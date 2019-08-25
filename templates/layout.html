@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<head lang = "en">
+
+    <!--meta data-->
+
+    <meta charset ="utf-8"/>
+
+    <meta name ="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/static/style.css" type="text/css"/>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
+    
+</head>
+<title>SS26: {% block title %} {% endblock %}</title>
+<body>
+    <nav class="navbar navbar-light bg-success"  >
+            <div class="collapse navbar-collapse" id="navbar">
+
+                {% if session.user_id %}
+                <ul class="navbar-nav mr-auto mt-2">
+                   <li class="nav-item">
+                       <a class="nav-link"href="{{ url_for('login') }}">Home</a>
+                      
+                       
+                    </li> 
+                </ul>
+                {% else %}
+                <ul class="navbar-nav mr-auto mt-2">
+                    <li class="nav-item">
+                        <a class="nav-link"href="{{ url_for('login') }}">Log In</a>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+    </nav>
+    {% block body %}
+    {% endblock %}
+</body>
