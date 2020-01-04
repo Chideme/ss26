@@ -111,9 +111,10 @@ def admin():
 def manage_users():
         """Managing Users"""
         if request.method == "GET":
-                users = db.session.query(User,Role).filter(Role.id == User.role_id).all()
+                users_roles = db.session.query(User,Role).filter(Role.id == User.role_id).all()
+                users= User.query.all()
                 roles = Role.query.all()
-                return render_template("manageusers.html",roles=roles,users=users)
+                return render_template("manageusers.html",roles=roles,users_roles=users_roles,users=users)
 
 @app.route("/admin/manage_inventory",methods=["GET","POST"])
 @login_required
@@ -131,20 +132,36 @@ def manage_inventory():
 def add_user():
         """Add User"""
         user = User(username=request.form.get("username"),password=request.form.get("password"),role_id=request.form.get("role"))
-        db.session.add(user)
-        db.session.commit()
-        
-        return redirect(url_for('manage_users'))
+        user_exists = bool(User.query.filter_by(username=request.form.get("username")).first())
+        if user_exists:
+                message = "User already exists, Try using another username!!"
+                return render_template("error.html",message=message)
+        else:
+                db.session.add(user)
+                db.session.commit()
+                flash('User Successfully Added')
+                return redirect(url_for('manage_users'))
 
 @app.route("/edit_user",methods=["POST"])
 @login_required
 @admin_required
 def edit_user():
         """Edit User Information"""
-        user = User(username=request.form.get("username"),password=request.form.get("password"),role_id=request.form.get("role"))
-        db.session.add(user)
+        db.session.query(User).filter(User.username == request.form.get("username")).update({User.password: generate_password_hash(request.form.get("password"))}, synchronize_session = False)
+        db.session.query(User).filter(User.username == request.form.get("username")).update({User.role_id: request.form.get("role")}, synchronize_session = False)
         db.session.commit()
-        
+        flash('User Successfully Updated')
+        return redirect(url_for('manage_users'))
+
+@app.route("/delete_user",methods=["POST"])
+@login_required
+@admin_required
+def delete_user():
+        """Deletes Users"""
+        user = db.session.query(User).get(int(request.form.get("users")))
+        db.session.delete(user)  
+        db.session.commit()
+        flash('User Successfully Removed!!')
         return redirect(url_for('manage_users'))
 
 @app.route("/add_pump",methods=["POST"])

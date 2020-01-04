@@ -43,7 +43,8 @@ class User(db.Model):
     role_id = db.Column(db.Integer,db.ForeignKey("roles.id"),nullable=False)
 
     def __repr__(self):
-        print("{}".format(self.username))
+        username =self.username
+        return "{}".format(username)
 
 
 class Role(db.Model):
@@ -53,7 +54,7 @@ class Role(db.Model):
     users= db.relationship("User",backref="user",lazy=True)
 
     def __repr__(self):
-        return '%r'% self.name
+        return "{}".format(self.name)
 
 class Customer(db.Model):
     __tablename__="customers"

@@ -39,8 +39,16 @@
                 {% endif %}
             </div>
     </nav>
-    {% block body %}
-    {% endblock %}
+    {% if get_flashed_messages() %}
+            <header>
+                <div class="alert alert-primary border text-center" role="alert">
+                    {{ get_flashed_messages() | join(" ") }}
+                </div>
+            </header>
+    {% endif %}
+    <main class="container p-5">
+        {% block main %}{% endblock %}
+    </main>
     <script src="/static/vendor/jquery/jquery-3.4.1.js" ></script>
     <script src="/static/vendor/popper/popper.min.js" ></script>
     <script src="/static/vendor/bootstrap/js/bootstrap.min.js" ></script>

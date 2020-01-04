@@ -4,9 +4,9 @@
     Manage Users
 {% endblock %}
 
-{% block body %}
+{% block main %}
 
-<div class="container">
+
 
     <div class="row">
         <div class="col-md-6">
@@ -19,22 +19,78 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for user in users %}
+                    {% for user in users_roles %}
                     <tr>
                         <td>{{ user[0] }}</td>
                         <td>{{ user[1] }}</td>
-                        <td></td>
+                        <td>
+                            <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditUser{{ user[0] }}">
+                                Edit User
+                            </button>
+                        </td>
+                    
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
+             </div>           
+                            <!--Edit User Modal -->
+                            {% for user in users_roles %}
+                            <div class="modal fade" id="EditUser{{ user[0] }}" tabindex="-1" role="dialog" aria-labelledby="EditUserFormModalLabel" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="EditUserFormLabel">Edit {{ user[0] }}</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form  action="{{ url_for('edit_user') }}" method="post" > 
+                                                <div class="form-group  " >
+                                                    <input type = "text"  value="{{ user[0] }}" name="username" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
+                                                </div>
+                                                <div class="form-group  ">
+                                                    <input type = "password" name="password" autocomplete="off" placeholder="Password" autofocus class="form-control" required>
+                                                </div>
+                                                <div class="form-group  ">
+                                                    <input type = "password" name="password1" autocomplete="off" placeholder="Re-enter Password" autofocus class="form-control" required>
+                                                </div>
+                                                <div>
+                                                    <select class="form-control" name="role">
+                                                        <option value="{{ user[1] }}" selected>{{ user[1] }}</option>
+                                                        {% for role in roles %}
+                                                        <option  value="{{ role.id }}">{{ role.name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div> 
+                                                <button class="btn btn-success" type="submit">Update User</button>
+                                                </div>
+                                             </form>
+                                        </div>
+                                        <div class="modal-footer">  
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                     <!--Edit User Modal-->
+
         <div class="col-md-6 text-right">
+            <div class="row">
             <button type="button" class="btn btn-success" data-toggle="modal" data-target="#AddUserFormModal">
                     New User
             </button>
+            </div>
+            <div class ="row">
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#DeleteUserFormModal">
+                Delete User
+            </button>
+            </div>
             
-                <!-- Modal -->
+                <!-- Add User Modal -->
                 <div class="modal fade" id="AddUserFormModal" tabindex="-1" role="dialog" aria-labelledby="AddUserFormModalLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
@@ -58,8 +114,8 @@
                                     <div>
                                         <select class="form-control" name="role">
                                             <option selected>Choose..</option>
-                                            {% for i in roles %}
-                                            <option  value="{{ i.id }}">{{ i.name }}</option>
+                                            {% for  role in roles %}
+                                            <option  value="{{ role.id }}">{{ role.name }}</option>
                                             {% endfor %}
                                         </select>
                                     </div> 
@@ -71,10 +127,42 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div><!--Add User-->
+                
+                    <!--Delete User Modal -->
+                    <div class="modal fade" id="DeleteUserFormModal" tabindex="-1" role="dialog" aria-labelledby="DeleteUserFormModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="DeleteUserFormLabel">Remove User</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form  action="{{ url_for('delete_user') }}" method="post" > 
+                                        <div>
+                                            <select class="form-control" name="users">
+                                                <option selected>Choose..</option>
+                                                {% for  user in users %}
+                                                <option  value="{{ user.id }}">{{ user.username }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div> 
+                                        <hr>
+                                        <button class="btn btn-success btn-group" type="submit">Remove User</button>
+                                
+                                     </form>
+                                </div>
+                                <div class="modal-footer">  
+                                    <button type="button" class="btn btn-secondary btn-group" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!--Deletes User-->
         </div>
     </div>
-</div>
+
     
 
     
