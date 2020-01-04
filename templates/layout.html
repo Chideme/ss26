@@ -4,27 +4,32 @@
     <!--meta data-->
 
     <meta charset ="utf-8"/>
-
-    <meta name ="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="/static/style.css" type="text/css"/>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/static/styles.css" type="text/css"/>
 </head>
 <title>SS26: {% block title %} {% endblock %}</title>
 <body>
-    <nav class="navbar navbar-light bg-success"  >
+    <nav class="navbar navbar-expand navbar-light bg-success"  >
             <div class="collapse navbar-collapse" id="navbar">
 
                 {% if session.user_id %}
-                <ul class="navbar-nav mr-auto mt-2">
-                   <li class="nav-item">
-                       <a class="nav-link"href="{{ url_for('login') }}">Home</a>
-                      
-                       
-                    </li> 
-                </ul>
+                    {% if session.user_id != 1 %}
+                    <ul class="navbar-nav mr-auto mt-2">
+                        <li class="nav-item">
+                            <a class="nav-link"href="{{ url_for('index') }}">Home</a>
+                            <a class="nav-link"href="{{ url_for('start_shift_update') }}">Start Shift Update</a>
+                        </li> 
+                    </ul>
+                    {% else %}
+                    <ul class="navbar-nav mr-auto mt-2">
+                            <li class="nav-item">
+                                <a class="nav-link"href="{{ url_for('index') }}">Home</a>
+                                <a class="nav-link"href="{{ url_for('admin') }}">Admin</a>
+                                <a class="nav-link"href="{{ url_for('start_shift_update') }}">Start Shift Update</a>                        
+                            </li> 
+                    </ul>
+                    {% endif %}
                 {% else %}
                 <ul class="navbar-nav mr-auto mt-2">
                     <li class="nav-item">
@@ -36,4 +41,22 @@
     </nav>
     {% block body %}
     {% endblock %}
+    <script src="/static/vendor/jquery/jquery-3.4.1.js" ></script>
+    <script src="/static/vendor/popper/popper.min.js" ></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.min.js" ></script>
+    <div class="fixed-bottom" style="text-align: center">
+        <div class="container">
+            <footer class="page-footer font-small blue">
+
+                <!-- Copyright -->
+                <div class="footer-copyright text-center py-3">© 2019-1-2020 Copyright:
+                Kudakwashe Chideme
+                </div>
+                <!-- Copyright -->
+          
+            </footer>
+        </div>
+    </div>
+    
 </body>
+

@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Admin
+{% endblock %}
+
+{% block body %}
+<div class="card text-center" style="width: 20rem; display: inline-block;" >
+    
+    <div class="card-header">Database Administration</div>
+    <ul class="list-group list-group-flush">
+
+        <li class="list-group-item">
+            <a class ="btn btn-info btn-lg" href="{{ url_for('manage_users') }}" role="button">Manage Users</a>
+        </li>
+
+        <li class="list-group-item">
+            <a class ="btn btn-info btn-lg" href="{{ url_for('manage_inventory') }}" role="button">Manage Inventory</a> 
+        </li>            
+    </ul>         
+</div> 
+
+       
+{% endblock %}

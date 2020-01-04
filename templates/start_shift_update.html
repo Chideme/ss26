@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Start Shift Update  
+{% endblock %}
+
+{% block body %}
+<form  action="{{ url_for('start_shift_update') }}" method="post" > 
+    <div class ="form-group">
+        <input type="date" name="date" class="form-control">
+    </div>
+    <div class="=form-group ">
+        <select class="form-control" name="shift">
+            <option selected>Day</option>
+            <option>Night</option>
+        </select>
+    </div>
+    <button type="button" class="btn btn-success" class="btn btn-success" type="submit">Start Shift Update</button>
+</form>
+{% endblock %}

@@ -23,3 +23,24 @@ def login_required(f):
         return f(*args, **kwargs)
 
     return decorated_function
+
+def admin_required(f):
+
+    """
+
+    Decorate routes to require Admin login.
+    http://flask.pocoo.org/docs/0.12/patterns/viewdecorators/
+
+    """
+
+    @wraps(f)
+
+    def decorated_function(*args, **kwargs):
+
+        if session.get("user_id") != 1:
+            message = "Access not allowed!!"
+            return render_template("error.html",message=message)
+
+        return f(*args, **kwargs)
+
+    return decorated_function

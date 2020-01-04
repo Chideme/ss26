@@ -7,6 +7,7 @@ db = SQLAlchemy()
 class Tank(db.Model):
     __tablename__="tanks"
     id = db.Column(db.Integer,primary_key=True)
+    name = db.Column(db.String,nullable=False)
     product = db.Column(db.String,nullable=False)
 
 class Pump(db.Model):
@@ -20,7 +21,7 @@ class PumpReading(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
     reading = db.Column(db.Integer, nullable=False)
-    pump_id = db.Column(db.Integer, db.ForeignKey("pump.id"), nullable=False)
+    pump_id = db.Column(db.Integer, db.ForeignKey("pumps.id"), nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     
 
@@ -41,11 +42,18 @@ class User(db.Model):
     password = db.Column(db.String,nullable=False)
     role_id = db.Column(db.Integer,db.ForeignKey("roles.id"),nullable=False)
 
+    def __repr__(self):
+        print("{}".format(self.username))
+
 
 class Role(db.Model):
     __tablename__="roles"
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     name= db.Column(db.String,nullable=False)
+    users= db.relationship("User",backref="user",lazy=True)
+
+    def __repr__(self):
+        return '%r'% self.name
 
 class Customer(db.Model):
     __tablename__="customers"
@@ -58,5 +66,5 @@ class Shift(db.Model):
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     date = db.Column(db.Date,nullable=False)
     daytime = db.Column(db.String,nullable=True)
-    pump_readings = db.relationship("PumpReading", backref="shift",lazy=True)
+
     
