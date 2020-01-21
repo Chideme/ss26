@@ -1,70 +1,227 @@
-<!DOCTYPE html>
-<head lang = "en">
-
-    <!--meta data-->
-
-    <meta charset ="utf-8"/>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="/static/styles.css" type="text/css"/>
-</head>
-<title>SS26: {% block title %} {% endblock %}</title>
-<body>
-    <nav class="navbar navbar-expand navbar-light bg-success"  >
-            <div class="collapse navbar-collapse" id="navbar">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../../../favicon.ico">
 
-                {% if session.user_id %}
-                    {% if session.user_id != 1 %}
-                    <ul class="navbar-nav mr-auto mt-2">
-                        <li class="nav-item">
-                            <a class="nav-link"href="{{ url_for('index') }}">Home</a>
-                            <a class="nav-link"href="{{ url_for('start_shift_update') }}">Start Shift Update</a>
-                        </li> 
-                    </ul>
-                    {% else %}
-                    <ul class="navbar-nav mr-auto mt-2">
-                            <li class="nav-item">
-                                <a class="nav-link"href="{{ url_for('index') }}">Home</a>
-                                <a class="nav-link"href="{{ url_for('admin') }}">Admin</a>
-                                <a class="nav-link"href="{{ url_for('start_shift_update') }}">Start Shift Update</a>                        
-                            </li> 
-                    </ul>
-                    {% endif %}
-                {% else %}
-                <ul class="navbar-nav mr-auto mt-2">
-                    <li class="nav-item">
-                        <a class="nav-link"href="{{ url_for('login') }}">Log In</a>
-                    </li>
-                </ul>
-                {% endif %}
-            </div>
+    <title>SS26: {% block title%}{% endblock %}</title>
+
+    <!-- Bootstrap core CSS -->
+
+    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css" />
+
+    <!-- Custom styles for this template -->
+    <link href="/static/dashboard.css" rel="stylesheet">
+  </head>
+  {% if session.user_id %}
+  <body>
+    <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#"><span style="color: rgb(255, 145, 0);">Driveway</span><span style="color: chartreuse;"> Maker</span></a>
+      <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+      <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="#">Sign out</a>
+        </li>
+      </ul>
     </nav>
-    {% if get_flashed_messages() %}
-            <header>
-                <div class="alert alert-primary border text-center" role="alert">
-                    {{ get_flashed_messages() | join(" ") }}
+    <div class="container-fluid p-5">
+      <div class="row">
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+          <div class="sidebar-sticky">
+            
+            {% if session.user_id != 1 %}
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('dashboard') }}">
+                  <span data-feather="home"></span>
+                  Dashboard 
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('start_shift_update') }}">
+                  <span data-feather="users"></span>
+                  Start Shift Update
+                </a>
+              </li>
+              
+              <li class="nav-item">
+                <a class="nav-link disabled" href="{{ url_for('manage_users') }}">
+                  <span data-feather="users"></span>
+                  Users
+                </a>
+              </li>
+              <li class="nav-item dropdown disabled">
+                <a class="nav-link dropdown-toggle" href="#" id="invetorydropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="layers"></span>Inventory</a>
+                <div class="dropdown-menu" aria-labelledby="inventorydropdown">
+                <a class="dropdown-item" href="#">Pumps</a>
+                <a class="dropdown-item" href="#">Tanks</a>
+                <a class="dropdown-item" href="#">Products</a>
                 </div>
-            </header>
-    {% endif %}
-    <main class="container p-5">
-        {% block main %}{% endblock %}
-    </main>
+            </li>
+            <li class="nav-item dropdown disabled">
+                <a class="nav-link dropdown-toggle" href="#" id="accountsdropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="layers"></span>Accounts</a>
+                <div class="dropdown-menu" aria-labelledby="accountsdropdown">
+                <a class="dropdown-item" href="#">Customer Accounts</a>
+                <a class="dropdown-item" href="#">Cash Accounts</a>
+                <a class="dropdown-item" href="#">Expense Accounts</a>
+                </div>
+            </li>
+              <li class="nav-item disabled">
+                <a class="nav-link" href="#">
+                  <span data-feather="layers"></span>
+                  Integrations
+                </a>
+              </li>
+            </ul>
+
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+              <span>Reports</span>
+              <a class="d-flex align-items-center text-muted" href="#">
+                <span data-feather="plus-circle"></span>
+              </a>
+            </h6>
+            <ul class="nav flex-column mb-2">
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span data-feather="file-text"></span>
+                  Driveway
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span data-feather="file-text"></span>
+                  SS28
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span data-feather="file-text"></span>
+                  Profit Statement
+                </a>
+              </li>
+            </ul>
+          </div>
+          {% else %}<!--Admin View-->
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link active" href="{{ url_for('dashboard') }}">
+                <span data-feather="home"></span>
+                Dashboard <span class="sr-only">(current)</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('start_shift_update') }}">
+                <span data-feather="users"></span>
+                Start Shift Update
+              </a>
+            </li>
+            
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('manage_users') }}">
+                <span data-feather="users"></span>
+                Users
+              </a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="invetorydropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="layers"></span>Item List</a>
+              <div class="dropdown-menu" aria-labelledby="inventorydropdown">
+              <a class="dropdown-item" href="{{ url_for('pumps') }}"><span style="font-size: .875rem;">Pumps</span></a>
+              <a class="dropdown-item" href="#"><span style="font-size: .875rem;">Tanks</span></a>
+              <a class="dropdown-item" href="#"><span style="font-size: .875rem;">Products</span></a>
+              </div>
+          </li>
+          <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="accountsdropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="layers"></span>Accounts List</a>
+              <div class="dropdown-menu" aria-labelledby="accountsdropdown">
+              <a class="dropdown-item" href="#"><span style="font-size: .875rem;">Customer Accounts</span></a>
+              <a class="dropdown-item" href="#"><span style="font-size: .875rem;">Cash Accounts</span></a>
+              <a class="dropdown-item" href="#"><span style="font-size: .875rem;">Expense Accounts</span></a>
+              </div>
+          </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <span data-feather="layers"></span>
+                Integrations
+              </a>
+            </li>
+          </ul>
+
+          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <span>Reports</span>
+            <a class="d-flex align-items-center text-muted" href="#">
+              <span data-feather="plus-circle"></span>
+            </a>
+          </h6>
+          <ul class="nav flex-column mb-2">
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <span data-feather="file-text"></span>
+                Driveway
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <span data-feather="file-text"></span>
+                SS28
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <span data-feather="file-text"></span>
+                Profit Statement
+              </a>
+            </li>
+          </ul>
+          {% endif %}
+        </div>
+
+        </nav>
+
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+            {% block main %}{% endblock %}
+            <footer class="text-center text-muted">
+              &copy; 2020
+            </footer>
+        </main>
+
+      </div>
+       
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
     <script src="/static/vendor/jquery/jquery-3.4.1.js" ></script>
     <script src="/static/vendor/popper/popper.min.js" ></script>
     <script src="/static/vendor/bootstrap/js/bootstrap.min.js" ></script>
-    <div class="fixed-bottom" style="text-align: center">
-        <div class="container">
-            <footer class="page-footer font-small blue">
 
-                <!-- Copyright -->
-                <div class="footer-copyright text-center py-3">© 2019-1-2020 Copyright:
-                Kudakwashe Chideme
-                </div>
-                <!-- Copyright -->
-          
-            </footer>
-        </div>
+    <!-- Icons -->
+    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+    <script>
+      feather.replace()
+    </script>
+
+    <!-- Graphs -->
+  </body>
+  {% else %}
+  <body>
+      <div class="text-center">
+        <h3>Sign In </h3>
+        <form style="display: inline-block;" action="{{ url_for('login') }}" method="post" > 
+            <div class="form-group" >
+            <input type = "text"  name="username" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
+            </div>
+            <div class="form-group  ">
+            <input type = "password"  name="password" autocomplete="off" placeholder="Password" autofocus class="form-control" required>
+            </div>
+            <button class="btn btn-primary" type="submit">Sign In</button>
+         </form>
     </div>
-    
-</body>
+    </body>
+    {% endif %}
+</html>
 
+
+    

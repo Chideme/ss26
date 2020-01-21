@@ -6,148 +6,92 @@
 
 {% block main %}
 
-{% if shift_underway == 0 %}
-    <div class="card" style="width: 20rem; display: inline-block;" >
-        
-        <div class="card-header">Shift Updates</div>
-            <!-- Button trigger modal -->
-        <ul class="list-group list-group-flush"> 
-            <li class="list-group-item"><!--Pump Readings -->
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#PumpReadingFormModal">
-                Enter Pump Readings
-            </button>
-        
-            <!-- Modal -->
-            <div class="modal fade" id="PumpReadingFormModal" tabindex="-1" role="dialog" aria-labelledby="PumpReadingFormModalLabel" aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="PumpReadingFormLabel">Enter Pump Readings</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                        </div>
-                        <div class="modal-body">
-                            <form  action="{{ url_for('pump_readings_entry') }}" method="post" > 
-                                <div class="form-row">
-                                    <div class="form-group col-md-3" >
-                                        <select class="form-control" name="pump_id">
-                                            <option selected>Choose..</option>
-                                            <option>Pump A1</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group col-md-4" >
-                                        <input type = "text"  name="litre_reading" autocomplete="off" placeholder="Litre Reading" autofocus class="form-control">
-                                    </div>
-                                    <div class="form-group col-md-4" >
-                                        <input type = "text"  name="money_reading" autocomplete="off" placeholder="Money Reading" autofocus class="form-control">
-                                    </div>
-                                    
-                                </div>
-                                <button  class="btn btn-success" class="btn btn-success" type="submit">Save changes</button>      
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                            <button  class="btn btn-success" class="btn btn-success" type="submit">Save changes</button>
-                        </div>
-                    </div>
+<ul  class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="pumpreadings-tab" role="tab" aria-controls="PumpReading" href="#PumpReadings" data-toggle="tab" aria-selected="true">
+            Pump Readings
+        </a>
+    </li>
+    <li class="nav-item"><a class="nav-link" id="tankdips-tab" role="tab" aria-controls="TankDips" href="#TankDips" data-toggle="tab" aria-selected="false">Tank Dips</a></li>
+    <li class="nav-item"><a class="nav-link" id="fueldeliveries-tab" role="tab" aria-controls="FuelDeliveries" href="#FuelDeliveries" data-toggle="tab" aria-selected="false">Fuel Deliveries</a></li>
+    <li class="nav-item"><a class="nav-link" id="customersales-tab" role="tab" aria-controls="CustomerSales" href="#CustomerSales" data-toggle="tab" aria-selected="false">Customer Sales</a></li>
+    <li class="nav-item"><a class="nav-link" id="expenses-tab" role="tab" aria-controls="Expenses" href="#Expenses" data-toggle="tab" aria-selected="false">Expenses</a></li>
+    <li class="nav-item"><a class="nav-link" id="cashcounts-tab" role="tab" aria-controls="Expenses" href="#CashCounts" data-toggle="tab" aria-selected="false">Cash Counts</a></li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane active" id="PumpReadings" role="tabpanel" aria-labelledby="pumpreadings-tab">
+        <div class="text-center p-5">
+        <form role="form" style="display: inline-block;" action="{{ url_for('pump_readings_entry') }}" method="post" >
+        <div class="form-group"> 
+            <select class="form-control" name="pump_id">
+                <option selected>Choose..</option>
+                {% for pump in pumps %}
+                <option value="{{ pump.id }}">{{ pump.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group"> 
+            <input type = "text"  name="litre_reading" autocomplete="off" placeholder="Litre Reading" autofocus class="form-control">
+        </div>
+        <div class="form-group">   
+            <input type = "text"  name="money_reading" autocomplete="off" placeholder="Money Reading" autofocus class="form-control">
+        </div>
+            <button class="btn btn-primary btn-block" type="submit">Enter</button>      
+        </form>
+    
+        </div>
+</div>
+    <div class="tab-pane" id="TankDips" role="tabpanel" aria-labelledby="tankdips-tab">
+        <form  action="{{ url_for('tank_dips_entry') }}" method="post" > 
+            <div class="form-row">
+                <div class="form-group col-md-3" >
+                    <select class="form-control" name="pump_id">
+                        <option selected>Choose..</option>
+                        <option >Tank A1</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-4" >
+                    <input type = "text"  name="tank_dip" autocomplete="off" placeholder="Tank Dips" autofocus class="form-control">
                 </div>
             </div>
-            </li><!--Pump Readings-->
-            <li class="list-group-item"><!--Tank Dips -->
-                <button type="button" class="btn btn-success" data-toggle="modal" data-target="#TankDipsFormModal">
-                    Enter Tank Dips
-                </button>
-            
-                <!-- Modal -->
-                <div class="modal fade" id="TankDipsFormModal" tabindex="-1" role="dialog" aria-labelledby="TankDipsFormModalLabel" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="TankDipsFormLabel">Enter Tank Dips</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                            </div>
-                            <div class="modal-body">
-                                <form  action="{{ url_for('tank_dips_entry') }}" method="post" > 
-                                    <div class="form-row">
-                                        <div class="form-group col-md-3" >
-                                            <select class="form-control" name="pump_id">
-                                                <option selected>Choose..</option>
-                                                <option>Tank A1</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-4" >
-                                            <input type = "text"  name="tank_dip" autocomplete="off" placeholder="Tank Dips" autofocus class="form-control">
-                                        </div>
-                                    </div>
-                                    <button  class="btn btn-success" class="btn btn-success" type="submit">Save changes</button>      
-                                </form>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                <button class="btn btn-success" class="btn btn-success" type="submit">Save changes</button>
-                            </div>
-                        </div>
-                    </div>
+            <button  class="btn btn-success" class="btn btn-success" type="submit">Save changes</button>      
+        </form>
+    </div>
+    <div class="tab-pane" id="FuelDeliveries" role="tabpanel" aria-labelledby="fueldeliveries-tab">
+        <form  action="{{ url_for('fuel_delivery') }}" method="post" > 
+            <div class ="form-row">
+                <div class="form-group col-md-5">
+                    <input type="text" name="document_number"  placeholder="Document Number" class="form-control">
                 </div>
-                </li><!--Tank Dips-->
-                <li class="list-group-item"><!--Fuel Deliveries -->
-                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#FuelDeliveriesFormModal">
-                        Enter Fuel Delivery
-                    </button>
-                
-                    <!-- Modal -->
-                    <div class="modal fade" id="FuelDeliveriesFormModal" tabindex="-1" role="dialog" aria-labelledby="FuelDeliveriesFormModalLabel" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="FuelDeliveriesFormLabel">Enter Fuel Delivery</h5>
-                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                            <span aria-hidden="true">&times;</span>
-                                        </button>
-                                </div>
-                                <div class="modal-body">
-                                    <form  action="{{ url_for('fuel_delivery') }}" method="post" > 
-                                        <div class ="form-row">
-                                            <div class="form-group col-md-5">
-                                                <input type="text" name="document_number"  placeholder="Document Number" class="form-control">
-                                            </div>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group col-md-3" >
-                                                <select class="form-control" name="pump_id">
-                                                    <option selected>Choose..</option>
-                                                    <option>Tank A1</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group col-md-4" >
-                                                <input type = "text"  name="product" autocomplete="off" placeholder="Product" autofocus class="form-control">
-                                            </div>
-                                            <div class="form-group col-md-4" >
-                                                <input type = "text"  name="litres_delivered" autocomplete="off" placeholder="Litres Delivered" autofocus class="form-control">
-                                            </div>
-                                        </div>
-                                        <button  class="btn btn-success" class="btn btn-success" type="submit">Save changes</button>      
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                    <button  class="btn btn-success" class="btn btn-success" type="submit">Save changes</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    </li><!--Fuel Deliveries-->
-                
-                
-        </ul>         
-    </div> 
-{% else %}
-    <a class ="btn btn-info btn-lg" href="{{ url_for('start_shift_update') }}" role="button">Please start shift update</a>
-{% endif %}  
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-3" >
+                    <select class="form-control" name="pump_id">
+                        <option selected>Choose..</option>
+                        <option>Tank A1</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-4" >
+                    <input type = "text"  name="product" autocomplete="off" placeholder="Product" autofocus class="form-control">
+                </div>
+                <div class="form-group col-md-4" >
+                    <input type = "text"  name="litres_delivered" autocomplete="off" placeholder="Litres Delivered" autofocus class="form-control">
+                </div>
+            </div>
+            <button  class="btn btn-success" class="btn btn-success" type="submit">Save changes</button>      
+        </form>
+    </div>
+    <div class="tab-pane" id="CustomerSales">
+
+    </div>
+    <div class="tab-pane" id="Expenses">
+
+    </div>
+    <div class="tab-pane" id="CashCounts">
+
+    </div>
+</div>
+ 
 
     
 {% endblock %}

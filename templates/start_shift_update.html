@@ -5,16 +5,18 @@
 {% endblock %}
 
 {% block main %}
-<form  action="{{ url_for('start_shift_update') }}" method="post" > 
-    <div class ="form-group">
-        <input type="date" name="date" class="form-control">
-    </div>
-    <div class="=form-group ">
-        <select class="form-control" name="shift">
-            <option selected>Day</option>
-            <option>Night</option>
-        </select>
-    </div>
-    <button type="button" class="btn btn-success" class="btn btn-success" type="submit">Start Shift Update</button>
+<div class="p-5"></div>
+<div class="text-center">
+
+<form style="display: inline-block;" action="{{ url_for('start_shift_update') }}" method="post" > 
+    <h1 class="h3 mb-3 font-weight-normal">Start Shift Update</h1>
+    <input type="date" name="date" class="form-control">
+    <select class="form-control" name="shift">
+        <option selected>Day</option>
+        <option>Night</option>
+    </select>
+    <div class="p-2"></div>
+    <button  class="btn btn-primary btn-block" type="submit">Start Shift Update</button>
 </form>
+</div>
 {% endblock %}

@@ -29,7 +29,9 @@ def main():
     admin = User(username="Admin",password=admin_password,role_id=1)
     db.session.add(admin)
     db.session.commit()
-
+    shift_state = Shift_Underway(state=False)
+    db.session.add(shift_state)
+    db.session.commit()
 if __name__=="__main__":
     with app.app_context():
         main()

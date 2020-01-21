@@ -6,8 +6,17 @@
 
 {% block main %}
 
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Manage Users</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+      <div class="btn-group mr-2">
+        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddUserFormModal">Add User</button>
+        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteUserFormModal">Delete User</button>
+      </div>
+    </div>
+  </div>
 
-
+  <h4>Users Table</h4>
     <div class="row">
         <div class="col-md-6">
             <table class="table table-hover">
@@ -15,7 +24,7 @@
                     <tr>
                         <th>User Name</th>
                         <th>Role</th>
-                        <th></th>
+                        <th>Modify User</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -58,19 +67,19 @@
                                                 </div>
                                                 <div>
                                                     <select class="form-control" name="role">
-                                                        <option value="{{ user[1] }}" selected>{{ user[1] }}</option>
+                                                        <option  selected>Choose Role</option>
                                                         {% for role in roles %}
                                                         <option  value="{{ role.id }}">{{ role.name }}</option>
                                                         {% endfor %}
                                                     </select>
                                                 </div>
-                                                <div> 
-                                                <button class="btn btn-success" type="submit">Update User</button>
+                                                <div class="p-2"> 
+                                                <button class="btn btn-primary btn-block" type="submit">Update User</button>
                                                 </div>
                                              </form>
                                         </div>
                                         <div class="modal-footer">  
-                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                            <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
                                         </div>
                                     </div>
                                 </div>
@@ -78,18 +87,7 @@
                             {% endfor %}
                      <!--Edit User Modal-->
 
-        <div class="col-md-6 text-right">
-            <div class="row">
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#AddUserFormModal">
-                    New User
-            </button>
-            </div>
-            <div class ="row">
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#DeleteUserFormModal">
-                Delete User
-            </button>
-            </div>
-            
+        
                 <!-- Add User Modal -->
                 <div class="modal fade" id="AddUserFormModal" tabindex="-1" role="dialog" aria-labelledby="AddUserFormModalLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
@@ -118,12 +116,14 @@
                                             <option  value="{{ role.id }}">{{ role.name }}</option>
                                             {% endfor %}
                                         </select>
-                                    </div> 
-                                    <button class="btn btn-success" type="submit">Add User</button>
+                                    </div>
+                                    <div class="p-2">
+                                    <button class="btn btn-primary btn-block" type="submit">Add User</button>
+                                    </div>
                                  </form>
                             </div>
                             <div class="modal-footer">  
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
@@ -140,7 +140,7 @@
                                         </button>
                                 </div>
                                 <div class="modal-body">
-                                    <form  action="{{ url_for('delete_user') }}" method="post" > 
+                                    <form action="{{ url_for('delete_user') }}" method="post" > 
                                         <div>
                                             <select class="form-control" name="users">
                                                 <option selected>Choose..</option>
@@ -149,13 +149,13 @@
                                                 {% endfor %}
                                             </select>
                                         </div> 
-                                        <hr>
-                                        <button class="btn btn-success btn-group" type="submit">Remove User</button>
-                                
+                                        <div class="p-2">
+                                        <button class="btn btn-primary btn-block btn-group" type="submit">Remove User</button>
+                                        </div>
                                      </form>
                                 </div>
                                 <div class="modal-footer">  
-                                    <button type="button" class="btn btn-secondary btn-group" data-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-primary btn-group" data-dismiss="modal">Close</button>
                                 </div>
                             </div>
                         </div>

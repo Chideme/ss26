@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, session, render_template,flash,request,redirect,url_for,jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import login_required, admin_required
+from helpers import *
 from models import *
 app = Flask(__name__,template_folder = "templates")
 
@@ -16,15 +16,11 @@ app.secret_key = os.urandom(24)
 db.init_app(app)
 
 
-shift_underway =0 # Yes/No (1/0) keeps track of whether a shift update has started or not
-current_shift_id =0 # keeps track of the current shift_id 
-
 @app.route("/",methods=["GET","POST"])
 @login_required
-def index():
-    """ Index"""
-    #return render_template("index.html")
-    return render_template("readings_entry.html",shift_underway=shift_underway)
+def dashboard():
+    """ Dashboard"""
+    return render_template("dashboard.html")
 
 @app.route("/login",methods=["GET","POST"])
 def login():
@@ -44,7 +40,7 @@ def login():
                         return render_template("error.html",message=message)
                 else:
                         session["user_id"] = user.id
-                        return redirect(url_for('index'))
+                        return redirect(url_for('dashboard'))
         else:
                 return render_template("login.html")
 
@@ -53,10 +49,13 @@ def login():
 def start_shift_update():
         "Start Update of Shift Figures"
         if request.method == "POST":
-                if shift_underway == 0:#check if there is a shift update going on
+                shift_underway = Shift_Underway.query.get(1)
+                if shift_underway.state == False:#check if there is a shift update going on
                         day= request.form.get("date")
-                        daytime = request.form.get("daytime")
-                        shift_underway = 1
+                        shift_daytime = request.form.get("daytime")
+                        db.session.query(Shift_Underway).filter(Shift_Underway.id == 1).update({Shift_Underway.state: True}, synchronize_session = False)
+                        db.session.commit()
+                        shift = Shift(date=day,daytime=shift_daytime)
                         return redirect(url_for('readings_entry'))
                 else:
                         message = "Another Shift Update is Already Underway, end it first !!"
@@ -68,16 +67,31 @@ def start_shift_update():
 @login_required
 def readings_entry():
         """Readings Entry"""
-        return render_template("readings_entry.html",shift_underway=shift_underway)
+        shift_underway = Shift_Underway.query.get(1)
+        shift_underway = Shift_Underway.state
+        pumps = Pump.query.all()
+        return render_template("readings_entry.html",shift_underway=shift_underway,pumps=pumps)
 
 @app.route("/pump_readings_entry",methods=["POST"])
 @login_required
 def pump_readings_entry():
-        """Enter readings for pumps """   
-        date = request.form.get("date")
-        shift = request.form.get("shift")
-        pump_name= request.form.get("pump_name")
-        pump_reading =request.form.get("pump_reading")
+        """Enter readings for pumps """
+        current_shift = Shift.query.order_by(Shift.id.desc()).first()
+        shift_daytime = current_shift.daytime
+        shift_id = current_shift.id
+        date = current_shift.date
+        pump_id= request.form.get("pump_name")
+        litre_reading = int(request.form.get("litre_reading"))
+        money_reading = int(request.form.get("money_reading"))
+        if money_reading in None:
+                pump_readings = PumpReading(date=date,litre_reading=litre_reading,money_reading=money_reading,pump_id=pump_id,shift_id=shift_id)
+                db.session.add(pump_readings)
+                db.session.commit()
+        else:
+                pump_readings = PumpReading(date=date,litre_reading=litre_reading,pump_id=pump_id,shift_id=shift_id)
+                db.session.add(pump_readings)
+                db.session.commit()
+
 
 @app.route("/tank_dips_entry",methods=["POST"])
 @login_required
@@ -98,12 +112,6 @@ def fuel_delivery():
         tank_name= request.form.get("tank_name")
         litres =request.form.get("litres_delivered")
 
-@app.route("/admin",methods=["GET","POST"])
-@login_required
-@admin_required
-def admin():
-        """Home page for admin functions"""
-        return render_template("admin.html")
 
 @app.route("/admin/manage_users",methods=["GET","POST"])
 @login_required
@@ -116,17 +124,9 @@ def manage_users():
                 roles = Role.query.all()
                 return render_template("manageusers.html",roles=roles,users_roles=users_roles,users=users)
 
-@app.route("/admin/manage_inventory",methods=["GET","POST"])
-@login_required
-@admin_required
-def manage_inventory():
-        """Managing Inventory Functions"""
-        if request.method == "GET":
-
-                return render_template("manageusers.html")
 
 
-@app.route("/add_user",methods=["POST"])
+@app.route("/manage_users/add_user",methods=["POST"])
 @login_required
 @admin_required
 def add_user():
@@ -142,7 +142,7 @@ def add_user():
                 flash('User Successfully Added')
                 return redirect(url_for('manage_users'))
 
-@app.route("/edit_user",methods=["POST"])
+@app.route("/manage_users/edit_user",methods=["POST"])
 @login_required
 @admin_required
 def edit_user():
@@ -153,7 +153,7 @@ def edit_user():
         flash('User Successfully Updated')
         return redirect(url_for('manage_users'))
 
-@app.route("/delete_user",methods=["POST"])
+@app.route("/manage_users/delete_user",methods=["POST"])
 @login_required
 @admin_required
 def delete_user():
@@ -164,6 +164,19 @@ def delete_user():
         flash('User Successfully Removed!!')
         return redirect(url_for('manage_users'))
 
+
+
+@app.route("/admin/pump_list",methods=["GET","POST"])
+@login_required
+@admin_required
+def pumps():
+        """Pump List"""
+        pump_tank = db.session.query(Tank,Pump).filter(Tank.id == Pump.tank_id).all()
+        pumps =  Pump.query.all()
+        tanks = Tank.query.all()
+        return render_template("pumps.html",pumps=pumps,pump_tank=pump_tank,tanks=tanks)
+        
+
 @app.route("/add_pump",methods=["POST"])
 @login_required
 @admin_required
@@ -172,6 +185,20 @@ def add_pump():
         pump = Pump(request.form.get("pump_name"),request.form.get("tank_id"))
         db.session.add(pump)
         db.session.commit()
+        flash('Pump Successfully Added !!')
+        return redirect(url_for('pumps')
+
+
+@app.route("/delete_pump",methods=["POST"])
+@login_required
+@admin_required
+def delete_pump():
+        """Delete Pump"""
+        user = db.session.query(User).get(int(request.form.get("pumps")))
+        db.session.delete(user)  
+        db.session.commit()
+        flash('Pump Successfully Removed!!')
+        return redirect(url_for('pumps')
 
 @app.route("/add_tank",methods=["POST"])
 @login_required
@@ -181,6 +208,14 @@ def add_tank():
         tank = Pump(request.form.get("tank_name"),request.form.get("product"))
         db.session.add(tank)
         db.session.commit()
+
+@app.route("/admin/tank_list",methods=["GET","POST"])
+@login_required
+@admin_required
+def pumps():
+        """Tank List"""
+        tanks = Tank.query.all()
+        return render_template("tanks.html",tanks=tanks)
 
 '''
 

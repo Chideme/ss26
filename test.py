@@ -12,10 +12,9 @@ db.init_app(app)
 
 def main():
     users = db.session.query(User,Role).filter(Role.id == User.role_id).all()
-    roles = Role.query.all()
+    #roles = Role.query.all()
+    #db.drop_all()
     print(users)
-
-   #db.drop_all()
 
 
 if __name__=="__main__":

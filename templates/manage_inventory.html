@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Manage Inventory
+{% endblock %}
+
+{% block main %}
+
+<div class="text-center">
+    <div class="card" style="width: 10rem; display: inline-block;" >
+        
+        <div class="card-header">Inventory Items Lists</div>
+        <ul class="list-group list-group-flush">
+
+            <li class="list-group-item">
+                <a  href="{{ url_for('manage_pumps') }}">Pump List</a>
+            </li>
+
+            <li class="list-group-item">
+                <a href="{{ url_for('manage_tanks') }}" >Tank List</a> 
+            </li>
+            <li class="list-group-item">
+                <a href="{{ url_for('manage_products') }}" >Product List</a> 
+            </li>              
+        </ul>         
+    </div> 
+</div>
+{% endblock %}

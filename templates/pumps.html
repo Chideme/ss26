@@ -1,0 +1,114 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Pump List
+{% endblock %}
+
+{% block main %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Manage Pumps</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+      <div class="btn-group mr-2">
+        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddUserFormModal">Add Pump</button>
+        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteUserFormModal">Delete Pump</button>
+      </div>
+    </div>
+  </div>
+
+  <h2>Pumps Table</h2>
+    <div class="row">
+        <div class="col-md-6">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Pump Name</th>
+                        <th>Tank</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pump in pump_tank %}
+                    <tr>
+                        <td>{{ pump[0] }}</td>
+                        <td>{{ pump[1] }}</td>
+                    
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+             </div>           
+
+        
+                <!-- Add Pump Modal -->
+                <div class="modal fade" id="AddPumpFormModal" tabindex="-1" role="dialog" aria-labelledby="AddPumpFormModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="AddPumpFormLabel">Add Pump</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                            </div>
+                            <div class="modal-body">
+                                <form  action="{{ url_for('add_pump') }}" method="post" > 
+                                    <div class="form-group  " >
+                                        <input type = "text"  name="pump_name" autocomplete="off" placeholder="Pump Namw" autofocus class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <select class="form-control" name="tank">
+                                            <option selected>Choose..</option>
+                                            {% for  tank in tanks %}
+                                            <option  value="{{ tank.id }}">{{ tank.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="p-2">
+                                    <button class="btn btn-success btn-block" type="submit">Pump</button>
+                                    </div>
+                                 </form>
+                            </div>
+                            <div class="modal-footer">  
+                                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div><!--Add Pump-->
+                
+                    <!--Delete Pump Modal -->
+                    <div class="modal fade" id="DeletePumpFormModal" tabindex="-1" role="dialog" aria-labelledby="DeletePumpFormModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="DeletePumpFormLabel">Remove Pump</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form action="{{ url_for('delete_pump') }}" method="post" > 
+                                        <div>
+                                            <select class="form-control" name="pumps">
+                                                <option selected>Choose..</option>
+                                                {% for  pump in pumps %}
+                                                <option  value="{{ pump.id }}">{{ pump.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div> 
+                                        <div class="p-2">
+                                        <button class="btn btn-success btn-group" type="submit">Delete Pump</button>
+                                        </div>
+                                     </form>
+                                </div>
+                                <div class="modal-footer">  
+                                    <button type="button" class="btn btn-primary btn-group" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!--Deletes Pump-->
+        </div>
+    </div>
+
+    
+
+    
+{% endblock %}
