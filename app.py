@@ -181,15 +181,16 @@ def pumps():
 @login_required
 @admin_required
 def add_pump():
+
         """Add Pump"""
         pump = Pump(request.form.get("pump_name"),request.form.get("tank_id"))
         db.session.add(pump)
         db.session.commit()
         flash('Pump Successfully Added !!')
-        return redirect(url_for('pumps')
+        return redirect(url_for('pumps'))
 
 
-@app.route("/delete_pump",methods=["POST"])
+@app.route("/admin/delete_pump",methods=["POST"])
 @login_required
 @admin_required
 def delete_pump():
@@ -198,7 +199,7 @@ def delete_pump():
         db.session.delete(user)  
         db.session.commit()
         flash('Pump Successfully Removed!!')
-        return redirect(url_for('pumps')
+        return redirect(url_for('pumps'))
 
 @app.route("/add_tank",methods=["POST"])
 @login_required
@@ -212,7 +213,7 @@ def add_tank():
 @app.route("/admin/tank_list",methods=["GET","POST"])
 @login_required
 @admin_required
-def pumps():
+def tanks():
         """Tank List"""
         tanks = Tank.query.all()
         return render_template("tanks.html",tanks=tanks)
