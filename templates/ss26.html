@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "layout.html" %} 
 
 {% block title %}
     SS26
@@ -6,10 +6,24 @@
 
 {% block main %}
 
-<form>
-    <table>
-        
-    </table>
-</form>
+<table>
+    <thead>
+        <tr>
+            <th>Pump</th>
+            <th>Current Reading</th>
+            <th>Previous Reading</th>
+            <th>Sales</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pump in pumps %}
+        <tr>
+            <td>{{ pump.name }}</td>
+            <td>{{ pump_readings[pump.name][1] }}</td>
+            <td>{{ pump_readings[pump.name][0] }}</td>
+            <td>{{ pump_readings[pump.name][1]-pump_readings[pump.name][0] }}</td>
+        </tr>
+    </tbody>
+</table>
 
 {% endblock %}

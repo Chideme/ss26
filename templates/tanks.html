@@ -1,22 +1,22 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Pump List
+    Tank List
 {% endblock %}
 
 {% block main %}
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Manage Pumps</h1>
+    <h1 class="h2">Manage Tanks</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
       <div class="btn-group mr-2">
-        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddUserFormModal">Add Pump</button>
-        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteUserFormModal">Delete Pump</button>
+        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddTankFormModal">Add Tank</button>
+        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteTankFormModal">Delete Tank</button>
       </div>
     </div>
   </div>
 
-  <h2>Pumps Table</h2>
+  <h2>Tanks Table</h2>
     <div class="row">
         <div class="col-md-6">
             <table class="table table-hover">
@@ -27,10 +27,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for tank in tanks %}
+                    {% for tank in tank_product %}
                     <tr>
-                        <td>{{ tank.name }}</td>
-                        <td>{{ tank.product }}</td>
+                        <td>{{ tank[1]}}</td>
+                        <td>{{ tank[0] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -54,10 +54,15 @@
                                         <input type = "text"  name="tank_name" autocomplete="off" placeholder="Tank Name" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group">
-                                        <input type = "text"  name="product" autocomplete="off" placeholder="Product" autofocus class="form-control" required>
+                                        <select class="form-control" name="product">
+                                            <option value="Petrol" selected>Product</option>
+                                            {% for product in products%}
+                                            <option  value="{{ product.id }}">{{ product.name }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                     <div class="p-2">
-                                    <button class="btn btn-success btn-block" type="submit">Add Tank</button>
+                                    <button class="btn btn-primary btn-block" type="submit">Add Tank</button>
                                     </div>
                                  </form>
                             </div>
@@ -68,12 +73,12 @@
                     </div>
                 </div><!--Add Tank-->
                 
-                    <!--Delete Pump Modal -->
+                    <!--Delete Tank Modal -->
                     <div class="modal fade" id="DeleteTankFormModal" tabindex="-1" role="dialog" aria-labelledby="DeleteTankFormModalLabel" aria-hidden="true">
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="DeletePumpFormLabel">Remove Tank</h5>
+                                    <h5 class="modal-title" id="DeleteTankFormLabel">Remove Tank</h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
@@ -89,7 +94,7 @@
                                             </select>
                                         </div> 
                                         <div class="p-2">
-                                        <button class="btn btn-success btn-group" type="submit">Delete Tank</button>
+                                        <button class="btn btn-primary btn-group" type="submit">Delete Tank</button>
                                         </div>
                                      </form>
                                 </div>

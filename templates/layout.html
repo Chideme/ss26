@@ -46,29 +46,6 @@
                   Start Shift Update
                 </a>
               </li>
-              
-              <li class="nav-item">
-                <a class="nav-link disabled" href="{{ url_for('manage_users') }}">
-                  <span data-feather="users"></span>
-                  Users
-                </a>
-              </li>
-              <li class="nav-item dropdown disabled">
-                <a class="nav-link dropdown-toggle" href="#" id="invetorydropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="layers"></span>Inventory</a>
-                <div class="dropdown-menu" aria-labelledby="inventorydropdown">
-                <a class="dropdown-item" href="#">Pumps</a>
-                <a class="dropdown-item" href="#">Tanks</a>
-                <a class="dropdown-item" href="#">Products</a>
-                </div>
-            </li>
-            <li class="nav-item dropdown disabled">
-                <a class="nav-link dropdown-toggle" href="#" id="accountsdropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="layers"></span>Accounts</a>
-                <div class="dropdown-menu" aria-labelledby="accountsdropdown">
-                <a class="dropdown-item" href="#">Customer Accounts</a>
-                <a class="dropdown-item" href="#">Cash Accounts</a>
-                <a class="dropdown-item" href="#">Expense Accounts</a>
-                </div>
-            </li>
               <li class="nav-item disabled">
                 <a class="nav-link" href="#">
                   <span data-feather="layers"></span>
@@ -76,7 +53,6 @@
                 </a>
               </li>
             </ul>
-
             <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
               <span>Reports</span>
               <a class="d-flex align-items-center text-muted" href="#">
@@ -114,33 +90,10 @@
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('start_shift_update') }}">
-                <span data-feather="users"></span>
+                <span data-feather="plus-circle"></span>
                 Start Shift Update
               </a>
             </li>
-            
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('manage_users') }}">
-                <span data-feather="users"></span>
-                Users
-              </a>
-            </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="invetorydropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="layers"></span>Item List</a>
-              <div class="dropdown-menu" aria-labelledby="inventorydropdown">
-              <a class="dropdown-item" href="{{ url_for('pumps') }}"><span style="font-size: .875rem;">Pumps</span></a>
-              <a class="dropdown-item" href="#"><span style="font-size: .875rem;">Tanks</span></a>
-              <a class="dropdown-item" href="#"><span style="font-size: .875rem;">Products</span></a>
-              </div>
-          </li>
-          <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="accountsdropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="layers"></span>Accounts List</a>
-              <div class="dropdown-menu" aria-labelledby="accountsdropdown">
-              <a class="dropdown-item" href="#"><span style="font-size: .875rem;">Customer Accounts</span></a>
-              <a class="dropdown-item" href="#"><span style="font-size: .875rem;">Cash Accounts</span></a>
-              <a class="dropdown-item" href="#"><span style="font-size: .875rem;">Expense Accounts</span></a>
-              </div>
-          </li>
             <li class="nav-item">
               <a class="nav-link" href="#">
                 <span data-feather="layers"></span>
@@ -175,12 +128,54 @@
               </a>
             </li>
           </ul>
+          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <span>Admin</span>
+            <a class="d-flex align-items-center text-muted" href="#">
+              <span data-feather="plus-circle"></span>
+            </a>
+          </h6>
+          <ul class="nav flex-column mb-2">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('manage_users')}}">
+                <span data-feather="users"></span>
+                Users
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('customers')}}">
+                <span data-feather="users"></span>
+                Customers
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('accounts') }}">
+                <span data-feather="file-text"></span>
+                Accounts
+              </a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="databasedropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="Database"></span>Item Lists</a>
+              <div class="dropdown-menu" aria-labelledby="databasedropdown">
+              <a class="dropdown-item" href="{{ url_for('pumps') }}"><span style="font-size: .875rem;" data-feather="archive">Pumps</span></a>
+              <a class="dropdown-item" href="{{ url_for('tanks') }}"><span style="font-size: .875rem;" data-feather="archive">Tanks</span></a>
+              <a class="dropdown-item" href="{{ url_for('products') }}"><span style="font-size: .875rem;">Products</span></a>
+              </div>
+          </li>
+
+          </ul>
           {% endif %}
         </div>
 
         </nav>
 
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+          {% if get_flashed_messages() %}
+            <header>
+                <div class="alert alert-info border text-center" role="alert">
+                    {{ get_flashed_messages() | join(" ") }}
+                </div>
+            </header>
+        {% endif %}
             {% block main %}{% endblock %}
             <footer class="text-center text-muted">
               &copy; 2020

@@ -1,36 +1,36 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Pump List
+    Product List
 {% endblock %}
 
 {% block main %}
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Manage Pumps</h1>
+    <h1 class="h2">Manage Products</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
       <div class="btn-group mr-2">
-        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddPumpFormModal">Add Pump</button>
-        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeletePumpFormModal">Delete Pump</button>
+        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddProductFormModal">Add Product</button>
+        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteProductFormModal">Delete Product</button>
       </div>
     </div>
   </div>
 
-  <h2>Pumps Table</h2>
+  <h2>Products Table</h2>
     <div class="row">
         <div class="col-md-6">
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Pump Name</th>
-                        <th>Tank</th>
+                        <th>Product Name</th>
+                        <th>Product Price</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for pump in pumps %}
+                    {% for product in products %}
                     <tr>
-                        <td>{{ pump.name }}</td>
-                        <td>{{ pump.tank_id }}</td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.price }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -38,32 +38,34 @@
              </div>           
 
         
-                <!-- Add Pump Modal -->
-                <div class="modal fade" id="AddPumpFormModal" tabindex="-1" role="dialog" aria-labelledby="AddPumpFormModalLabel" aria-hidden="true">
+                <!-- Add Product Modal -->
+                <div class="modal fade" id="AddProductFormModal" tabindex="-1" role="dialog" aria-labelledby="AddProductFormModalLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="AddPumpFormLabel">Add Pump</h5>
+                                <h5 class="modal-title" id="AddProductFormLabel">Add Product</h5>
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>
                                     </button>
                             </div>
                             <div class="modal-body">
-                                <form  action="{{ url_for('add_pump') }}" method="post" > 
-                                    <div class="form-group  " >
-                                        <input type = "text"  name="pump_name" autocomplete="off" placeholder="Pump Name" autofocus class="form-control" required>
+                                <form  action="{{ url_for('add_product') }}" method="post" > 
+                                    <div class="form-group" >
+                                        <input type = "text"  name="product_name" autocomplete="off" placeholder="Product Name" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group">
-                                        <select class="form-control" name="tank">
-                                            <option selected>Choose..</option>
-                                            {% for  tank in tanks %}
-                                            <option  value="{{ tank.id }}">{{ tank.name }}</option>
-                                            {% endfor %}
+                                        <select class="form-control" name="product_type">
+                                            <option value="Fuels" selected>Fuels</option>
+                                            <option  value="Lubes">Lubes</option>
                                         </select>
                                     </div>
-                                    <div class="p-2">
-                                    <button class="btn btn-primary btn-block" type="submit"> Add Pump</button>
+                                    <div class="form-group " >
+                                        <input type = "text"  name="price" autocomplete="off" placeholder="Product Price" autofocus class="form-control" required>
                                     </div>
+
+                                    
+                                    <button class="btn btn-primary btn-block" type="submit">Add Product</button>
+                            
                                  </form>
                             </div>
                             <div class="modal-footer">  
@@ -71,30 +73,30 @@
                             </div>
                         </div>
                     </div>
-                </div><!--Add Pump-->
+                </div><!--Add Product-->
                 
-                    <!--Delete Pump Modal -->
-                    <div class="modal fade" id="DeletePumpFormModal" tabindex="-1" role="dialog" aria-labelledby="DeletePumpFormModalLabel" aria-hidden="true">
+                    <!--Delete Product Modal -->
+                    <div class="modal fade" id="DeleteProductFormModal" tabindex="-1" role="dialog" aria-labelledby="DeleteProductFormModalLabel" aria-hidden="true">
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="DeletePumpFormLabel">Remove Pump</h5>
+                                    <h5 class="modal-title" id="DeleteProductFormLabel">Remove Product</h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
                                 </div>
                                 <div class="modal-body">
-                                    <form action="{{ url_for('delete_pump') }}" method="post" > 
-                                        <div>
-                                            <select class="form-control" name="pumps">
-                                                <option selected>Choose..</option>
-                                                {% for  pump in pumps %}
-                                                <option  value="{{ pump.id }}">{{ pump.name }}</option>
+                                    <form action="{{ url_for('delete_product') }}" method="post" > 
+                                        <div class="form-group">
+                                            <select class="form-control" name="products">
+                                                <option selected>Product</option>
+                                                {% for  product in products %}
+                                                <option  value="{{ product.id }}">{{ product.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div> 
                                         <div class="p-2">
-                                        <button class="btn btn-success btn-group" type="submit">Delete Pump</button>
+                                        <button class="btn btn-primary btn-group" type="submit">Delete Product</button>
                                         </div>
                                      </form>
                                 </div>
@@ -103,7 +105,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div><!--Deletes Pump-->
+                    </div><!--Deletes Product-->
         </div>
     </div>
 

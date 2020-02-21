@@ -1,69 +1,68 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Pump List
+    Accounts
 {% endblock %}
 
 {% block main %}
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Manage Pumps</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
       <div class="btn-group mr-2">
-        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddPumpFormModal">Add Pump</button>
-        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeletePumpFormModal">Delete Pump</button>
+        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddAccountFormModal">Add Account</button>
+        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteAccountFormModal">Delete Account</button>
       </div>
     </div>
   </div>
 
-  <h2>Pumps Table</h2>
+  <h4>Accounts</h4>
     <div class="row">
         <div class="col-md-6">
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Pump Name</th>
-                        <th>Tank</th>
+                        <th>Account</th>
+                        <th>Category</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for pump in pumps %}
+                    {% for account in accounts %}
                     <tr>
-                        <td>{{ pump.name }}</td>
-                        <td>{{ pump.tank_id }}</td>
+                        <td>{{ account.account_name }}</td>
+                        <td>{{ account.account_category }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
              </div>           
+                           
 
         
-                <!-- Add Pump Modal -->
-                <div class="modal fade" id="AddPumpFormModal" tabindex="-1" role="dialog" aria-labelledby="AddPumpFormModalLabel" aria-hidden="true">
+                <!-- Add Account Modal -->
+                <div class="modal fade" id="AddAccountFormModal" tabindex="-1" role="dialog" aria-labelledby="AddAccountFormModalLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="AddPumpFormLabel">Add Pump</h5>
+                                <h5 class="modal-title" id="AddAccountFormLabel">Add Account</h5>
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>
                                     </button>
                             </div>
                             <div class="modal-body">
-                                <form  action="{{ url_for('add_pump') }}" method="post" > 
+                                <form  action="{{ url_for('add_account') }}" method="post" > 
                                     <div class="form-group  " >
-                                        <input type = "text"  name="pump_name" autocomplete="off" placeholder="Pump Name" autofocus class="form-control" required>
+                                        <input type = "text"  name="name" autocomplete="off" placeholder="Name" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group">
-                                        <select class="form-control" name="tank">
-                                            <option selected>Choose..</option>
-                                            {% for  tank in tanks %}
-                                            <option  value="{{ tank.id }}">{{ tank.name }}</option>
-                                            {% endfor %}
+                                        <select class="form-control" name="category">
+                                            <option selected>Category</option>
+                                            <option  value="expense">Expense</option>
+                                            <option  value="other_cash">Other Cash</option>
+                                            <option  value="supplier">supplier</option>
                                         </select>
                                     </div>
-                                    <div class="p-2">
-                                    <button class="btn btn-primary btn-block" type="submit"> Add Pump</button>
-                                    </div>
+                                    <button class="btn btn-primary btn-block" type="submit">Add Account</button>
+
                                  </form>
                             </div>
                             <div class="modal-footer">  
@@ -71,31 +70,31 @@
                             </div>
                         </div>
                     </div>
-                </div><!--Add Pump-->
+                </div><!--Add Account-->
                 
-                    <!--Delete Pump Modal -->
-                    <div class="modal fade" id="DeletePumpFormModal" tabindex="-1" role="dialog" aria-labelledby="DeletePumpFormModalLabel" aria-hidden="true">
+                    <!--Delete Account modal -->
+                    <div class="modal fade" id="DeleteAccountFormModal" tabindex="-1" role="dialog" aria-labelledby="DeleteAccountFormModalLabel" aria-hidden="true">
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="DeletePumpFormLabel">Remove Pump</h5>
+                                    <h5 class="modal-title" id="DeleteAccountFormLabel">Remove Account</h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
                                 </div>
                                 <div class="modal-body">
-                                    <form action="{{ url_for('delete_pump') }}" method="post" > 
-                                        <div>
-                                            <select class="form-control" name="pumps">
+                                    <form action="{{ url_for('delete_account') }}" method="post" > 
+                                        <div class="form-group">
+                                            <select class="form-control" name="accounts">
                                                 <option selected>Choose..</option>
-                                                {% for  pump in pumps %}
-                                                <option  value="{{ pump.id }}">{{ pump.name }}</option>
+                                                {% for  account in accounts %}
+                                                <option  value="{{ account.id }}">{{ account.account_name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div> 
-                                        <div class="p-2">
-                                        <button class="btn btn-success btn-group" type="submit">Delete Pump</button>
-                                        </div>
+                                        
+                                        <button class="btn btn-primary btn-block btn-group" type="submit">Remove Account</button>
+                                    
                                      </form>
                                 </div>
                                 <div class="modal-footer">  
@@ -103,7 +102,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div><!--Deletes Pump-->
+                    </div><!--Deletes  Account-->
         </div>
     </div>
 

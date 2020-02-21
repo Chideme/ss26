@@ -15,16 +15,18 @@
     <li class="nav-item"><a class="nav-link" id="tankdips-tab" role="tab" aria-controls="TankDips" href="#TankDips" data-toggle="tab" aria-selected="false">Tank Dips</a></li>
     <li class="nav-item"><a class="nav-link" id="fueldeliveries-tab" role="tab" aria-controls="FuelDeliveries" href="#FuelDeliveries" data-toggle="tab" aria-selected="false">Fuel Deliveries</a></li>
     <li class="nav-item"><a class="nav-link" id="customersales-tab" role="tab" aria-controls="CustomerSales" href="#CustomerSales" data-toggle="tab" aria-selected="false">Customer Sales</a></li>
-    <li class="nav-item"><a class="nav-link" id="expenses-tab" role="tab" aria-controls="Expenses" href="#Expenses" data-toggle="tab" aria-selected="false">Expenses</a></li>
-    <li class="nav-item"><a class="nav-link" id="cashcounts-tab" role="tab" aria-controls="Expenses" href="#CashCounts" data-toggle="tab" aria-selected="false">Cash Counts</a></li>
+    <li class="nav-item"><a class="nav-link" id="salesreceipts-tab" role="tab" aria-controls="SalesReceipts" href="#SalesReceipts" data-toggle="tab" aria-selected="false">Sales Receipts</a></li>
+    <li class="nav-item"><a class="nav-link" id="payouts-tab" role="tab" aria-controls="PayOuts" href="#PayOuts" data-toggle="tab" aria-selected="false">Pay Outs</a></li>
+    <li class="nav-item"><a class="nav-link" id="cashup-tab" role="tab" aria-controls="CashUp" href="#CashUp" data-toggle="tab" aria-selected="false">Cash Up</a></li>
+    <li class="nav-item"><a class="nav-link" id="endshift-tab" role="tab" aria-controls="EndShift" href="#EndShift" data-toggle="tab" aria-selected="false">End Shift</a></li>
 </ul>
 <div class="tab-content">
     <div class="tab-pane active" id="PumpReadings" role="tabpanel" aria-labelledby="pumpreadings-tab">
         <div class="text-center p-5">
         <form role="form" style="display: inline-block;" action="{{ url_for('pump_readings_entry') }}" method="post" >
         <div class="form-group"> 
-            <select class="form-control" name="pump_id">
-                <option selected>Choose..</option>
+            <select class="form-control" name="pump_name">
+                <option selected>Pump</option>
                 {% for pump in pumps %}
                 <option value="{{ pump.id }}">{{ pump.name }}</option>
                 {% endfor %}
@@ -40,56 +42,176 @@
         </form>
     
         </div>
-</div>
+    </div>
     <div class="tab-pane" id="TankDips" role="tabpanel" aria-labelledby="tankdips-tab">
-        <form  action="{{ url_for('tank_dips_entry') }}" method="post" > 
-            <div class="form-row">
-                <div class="form-group col-md-3" >
-                    <select class="form-control" name="pump_id">
-                        <option selected>Choose..</option>
-                        <option >Tank A1</option>
+        <div class="text-center p-5">
+        <form  role="form" style="display: inline-block;" action="{{ url_for('tank_dips_entry') }}" method="post" > 
+                <div class="form-group" >
+                    <select class="form-control" name="tank_name">
+                        <option selected>Tank</option>
+                        {% for tank in tanks %}
+                        <option value="{{ tank.id }}" >{{ tank.name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
-                <div class="form-group col-md-4" >
+                <div class="form-group" >
                     <input type = "text"  name="tank_dip" autocomplete="off" placeholder="Tank Dips" autofocus class="form-control">
                 </div>
-            </div>
-            <button  class="btn btn-success" class="btn btn-success" type="submit">Save changes</button>      
+
+            <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
         </form>
+        </div>
     </div>
     <div class="tab-pane" id="FuelDeliveries" role="tabpanel" aria-labelledby="fueldeliveries-tab">
-        <form  action="{{ url_for('fuel_delivery') }}" method="post" > 
-            <div class ="form-row">
-                <div class="form-group col-md-5">
+        <div class="text-center p-5">
+        <form role="form" style="display: inline-block;"  action="{{ url_for('fuel_delivery') }}" method="post" > 
+                <div class="form-group">
                     <input type="text" name="document_number"  placeholder="Document Number" class="form-control">
                 </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-3" >
-                    <select class="form-control" name="pump_id">
-                        <option selected>Choose..</option>
-                        <option>Tank A1</option>
+
+                <div class="form-group" >
+                    <select class="form-control" name="tank_name">
+                        <option selected>Tank</option>
+                        {% for tank in tanks %}
+                        <option value="{{ tank.id }}">{{ tank.name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
-                <div class="form-group col-md-4" >
-                    <input type = "text"  name="product" autocomplete="off" placeholder="Product" autofocus class="form-control">
+                <div class="form-group" >
+                    <select class="form-control" name="product">
+                        <option selected>Product</option>
+                        {% for product in products %}
+                        <option  value="{{ product.id }}">{{ product.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <div class="form-group col-md-4" >
+                <div class="form-group" >
                     <input type = "text"  name="litres_delivered" autocomplete="off" placeholder="Litres Delivered" autofocus class="form-control">
                 </div>
-            </div>
-            <button  class="btn btn-success" class="btn btn-success" type="submit">Save changes</button>      
+            <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
         </form>
+        </div>
     </div>
-    <div class="tab-pane" id="CustomerSales">
+    <div class="tab-pane" id="CustomerSales" role="tabpanel" aria-labelledby="customersales-tab">
+        <div class="text-center p-5">
+            <form role="form" style="display: inline-block;"  action="{{ url_for('customer_sales') }}" method="post" >
+                <div class="form-row">
+                <div class="form-group col-md-8">
+                    <select class="form-control" name="customers">
+                        <option selected>Customer</option>
+                        {% for customer in customers %}
+                        <option  value="{{ customer.id }}">{{ customer.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <select class="form-control" name="product">
+                            <option selected>Product</option>
+                            {% for product in products %}
+                            <option  value="{{ product.id }}">{{ product.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <input type="text" name="sales_price"  placeholder="Price" class="form-control">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <input type="text" name="qty"  placeholder="litres" class="form-control">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <input type="text" name="vehicle_number"  placeholder="Vehicle Number" class="form-control">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <input type="text" name="driver_name"  placeholder="Driver Name" class="form-control">
+                    </div> 
+                </div>
+                <button  class="btn btn-primary btn-block" type="submit">Enter</button>    
+            </form>
+
+        </div>
+    </div>
+<div class="tab-pane" id="SalesReceipts" role="tabpanel" aria-labelledby="salesreceipts-tab">
+    <div class="text-center p-5">
+        <form role="form" style="display: inline-block;"  action="{{ url_for('sales_receipts') }}" method="post" > 
+            <div class="form-group" >
+                <select class="form-control" name="account">
+                    <option selected>Account</option>
+                    {% for account in customers %}
+                    <option  value="{{ account.id }}">{{ account.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" >
+                <input type = "text"  name="amount" autocomplete="off" placeholder="Amount" autofocus class="form-control">
+            </div>
+        <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
+    </form>
+    </div>
+
+</div>
+<div class="tab-pane" id="PayOuts"role="tabpanel" aria-labelledby="payouts-tab">
+    <div class="text-center p-5">
+        <form role="form" style="display: inline-block;"  action="{{ url_for('pay_outs') }}" method="post" > 
+            <div class="form-group" >
+                <select class="form-control" name="source_account">
+                    <option selected>Source Account</option>
+                    {% for account in accounts %}
+                    <option  value="{{ account.id }}">{{ account.account_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" >
+                <select class="form-control" name="pay_out_account">
+                    <option selected>Pay to...</option>
+                    {% for account in accounts %}
+                    <option  value="{{ account.id }}">{{ account.account_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" >
+                <input type = "text"  name="amount" autocomplete="off" placeholder="Amount" autofocus class="form-control">
+            </div>
+        <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
+    </form>
 
     </div>
-    <div class="tab-pane" id="Expenses">
 
-    </div>
-    <div class="tab-pane" id="CashCounts">
+</div>
+<div class="tab-pane" id="CashUp" role="tabpanel" aria-labelledby="cashup-tab">
+    <div class="text-center p-5">
+        <form role="form" style="display: inline-block;"  action="{{ url_for('cash_up') }}" method="post" > 
+            <div class="form-group" >
+                <select class="form-control" name="account">
+                
+                    <option  selected value="Cash"></option>Cash</option>
 
+                </select>
+            </div>
+            <div class="form-group" >
+                <input type = "text"  name="actual_amount" autocomplete="off" placeholder="Actual Amount" autofocus class="form-control">
+            </div>
+            <div class="form-group" >
+                <input type = "text"  name="expected_amount" autocomplete="off" placeholder="Expected Amount" autofocus class="form-control">
+            </div>
+            <div class="form-group" >
+                <input type = "text"  name="variance" autocomplete="off" placeholder="Variance" autofocus class="form-control">
+            </div>
+        <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
+    </form>
     </div>
+
+</div>
+<div class="tab-pane" id="EndShift" role="tabpanel" aria-labelledby="endshift-tab">
+    <div class="text-center p-5">
+        <form role="form" style="display: inline-block;"  action="{{ url_for('end_shift_update') }}" method="post" > 
+        <button  class="btn btn-primary btn-block" type="submit">End</button>      
+    </form>
+    </div>
+
 </div>
  
 

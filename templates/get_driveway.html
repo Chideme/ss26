@@ -1,14 +1,14 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Start Shift Update  
+    Get DV
 {% endblock %}
 
 {% block main %}
 <div class="p-5"></div>
 <div class="text-center">
 
-<form style="display: inline-block;" action="{{ url_for('start_shift_update') }}" method="post" > 
+<form style="display: inline-block;" action="{{ url_for('shift_driveway') }}" method="post" > 
     <h1 class="h3 mb-3 font-weight-normal">Start Shift Update</h1>
     <div class="form-group">
     <input type="date" name="date" class="form-control">
