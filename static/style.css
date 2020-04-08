@@ -1,6 +1,16 @@
-body {
-  text-align: center;
+.numbers {
+    text-align: right;
 }
-form {
-  display: inline-block;
+.driveway-table {
+    border: 1px solid lightblue;
+    padding: 10px 15px;
+    font-family: Helvetica;
+    color:lightgoldenrodyellow;
+    
+}
+
+.driveway {
+    border: 1px solid lightblue;
+    border-width: 12px 12px 12px 12px;
+    background-color: lightseagreen;
 }

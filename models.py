@@ -85,6 +85,18 @@ class Customer(db.Model):
     name= db.Column(db.String,nullable=False)
     contact_person =db.Column(db.String,nullable=True)
     phone_number = db.Column(db.String,nullable=True)
+    account_type=db.Column(db.String,nullable=True)
+
+    def __repr__(self):
+        return "{}".format(self.name)
+
+class Supplier(db.Model):
+    __tablename__="supplier"
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name= db.Column(db.String,nullable=False)
+    contact_person =db.Column(db.String,nullable=True)
+    phone_number = db.Column(db.String,nullable=True)
+
 
     def __repr__(self):
         return "{}".format(self.name)
@@ -115,7 +127,7 @@ class Fuel_Delivery(db.Model):
     date= db.Column(db.Date, nullable=False)
     qty = db.Column(db.Float,nullable=False)
     product_id = db.Column(db.Integer,db.ForeignKey("products.id"),nullable=True)
-    document_number = db.Column(db.String,nullable=True)
+    document_number = db.Column(db.String,nullable=True)#remove this column
 
 class Invoice(db.Model):
     __tablename__="invoices"
@@ -175,7 +187,9 @@ class Price(db.Model):
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     product_id= db.Column(db.Integer,db.ForeignKey("products.id"),nullable=False)
-    price= db.Column(db.Float,nullable=False)
+    cost_price= db.Column(db.Float,nullable=False)
+    selling_price= db.Column(db.Float,nullable=False)
+
     
 
 

@@ -15,6 +15,8 @@
 
     <!-- Custom styles for this template -->
     <link href="/static/dashboard.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    
   </head>
   {% if session.user_id %}
   <body>
@@ -61,7 +63,7 @@
             </h6>
             <ul class="nav flex-column mb-2">
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link" href="{{ url_for('shift_driveway') }}">
                   <span data-feather="file-text"></span>
                   Driveway
                 </a>
@@ -95,6 +97,12 @@
               </a>
             </li>
             <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('ss26') }}">
+                <span data-feather="plus-circle"></span>
+                SS26
+              </a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" href="#">
                 <span data-feather="layers"></span>
                 Integrations
@@ -110,7 +118,7 @@
           </h6>
           <ul class="nav flex-column mb-2">
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link" href="{{ url_for('get_driveway') }}">
                 <span data-feather="file-text"></span>
                 Driveway
               </a>
@@ -145,6 +153,12 @@
               <a class="nav-link" href="{{ url_for('customers')}}">
                 <span data-feather="users"></span>
                 Customers
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('suppliers')}}">
+                <span data-feather="users"></span>
+                Suppliers
               </a>
             </li>
             <li class="nav-item">
@@ -188,9 +202,11 @@
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="/static/vendor/jquery/jquery-3.4.1.js" ></script>
-    <script src="/static/vendor/popper/popper.min.js" ></script>
-    <script src="/static/vendor/bootstrap/js/bootstrap.min.js" ></script>
+    
+    <script src="/static/vendor/jquery/jquery-3.4.1.min.js" type="text/javascript"></script>
+    <script src="/static/vendor/popper/popper.min.js" type="text/javascript"></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.min.js" type="text/javascript" ></script>
+    <script src="/static/scripts.js" type="text/javascript" ></script>
 
     <!-- Icons -->
     <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
@@ -201,20 +217,18 @@
     <!-- Graphs -->
   </body>
   {% else %}
-  <body>
-      <div class="text-center">
-        <h3>Sign In </h3>
-        <form style="display: inline-block;" action="{{ url_for('login') }}" method="post" > 
-            <div class="form-group" >
-            <input type = "text"  name="username" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
-            </div>
-            <div class="form-group  ">
-            <input type = "password"  name="password" autocomplete="off" placeholder="Password" autofocus class="form-control" required>
-            </div>
-            <button class="btn btn-primary" type="submit">Sign In</button>
-         </form>
-    </div>
-    </body>
+  <body class="text-center">
+    <form style="display: inline-block;" class="form-signin" action="{{ url_for('login') }}" method="post">
+      <img class="mb-4" src="../../assets/brand/bootstrap-solid.svg" alt="" width="72" height="72">
+      <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+      <label for="inputUsername" class="sr-only">User Name</label>
+      <input type="text" id="inputUsername" name="username" class="form-control" placeholder="User Name" required autofocus>
+      <label for="inputPassword" class="sr-only">Password</label>
+      <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
+      <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+      <p class="mt-5 mb-3 text-muted">&copy; 2019</p>
+    </form>
+  </body>
     {% endif %}
 </html>
 

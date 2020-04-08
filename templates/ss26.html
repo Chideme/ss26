@@ -1,29 +1,700 @@
-{% extends "layout.html" %} 
+{% extends "layout.html" %}
 
 {% block title %}
-    SS26
+  SS26
 {% endblock %}
+
 
 {% block main %}
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group mr-2">
+            <button  type="button" id="print" class="btn btn-sm btn-outline-secondary">Print</button>
+            <button class="btn btn-sm btn-outline-secondary">Export</button>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle">
+            <span data-feather="calendar"></span>
+            This week
+          </button>
+        </div>
+      </div>
 
-<table>
-    <thead>
-        <tr>
-            <th>Pump</th>
-            <th>Current Reading</th>
-            <th>Previous Reading</th>
-            <th>Sales</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for pump in pumps %}
-        <tr>
-            <td>{{ pump.name }}</td>
-            <td>{{ pump_readings[pump.name][1] }}</td>
-            <td>{{ pump_readings[pump.name][0] }}</td>
-            <td>{{ pump_readings[pump.name][1]-pump_readings[pump.name][0] }}</td>
-        </tr>
-    </tbody>
-</table>
+    
+      
+      <h2>Driveway</h2>
+      <div class="table-responsive driveway">
+      <div class="row" id="printTable">
+        <div class="col-md-4">
+    
+        <table class="driveway-table">
+          <thead class="driveway-table">
+            <th class="driveway-table" colspan="2">Date</th>
+            <th class="driveway-table">Shift Number</th>
+            <th class="driveway-table" colspan="2">Shift</th>
+          </thead>
+          <tbody>
+            <tr class="driveway-table">
+              <td class="driveway-table" colspan="2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#ShiftDate">
+                {{ date }}</button>
+              </td>
+              <td class="driveway-table">
+                {{ shift_number }}</td>
+              <td class="driveway-table" colspan="2">
+                <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#ShiftDaytime">
+                {{ shift_daytime }}</button>
+              </td>
+            </tr>
+            <thead>
+                <th class="driveway-table" colspan="2">Pump Name</th>
+              
+                <th class="driveway-table">Opening Readings</th>
+                <th class="driveway-table">Closing Readings</th>
+                <th class="driveway-table">Sales</th>
+            </thead>
+            <tbody>
+              {%for pump in pump_readings %}
+              <tr class="driveway-table">
+                <td class="driveway-table" rowspan="2">{{ pump }}</td>
+                <td class="driveway-table">Litre Reading:</td>
+                <td class="numbers driveway-table">{{ pump_readings[pump][0][0] }}</td>
+                <td class="numbers driveway-table">
+                  <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#ClosingLitreReading{{ pump }}">
+                    {{ pump_readings[pump][1][0] }}
+                  </button>
+                </td>
+                <td class="numbers driveway-table">{{ pump_readings[pump][1][0]-pump_readings[pump][0][0] }}</td>
+              </tr>
+              <tr class="driveway-table">
+                <td class="driveway-table">Money Reading (in $):</td>
+                <td class="numbers driveway-table">{{ pump_readings[pump][0][1] }}</td>
+                <td class="numbers driveway-table">
+                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#ClosingMoneyReading{{ pump }}">
+                    {{ pump_readings[pump][1][1] }}
+                  </button>
+                </td>
+                <td class="numbers driveway-table">{{ pump_readings[pump][1][1]-pump_readings[pump][0][1] }}</td>
+              </tr>
+              {% endfor %}
+              <thead class="driveway-table">
+                <th class="driveway-table">Product</th>
+                <th class="driveway-table">Cost Price</th>
+                <th class="driveway-table">Selling Price</th>
+                <th class="driveway-table">Litres</th>
+                <th class="driveway-table">Amount</th>
+              </thead>
+              <tbody>
+                <tr class="driveway-table">
+                  <td class="driveway-table">Diesel</td>
+                  <td class="driveway-table">
+                    <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#DieselCostPrice">
+                    {{ diesel_sales[1][0][1].cost_price }}
+                  </button>
+                </td>
+                  <td class="driveway-table">
+                    <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#DieselSellingPrice">
+                    {{ diesel_sales[1][0][1].selling_price }}
+                    </button>
+                  </td>
+                  <td class="driveway-table">{{ diesel_sales[0] }}</td>
+                  <td class="numbers driveway-table">{{ diesel_sales[0]*diesel_sales[1][0][1].selling_price }}</td>
+                </tr>
+                <tr class="driveway-table">
+                  <td class="driveway-table">Petrol</td>
+                  <td class="driveway-table">
+                    <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#PetrolCostPrice">
+                    {{ petrol_sales[1][0][1].cost_price }}
+                    </button>
+                  </td>
+                  <td class="driveway-table">
+                    <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#PetrolSellingPrice">
+                    {{ petrol_sales[1][0][1].selling_price }}
+                    </button>
+                  </td>
+                  <td class="driveway-table">{{ petrol_sales[0] }}</td>
+                  <td class="numbers driveway-table">{{ petrol_sales[0]* petrol_sales[1][0][1].selling_price }}</td>
+                </tr>
+              </tbody>
+            <thead>
+              <th class="driveway-table">Tank Name</th>
+              <th class="driveway-table">Opening Dip</th>
+              <th class="driveway-table">Delivery</th>
+              <th class="driveway-table">Closing Dip </th>
+              <th class="driveway-table"> Tank Sales</th>
+              <th class="driveway-table">Pump Sales</th>
+              <th class="driveway-table">Variance</th>
+            </thead>
+            <tbody>
+              {% for tank in tank_dips %}
+              <tr class="driveway-table">
+                <td>{{ tank }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][0] }}</td>
+                <td class="numbers driveway-table">
+                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#FuelDelivery{{ tank }}">2000
+                  </button>
+                </td>
+                <td class="numbers driveway-table">
+                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#ClosingTankDip{{ tank }}">
+                  {{ tank_dips[tank][1] }}
+                  </button>
+                </td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][0]-tank_dips[tank][1] }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][2] }} ltrs</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][2]-(tank_dips[tank][0]-tank_dips[tank][1]) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            
+        </table>
+        </div>
+        <div class="col-md-2"></div>
+        <div class="col-md-4">
+        <h4>Sales Breakdown  
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+                <div class="btn-toolbar mb-2 mb-md-0">
+                  <div class="btn-group mr-2">
+                    <button  type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#CustomerSales">Customer Sales</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#SalesReceipts">Sales Receipt</button>
+                  </div>
+                </div>
+              </div>
+        
+        </h4>
+        <table class="table table-sm">
+              <thead>
+                <th>Account</th>
+                <th>Amount</th>
+              </thead>
+              <tbody>
+                {% for i in sales_breakdown %}
+                <tr>
+                  <td>{{ i }}</td>
+                  <td>{{ sales_breakdown[i] }}</td>
+                </tr>
+               {% endfor %}
+              </tbody>
+        </table>
+        <h4 class="p-2">Cash Payouts
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+                <div class="btn-toolbar mb-2 mb-md-0">
+                  <div class="btn-group mr-2">
+                    <button  type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#Payouts">Enter Payouts</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#CashUp">Cash Up</button>
+                  </div>
+                </di>
+        </h4>
+        <table class="table table-sm">
+    
+            <tr>
+              <th scope="row">Total Cash Sales:</th>
+              <td class="numbers">{{ sales_breakdown["Cash"] }}</td>
+            </tr>
+            <th  colspan="2">Expenses:</th>
+            {% if expenses %}
+            {% for expense in expenses %}
+            <tr>
+              <td>{{ expense[1].name }}</td>
+              <td class="numbers">{{ expense[0].amount }}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+              <td>--</td>
+              <td>--</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <th  scope="row">Expected Cash</th>
+          
+                <td class="numbers">{{ sales_breakdown["Cash"]-total_cash_expenses }}</td>
+  
+            </tr>
+            <tr>
+              <th  scope="row"> Actual Cash Banked</th>
+        
+              <td class="numbers">{{ cash_up.actual_amount }}</td>
+
+            </tr>
+        </table>
+        </table>
+        </div>
+      </div>
+      </div>
+      <!--MODALS-->
+      <!--Pump Ltr Modal-->
+      {% for pump in pump_readings %}
+      <div class="modal fade" id="ClosingLitreReading{{ pump }}" tabindex="-1" role="dialog" aria-labelledby="ClosingLitreReadingFormModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="ClosingLitreFormLabel">Enter Closing Litre Reading</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                          </button>
+                  </div>
+                  <div class="modal-body">
+                      <form  action="{{ url_for('update_pump_litre_readings') }}" method="post" > 
+                          <div class="form-group  " >
+                              <input type = "text"  value="{{ pump }}" name="pump" autocomplete="off"  autofocus class="form-control" required>
+                          </div>
+                          <div class="form-group">
+                              <input type ="number" value="{{ pump_readings[pump][1][0] }}" name="litre_reading" autocomplete="off"autofocus class="form-control" required>
+                          </div>
+   
+                          <button class="btn btn-primary btn-block" type="submit">Update Reading</button>
+                  
+                       </form>
+                  </div>
+                  <div class="modal-footer">  
+                      <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                  </div>
+              </div>
+          </div>
+      </div><!--Pump Ltr Modal-->
+      {% endfor %}
+      <!--Pump Money Modal-->
+      {% for pump in pump_readings %}
+      <div class="modal fade" id="ClosingMoneyReading{{ pump }}" tabindex="-1" role="dialog" aria-labelledby="ClosingMoneyReadingFormModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="ClosingMoneyFormLabel">Enter Closing Money Reading</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                          </button>
+                  </div>
+                  <div class="modal-body">
+                      <form  action="{{ url_for('update_pump_money_readings') }}" method="post" > 
+                          <div class="form-group  " >
+                              <input type = "text"  value="{{ pump }}" name="pump" autocomplete="off"  autofocus class="form-control" required>
+                          </div>
+                          <div class="form-group">
+                              <input type ="number" value="{{ pump_readings[pump][1][1] }}" name="money_reading" autocomplete="off" autofocus class="form-control" required>
+                          </div>
+   
+                          <button class="btn btn-primary btn-block" type="submit">Update Reading</button>
+                  
+                       </form>
+                  </div>
+                  <div class="modal-footer">  
+                      <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                  </div>
+              </div>
+          </div>
+      </div><!--Pump Money Modal-->
+      {% endfor %}
+
+      <!--Delivery Modal-->
+      {% for tank in tank_dips %}
+      <div class="modal fade" id="FuelDelivery{{ tank }}" tabindex="-1" role="dialog" aria-labelledby="FuelDeliveryFormModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="FuelDeliveryFormLabel">Enter Delivery</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                          </button>
+                  </div>
+                  <div class="modal-body">
+                      <form  action="{{ url_for('update_fuel_deliveries') }}" method="post" > 
+                          <div class="form-group  " >
+                              <input type = "text"  value="{{ tank }}" name="tank" autocomplete="off"  autofocus class="form-control" required>
+                          </div>
+                          <div class="form-group">
+                              <input type ="text" value="0" name="delivery" autocomplete="off"autofocus class="form-control" required>
+                          </div>
+   
+                          <button class="btn btn-primary btn-block" type="submit">Enter Delivery</button>
+                  
+                       </form>
+                  </div>
+                  <div class="modal-footer">  
+                      <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                  </div>
+              </div>
+          </div>
+      </div>
+      {% endfor %}
+      <!--Delivery  Modal-->
+
+       <!--Dips Modal-->
+       {% for tank in tank_dips %}
+       <div class="modal fade" id="ClosingTankDip{{ tank }}" tabindex="-1" role="dialog" aria-labelledby="ClosingTankFormModalLabel" aria-hidden="true">
+           <div class="modal-dialog" role="document">
+               <div class="modal-content">
+                   <div class="modal-header">
+                       <h5 class="modal-title" id="ClosingTankFormLabel">Enter Dip</h5>
+                           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                               <span aria-hidden="true">&times;</span>
+                           </button>
+                   </div>
+                   <div class="modal-body">
+                       <form  action="{{ url_for('update_tank_dips') }}" method="post" > 
+                           <div class="form-group  " >
+                               <input type = "text"  value="{{ tank }}" name="tank" autocomplete="off"  autofocus class="form-control" required>
+                           </div>
+                           <div class="form-group">
+                               <input type ="text" value="{{ tank_dips[tank][1] }}" name="delivery" autocomplete="off"autofocus class="form-control" required>
+                           </div>
+    
+                           <button class="btn btn-primary btn-block" type="submit">Enter Delivery</button>
+                   
+                        </form>
+                   </div>
+                   <div class="modal-footer">  
+                       <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                   </div>
+               </div>
+           </div>
+       </div>
+       {% endfor %}
+       <!--Dips  Modal-->
+
+        <!--Diesel Cost price Modal-->
+        <div class="modal fade" id="DieselCostPrice" tabindex="-1" role="dialog" aria-labelledby="DieselCostPriceFormModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="DieselCostPriceFormLabel">Update Price</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                    </div>
+                    <div class="modal-body">
+                        <form  action="{{ url_for('update_cost_prices') }}" method="post" > 
+                            <div class="form-group  " >
+                                <input type = "text"  value="Diesel" name="product" autocomplete="off"  autofocus class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <input type ="number" value="{{ diesel_sales[1][0][1].cost_price }}" name="cost_price" autocomplete="off"autofocus class="form-control" required>
+                            </div>
+     
+                            <button class="btn btn-primary btn-block" type="submit">Update Price</button>
+                    
+                         </form>
+                    </div>
+                    <div class="modal-footer">  
+                        <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--Diesel Cost Price  Modal-->
+
+        <!--Diesel Selling Price Modal-->
+        <div class="modal fade" id="DieselSellingPrice" tabindex="-1" role="dialog" aria-labelledby="DieselSellingPriceFormModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="DieselSellingPriceFormLabel">Update Price</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                          </button>
+                  </div>
+                  <div class="modal-body">
+                      <form  action="{{ url_for('update_selling_prices') }}" method="post" > 
+                          <div class="form-group  " >
+                              <input type = "text"  value="Diesel" name="product" autocomplete="off"  autofocus class="form-control" required>
+                          </div>
+                          <div class="form-group">
+                              <input type ="number" value="{{ diesel_sales[1][0][1].selling_price }}" name="selling_price" autocomplete="off"autofocus class="form-control" required>
+                          </div>
+   
+                          <button class="btn btn-primary btn-block" type="submit">Update Price</button>
+                  
+                       </form>
+                  </div>
+                  <div class="modal-footer">  
+                      <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                  </div>
+              </div>
+          </div>
+      </div>
+      <!--Diesel Selling Price  Modal-->
+
+       <!--Petrol Cost Price Modal-->
+       <div class="modal fade" id="PetrolCostPrice" tabindex="-1" role="dialog" aria-labelledby="PetrolCostPriceFormModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="PetrolCostPriceFormLabel">Update Price</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                </div>
+                <div class="modal-body">
+                    <form  action="{{ url_for('update_cost_prices') }}" method="post" > 
+                        <div class="form-group  " >
+                            <input type = "text"  value="Petrol" name="product" autocomplete="off"  autofocus class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <input type ="number" value="{{ petrol_sales[1][0][1].cost_price }}" name="cost_price" autocomplete="off"autofocus class="form-control" required>
+                        </div>
+ 
+                        <button class="btn btn-primary btn-block" type="submit">Update Price</button>
+                
+                     </form>
+                </div>
+                <div class="modal-footer">  
+                    <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--Petrol Cost Price  Modal-->
+
+    <!--Petrol Selling Price Modal-->
+    <div class="modal fade" id="PetrolSellingPrice" tabindex="-1" role="dialog" aria-labelledby="PetrolSellingPriceFormModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="PetrolSellingPriceFormLabel">Update Price</h5>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                      </button>
+              </div>
+              <div class="modal-body">
+                  <form  action="{{ url_for('update_selling_prices') }}" method="post" > 
+                      <div class="form-group  " >
+                          <input type = "text"  value="Petrol" name="product" autocomplete="off"  autofocus class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                          <input type ="number" value="{{ petrol_sales[1][0][1].selling_price }}" name="selling_price" autocomplete="off"autofocus class="form-control" required>
+                      </div>
+
+                      <button class="btn btn-primary btn-block" type="submit">Update Price</button>
+              
+                   </form>
+              </div>
+              <div class="modal-footer">  
+                  <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+              </div>
+          </div>
+      </div>
+  </div>
+  <!--Petrol Selling Price  Modal-->
+
+   <!--Shift Date Modal-->
+   <div class="modal fade" id="ShiftDate" tabindex="-1" role="dialog" aria-labelledby="ShiftDateFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ShiftDateFormLabel">Update Shift Date</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form  action="{{ url_for('update_shift_date') }}" method="post" > 
+                    <div class="form-group  " >
+                        <input type = "date"  value="{{ date }}" name="date" autocomplete="off"  autofocus class="form-control" required>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" type="submit">Update Date</button>
+            
+                 </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Shift Date Modal-->
+
+ <!--Shift Daytime Modal-->
+ <div class="modal fade" id="ShiftDaytime" tabindex="-1" role="dialog" aria-labelledby="ShiftDaytimeFormModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="ShiftDaytimeFormLabel">Update Shift Daytime</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+          </div>
+          <div class="modal-body">
+              <form  action="{{ url_for('update_shift_daytime') }}" method="post" > 
+                  <div class="form-group">
+                    <select class="form-control" name="shift">
+                        <option selected>Day</option>
+                        <option>Night</option>
+                    </select>
+                    </div>
+
+                  <button class="btn btn-primary btn-block" type="submit">Update Daytime</button>
+          
+               </form>
+          </div>
+          <div class="modal-footer">  
+              <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+          </div>
+      </div>
+  </div>
+</div>
+<!--Shift Daytime Modal-->
+ <!--Customer Sales Modal-->
+ <div class="modal fade" id="CustomerSales" tabindex="-1" role="dialog" aria-labelledby="CustomerSalesFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="CustomerSalesFormLabel">Enter Invoice</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form role="form"  action="{{ url_for('customer_sales') }}" method="post" >
+                    <div class="form-row">
+                    <div class="form-group col-md-8">
+                        <select class="form-control" name="customers"> <!--DataList-->
+                            <option selected>Customer</option>
+                            {% for customer in customers %}
+                            <option  value="{{ customer.id }}">{{ customer.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <select class="form-control" name="product">
+                                <option selected>Product</option>
+                                {% for product in products %}
+                                <option  value="{{ product.id }}">{{ product.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <input type="text" name="sales_price"  placeholder="Price" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <input type="text" name="qty"  placeholder="litres" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <input type="text" name="vehicle_number"  placeholder="Vehicle Number" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <input type="text" name="driver_name"  placeholder="Driver Name" class="form-control">
+                        </div> 
+                    </div>
+                    <button  class="btn btn-primary btn-block" type="submit">Save</button>    
+                </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  <!--Customer Sales Modal-->
+<!--Sales Receipts Modal-->
+<div class="modal fade" id="SalesReceipts" tabindex="-1" role="dialog" aria-labelledby="SalesReceiptsFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="SalesReceiptsFormLabel">Enter Invoice</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form role="form"  action="{{ url_for('sales_receipts') }}" method="post" > 
+                    <div class="form-group" >
+                        <select class="form-control" name="account">
+                            <option selected>Account</option>
+                            {% for account in cash_customers %}
+                            <option  value="{{ account.id }}">{{ account.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type = "number"  name="amount" autocomplete="off" placeholder="Amount" autofocus class="form-control">
+                    </div>
+                <button  class="btn btn-primary btn-block" type="submit">Save</button>      
+            </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  <!--Sales Receipts Modal-->
+  <!--Payouts Modal-->
+<div class="modal fade" id="Payouts" tabindex="-1" role="dialog" aria-labelledby="PayoutsFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="PayoutsFormLabel">Enter Payout</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form role="form" action="{{ url_for('pay_outs') }}" method="post" > 
+                    <div class="form-group" >
+                        <select class="form-control" name="source_account">
+                            <option selected>Source Account</option>
+                            {% for account in accounts %}
+                            <option  value="{{ account.id }}">{{ account.account_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" >
+                        <select class="form-control" name="pay_out_account">
+                            <option selected>Pay to...</option>
+                            {% for account in accounts %}
+                            <option  value="{{ account.id }}">{{ account.account_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" >
+                        <input type = "text"  name="amount" autocomplete="off" placeholder="Amount" autofocus class="form-control">
+                    </div>
+                <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
+            </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  <!--Payouts Modal-->
+
+  <!--CashUpModal-->
+  <div class="modal fade" id="CashUp" tabindex="-1" role="dialog" aria-labelledby="CashUpFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="CashUpFormLabel">Enter Payout</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                    <form role="form"   action="{{ url_for('cash_up') }}" method="post" > 
+                        <div class="form-group" >
+                            <input type = "number"  name="actual_amount" autocomplete="off" placeholder="Actual Amount" autofocus class="form-control">
+                        </div>
+                        <div class="form-group" >
+                            <input type = "number" value="{{ sales_breakdown['Cash']-total_cash_expenses }}"  name="expected_amount" autocomplete="off" autofocus class="form-control" disabled>
+                        </div>
+                        <div class="form-group" >
+                            <input type = "number"  name="variance" autocomplete="off" placeholder="Variance" autofocus class="form-control">
+                        </div>
+                    <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
+                </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  <!--Cash Up Modal-->
+
 
 {% endblock %}
+   

@@ -7,8 +7,10 @@
 {% block main %}
 
 <ul  class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item"><a class="nav-link active" id="pricechange-tab" role="tab" aria-controls="PriceChange" href="#PriceChange" data-toggle="tab" aria-selected="false">Price Change</a></li>
+
     <li class="nav-item">
-        <a class="nav-link active" id="pumpreadings-tab" role="tab" aria-controls="PumpReading" href="#PumpReadings" data-toggle="tab" aria-selected="true">
+        <a class="nav-link" id="pumpreadings-tab" role="tab" aria-controls="PumpReading" href="#PumpReadings" data-toggle="tab" aria-selected="true">
             Pump Readings
         </a>
     </li>
@@ -21,7 +23,29 @@
     <li class="nav-item"><a class="nav-link" id="endshift-tab" role="tab" aria-controls="EndShift" href="#EndShift" data-toggle="tab" aria-selected="false">End Shift</a></li>
 </ul>
 <div class="tab-content">
-    <div class="tab-pane active" id="PumpReadings" role="tabpanel" aria-labelledby="pumpreadings-tab">
+    <div class="tab-pane active" id="PriceChange" role="tabpanel" aria-labelledby="pricechange-tab">
+        <div class="text-center p-5">
+        <form role="form" style="display: inline-block;" action="{{ url_for('price_change') }}" method="post" >
+        <div class="form-group"> 
+            <select class="form-control" name="product">
+                <option selected>Product</option>
+                {% for product in products %}
+                <option value="{{ product.id }}">{{ product.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group"> 
+            <input type = "text"  name="cost_price" autocomplete="off" placeholder="Cost Price" autofocus class="form-control">
+        </div>
+        <div class="form-group">   
+            <input type = "text"  name="selling_price" autocomplete="off" placeholder="Selling Price" autofocus class="form-control">
+        </div>
+            <button class="btn btn-primary btn-block" type="submit">Enter</button>      
+        </form>
+    
+        </div>
+    </div>
+    <div class="tab-pane" id="PumpReadings" role="tabpanel" aria-labelledby="pumpreadings-tab">
         <div class="text-center p-5">
         <form role="form" style="display: inline-block;" action="{{ url_for('pump_readings_entry') }}" method="post" >
         <div class="form-group"> 
@@ -140,7 +164,7 @@
             <div class="form-group" >
                 <select class="form-control" name="account">
                     <option selected>Account</option>
-                    {% for account in customers %}
+                    {% for account in cash_customers %}
                     <option  value="{{ account.id }}">{{ account.name }}</option>
                     {% endfor %}
                 </select>
@@ -213,7 +237,27 @@
     </div>
 
 </div>
- 
+ <script>
+$(document).ready(function(){
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function(e){
+            localStorage.setItem('activeTab', $(e.target).attr('href'));
+        });
+
+        // Here, save the index to which the tab corresponds. You can see it 
+        // in the chrome dev tool.
+        var activeTab = localStorage.getItem('activeTab');
+
+        // In the console you will be shown the tab where you made the last 
+        // click and the save to "activeTab". I leave the console for you to 
+        // see. And when you refresh the browser, the last one where you 
+        // clicked will be active.
+        console.log(activeTab);
+
+        if (activeTab) {
+           $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
+        }
+    });
+ </script>
 
     
 {% endblock %}

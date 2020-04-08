@@ -1,25 +1,166 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Get DV
+  Driveway
 {% endblock %}
+
 
 {% block main %}
-<div class="p-5"></div>
-<div class="text-center">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group mr-2">
+            <button  type="button" id="print" class="btn btn-sm btn-outline-secondary">Print</button>
+            <button class="btn btn-sm btn-outline-secondary">Export</button>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle">
+            <span data-feather="calendar"></span>
+            This week
+          </button>
+        </div>
+      </div>
 
-<form style="display: inline-block;" action="{{ url_for('shift_driveway') }}" method="post" > 
-    <h1 class="h3 mb-3 font-weight-normal">Start Shift Update</h1>
-    <div class="form-group">
-    <input type="date" name="date" class="form-control">
-    </div>
-    <div class="form-group">
-    <select class="form-control" name="shift">
-        <option selected>Day</option>
-        <option>Night</option>
-    </select>
-    </div>
-    <button  class="btn btn-primary btn-block" type="submit">Start Shift Update</button>
-</form>
-</div>
-{% endblock %}
+    
+      
+      <h2>Driveway</h2>
+      <div class="table-responsive driveway">
+      <div class="row" id="printTable">
+        <div class="col-md-4">
+    
+        <table class="driveway-table">
+          <thead class="driveway-table">
+            <th class="driveway-table" colspan="2">Date</th>
+            <th class="driveway-table">Shift Number</th>
+            <th class="driveway-table" colspan="2">Shift</th>
+          </thead>
+          <tbody>
+            <tr class="driveway-table">
+              <td class="driveway-table" colspan="2">{{ date }}</td>
+              <td class="driveway-table">{{ shift_number }}</td>
+              <td class="driveway-table" colspan="2">{{ shift_daytime }}</td>
+            </tr>
+            <thead>
+                <th class="driveway-table" colspan="2">Pump Name</th>
+              
+                <th class="driveway-table">Opening Readings</th>
+                <th class="driveway-table">Closing Readings</th>
+                <th class="driveway-table">Sales</th>
+            </thead>
+            <tbody>
+              {%for pump in pump_readings %}
+              <tr class="driveway-table">
+                <td class="driveway-table" rowspan="2">{{ pump }}</td>
+                <td class="driveway-table">Litre Reading:</td>
+                <td class="numbers driveway-table">{{ pump_readings[pump][0][0] }}</td>
+                <td class="numbers driveway-table">{{ pump_readings[pump][1][0] }}</td>
+                <td class="numbers driveway-table">{{ pump_readings[pump][1][0]-pump_readings[pump][0][0] }}</td>
+              </tr>
+              <tr class="driveway-table">
+                <td class="driveway-table">Money Reading (in $):</td>
+                <td class="numbers driveway-table">{{ pump_readings[pump][0][1] }}</td>
+                <td class="numbers driveway-table">{{ pump_readings[pump][1][1] }}</td>
+                <td class="numbers driveway-table">{{ pump_readings[pump][1][1]-pump_readings[pump][0][1] }}</td>
+              </tr>
+              {% endfor %}
+              <thead class="driveway-table">
+                <th class="driveway-table">Product</th>
+                <th class="driveway-table">Selling Price</th>
+                <th class="driveway-table">Litres</th>
+                <th class="driveway-table">Amount</th>
+              </thead>
+              <tbody>
+                <tr class="driveway-table">
+                  <td class="driveway-table">Diesel</td>
+                  <td class="driveway-table">{{ diesel_sales[1][0][1].selling_price }}</td>
+                  <td class="driveway-table">{{ diesel_sales[0] }}</td>
+                  <td class="numbers driveway-table">{{ diesel_sales[0]*diesel_sales[1][0][1].selling_price }}</td>
+                </tr>
+                <tr class="driveway-table">
+                  <td class="driveway-table">Petrol</td>
+                  <td class="driveway-table">{{ petrol_sales[1][0][1].selling_price }}</td>
+                  <td class="driveway-table">{{ petrol_sales[0] }}</td>
+                  <td class="numbers driveway-table">{{ petrol_sales[0]* petrol_sales[1][0][1].selling_price }}</td>
+                </tr>
+              </tbody>
+            <thead>
+              <th class="driveway-table">Tank Name</th>
+              <th class="driveway-table">Opening Dip</th>
+              <th class="driveway-table">Delivery</th>
+              <th class="driveway-table">Closing Dip </th>
+              <th class="driveway-table"> Tank Sales</th>
+              <th class="driveway-table">Pump Sales</th>
+              <th class="driveway-table">Variance</th>
+            </thead>
+            <tbody>
+              {% for tank in tank_dips %}
+              <tr class="driveway-table">
+                <td>{{ tank }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][0] }}</td>
+                <td class="numbers driveway-table">2000</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][1] }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][0]-tank_dips[tank][1] }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][2] }} ltrs</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][2]-(tank_dips[tank][0]-tank_dips[tank][1]) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            
+        </table>
+        </div>
+        <div class="col-md-2"></div>
+        <div class="col-md-4">
+        <h4>Sales Breakdown</h4>
+        <table class="driveway-table">
+              <thead>
+                <th class="driveway-table">Account</th>
+                <th class="driveway-table">Amount</th>
+              </thead>
+              <tbody>
+                {% for i in sales_breakdown %}
+                <tr>
+                  <td class="driveway-table">{{ i }}</td>
+                  <td class="numbers driveway-table">{{ sales_breakdown[i] }}</td>
+                </tr>
+               {% endfor %}
+              </tbody>
+        </table>
+        <h4 class="p-2">Cash Payouts</h4>
+        <table>
+    
+            <tr>
+              <th class="driveway-table" scope="row">Total Cash Sales:</th>
+              {%  if Cash in sales_breakdown %}
+              <td class="numbers driveway-table">{{ sales_breakdown["Cash"] }}</td>
+              {% else %}
+              <td class="numbers driveway-table">$0.00</td>
+              {% endif %}
+            </tr>
+            <th class="driveway-table" colspan="2">Expenses:</th>
+            {% if expenses %}
+            {% for expense in expenses %}
+            <tr>
+              <td class="driveway-table">{{ expense[1].name }}</td>
+              <td class="numbers driveway-table">{{ expense[0].amount }}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+              <td class="driveway-table">--</td>
+              <td class="driveway-table">--</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <th class="driveway-table" scope="row">Cash Banked</th>
+              {% if "Cash" in sales_breakdown %}
+              <td class="numbers driveway-table">{{ sales_breakdown["Cash"]-total_cash_expenses }}</td>
+              {% else %}
+              <td class="numbers driveway-table">0</td>
+              {% endif %}
+            </tr>
+        </table>
+        </table>
+        </div>
+      </div>
+      </div>
+  
+    {% endblock %}
+   
