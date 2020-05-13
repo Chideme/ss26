@@ -1,0 +1,51 @@
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css"/>
+<link href="/static/dashboard.css" rel="stylesheet">
+<link href="/static/style.css" rel="stylesheet">
+
+<a href="{{ url_for('tanks') }}"><span style="color: royalblue;">Back</span></a>
+<div class="text-center">
+    <h4>Tank {{ tank.name }} Variance Report</h4>
+        <form style="display: inline-block;" action="{{ url_for('tank_variances',tank_id=tank.id) }}"  method="post">
+        <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group mr-2">
+            <input type = "date"  name="start_date" autocomplete="off"autofocus class="form-control" required>
+            <input type = "date"  name="end_date" autocomplete="off"autofocus class="form-control" required>
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Enter</button>
+        </div>
+        </div>
+        </form>
+    </div>
+<div class="p-5 text-center">
+    <table class="table table-sm table-striped">
+        <thead>
+            <th>Shift</th>
+            <th>Date</th>
+            <th>Opening Dip</th>
+            <th>Closing Dip</th>
+            <th>Deliveries</th>
+            <th>Tank Sales</th>
+            <th>Pump Sales</th>
+            <th>Variance</th>
+            <th>Shrinkage %</th>
+            <th style="color: rgb(172, 33, 33);">Cumulative Shrinkage</th>
+            <th style="color: rgb(138, 34, 34);">Cumulative Shrinkage %</th>
+        </thead>
+        <tbody>
+            {% for shift in tank_dips %}
+            <tr>
+                <td>{{ shift }}</td>
+                <td>{{ tank_dips[shift][0] }}</td>
+                <td>{{ tank_dips[shift][1] }}</td>
+                <td>{{ tank_dips[shift][2] }}</td>
+                <td>{{ tank_dips[shift][3] }}</td>
+                <td>{{ tank_dips[shift][4] }}</td>
+                <td>{{ tank_dips[shift][5] }}</td>
+                <td>{{ tank_dips[shift][6] }}</td>
+                <td>{{ tank_dips[shift][7] }}</td>
+                <td style="color: lightcoral;">{{ tank_dips[shift][8] }}</td>
+                <td style="color: lightcoral;">{{ tank_dips[shift][9] }}</td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>

@@ -1,16 +1,32 @@
-.numbers {
-    text-align: right;
-}
+
 .driveway-table {
-    border: 1px solid lightblue;
+    border: 1px solid rgb(202, 202, 202);
+    border-width: 2px ;
     padding: 10px 15px;
-    font-family: Helvetica;
-    color:lightgoldenrodyellow;
+    
     
 }
 
 .driveway {
-    border: 1px solid lightblue;
-    border-width: 12px 12px 12px 12px;
-    background-color: lightseagreen;
+    border: 1px solid rgb(202, 202, 202);
+    border-width: 6px 6px 6px 6px;
+    border-radius: 5px;
+    background-color: rgb(250, 250, 250);
+    color:rgb(78, 78, 78);
+    /*font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif,serif*/
+    font-family: Helvetica;
+}
+
+.petrol {
+    background: yellow;
+}
+
+.diesel {
+    background: green;
+}
+
+.sidelayout {
+    color: lightgray;
+    background-color: rgb(22, 22, 37);
+    
 }

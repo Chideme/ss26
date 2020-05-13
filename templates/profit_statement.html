@@ -1,0 +1,62 @@
+{% extends "report_layout.html" %}
+
+
+
+{% block main %}
+
+
+
+<div class="text-center">
+<h4>Daily Fuel Gross Profit</h4>
+<h6>Period: {{ start_date }}  TO   {{ end_date }}</h6>
+
+    <form style="display: inline-block;" action="{{ url_for('profit_statement') }}"  method="post">
+    <div class="btn-toolbar mb-2 mb-md-0">
+    <div class="btn-group mr-2">
+        <input type = "date"  name="start_date" autocomplete="off"autofocus class="form-control" required>
+        <input type = "date"  name="end_date" autocomplete="off"autofocus class="form-control" required>
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Enter</button>
+    </div>
+    </div>
+    </form>
+</div>
+<div class="p-3"></div>
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        {% for product in products %}
+                        <th colspan="4" class="text-center">{{ product }}</th>
+                        {% endfor %}
+                        <th>Total Litres</th>
+                        <th>Gross Profit</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        {% for product in products %}
+                        <th>Litres Sold</th>
+                        <th>Selling Price</th>
+                        <th>Cost Price</th>
+                        <th>Gross Profit</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for date in reports %}
+                    <tr>
+                        
+                        <td>{{ date }}</td>
+                        {% for product in products %}
+                        <td>{{ reports[date][product][0] }}</td>
+                        <td >{{ reports[date][product][1] }}</td>
+                        <td>{{ reports[date][product][2] }}</td>
+                        <td>{{ reports[date][product][0]*reports[date][product][3] }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+</div>
+{% endblock %} 
+
+    

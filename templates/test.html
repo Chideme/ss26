@@ -1,46 +1,245 @@
-<ul id="myTab" class="nav nav-tabs">
-<li class="active">
-<a href="#home" data-toggle="tab">
-Tutorial Point Home
-</a>
-</li>
-<li><a href="#ios" data-toggle="tab">iOS</a></li>
-<li class="dropdown">
-<a href="#" id="myTabDrop1" class="dropdown-toggle"
-data-toggle="dropdown">Java
-<b class="caret"></b>
-</a>
-<ul class="dropdown-menu" role="menu" aria-labelledby="myTabDrop1">
-<li><a href="#jmeter" tabindex="-1" data-toggle="tab">jmeter</a></li>
-<li><a href="#ejb" tabindex="-1" data-toggle="tab">ejb</a></li>
-</ul>
-</li>
-</ul>
-<div id="myTabContent" class="tab-content">
-<div class="tab-pane fade in active" id="home">
-<p>Tutorials Point is a place for beginners in all technical areas.
-This website covers most of the latest technoligies and explains
-each of the technology with simple examples. You also have a
-<b>tryit</b> editor, wherein you can edit your code and
-try out different possibilities of the examples.</p>
-</div>
-<div class="tab-pane fade" id="ios">
-<p>iOS is a mobile operating system developed and distributed by Apple
-Inc. Originally released in 2007 for the iPhone, iPod Touch, and
-Apple TV. iOS is derived from OS X, with which it shares the
-Darwin foundation. iOS is Apple's mobile version of the
-OS X operating system used on Apple computers.</p>
-</div>
-<div class="tab-pane fade" id="jmeter">
-<p>jMeter is an Open Source testing software. It is 100% pure
-Java application for load and performance testing.</p>
-</div>
-<div class="tab-pane fade" id="ejb">
-<p>Enterprise Java Beans (EJB) is a development architecture
-for building highly scalable and robust enterprise level
-applications to be deployed on J2EE compliant
-TUTORIALS POINT
-Simply Easy LearningApplication Server such as JBOSS, Web Logic etc.
-</p>
-</div>
-</div>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../../../favicon.ico">
+
+    <title>SS26: {% block title%}{% endblock %}</title>
+
+    <!-- Bootstrap core CSS -->
+
+    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css"/>
+
+    <!-- Custom styles for this template -->
+    <link href="/static/dashboard.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    
+  </head>
+  {% if session.user_id %}
+  <body>
+    <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#"><span style="color: rgb(16, 66, 4);">Driveway</span><span style="color: chartreuse;"> Maker</span></a>
+      
+      <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="{{ url_for('logout') }}">Sign out</a>
+        </li>
+      </ul>
+    </nav>
+    <div class="container-fluid p-5">
+      <div class="row">
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+          <div class="sidebar-sticky">
+            
+            {% if session.user_id != 1 %}
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                  <span data-feather="home"></span>
+                  Dashboard 
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('start_shift_update') }}">
+                  <span data-feather="users"></span>
+                  Start Shift Update
+                </a>
+              </li>
+              <li class="nav-item disabled">
+                <a class="nav-link" href="{{ url_for('ss26') }}">
+                  <span data-feather="layers"></span>
+                  Driveway Form
+                </a>
+              </li>
+            </ul>
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+              <span>Reports</span>
+              <a class="d-flex align-items-center text-muted" href="#">
+                <span data-feather="plus-circle"></span>
+              </a>
+            </h6>
+            <ul class="nav flex-column mb-2">
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('get_driveway') }}">
+                  <span data-feather="file-text"></span>
+                  Driveway Report
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('customers')}}">
+                  <span data-feather="users"></span>
+                  Customers Reports
+                </a>
+              </li>
+            </ul>
+          </div>
+          {% else %}<!--Admin View-->
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('dashboard') }}">
+                <span data-feather="home"></span>
+                Dashboard <span class="sr-only">(current)</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('start_shift_update') }}">
+                <span data-feather="plus-circle"></span>
+                Start Shift Update
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('ss26') }}">
+                <span data-feather="plus-circle"></span>
+                Driveway Form
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('readings_entry') }}">
+                <span data-feather="file-text"></span>
+                Edit Previous Driveways
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <span data-feather="layers"></span>
+                Integrations
+              </a>
+            </li>
+          </ul>
+
+          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <span>Reports</span>
+            <a class="d-flex align-items-center text-muted" href="#">
+              <span data-feather="plus-circle"></span>
+            </a>
+          </h6>
+          <ul class="nav flex-column mb-2">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('get_driveway') }}">
+                <span data-feather="file-text"></span>
+                Driveway
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <span data-feather="file-text"></span>
+                SS28
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('profit_statement') }}">
+                <span data-feather="file-text"></span>
+                Profit Statement
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('customers')}}">
+                <span data-feather="users"></span>
+                Customers Reports
+              </a>
+            </li>
+            
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('cash_accounts') }}">
+                <span data-feather="file-text"></span>
+                Cash Accounts Reports
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('cash_up_reports') }}">
+                <span data-feather="file-text"></span>
+                Cash Up Reports
+              </a>
+            </li>
+          </ul>
+          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <span>Admin</span>
+            <a class="d-flex align-items-center text-muted" href="#">
+              <span data-feather="plus-circle"></span>
+            </a>
+          </h6>
+          <ul class="nav flex-column mb-2">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('manage_users')}}">
+                <span data-feather="users"></span>
+                Users
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('accounts') }}">
+                <span data-feather="file-text"></span>
+                Expenses Accounts
+              </a>
+            </li>
+           
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="databasedropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="Database"></span>Item Lists</a>
+              <div class="dropdown-menu" aria-labelledby="databasedropdown">
+              <a class="dropdown-item" href="{{ url_for('pumps') }}"><span style="font-size: .875rem;" data-feather="archive">Pumps</span></a>
+              <a class="dropdown-item" href="{{ url_for('tanks') }}"><span style="font-size: .875rem;" data-feather="archive">Tanks</span></a>
+              <a class="dropdown-item" href="{{ url_for('products') }}"><span style="font-size: .875rem;">Products</span></a>
+              <a class="dropdown-item" href="{{ url_for('coupons') }}"><span style="font-size: .875rem;">Coupons</span></a>
+              </div>
+          </li>
+
+          </ul>
+          {% endif %}
+        
+
+        </nav>
+
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+          {% if get_flashed_messages() %}
+            <header>
+                <div class="alert alert-info border text-center" role="alert">
+                    {{ get_flashed_messages() | join(" ") }}
+                </div>
+            </header>
+        {% endif %}
+            {% block main %}{% endblock %}
+            <footer class="text-center text-muted">
+              &copy; 2020
+            </footer>
+        </main>
+
+      </div>
+       
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    
+    <script src="/static/vendor/jquery/jquery-3.4.1.min.js" type="text/javascript"></script>
+    <script src="/static/vendor/popper/popper.min.js" type="text/javascript"></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.min.js" type="text/javascript" ></script>
+    <script src="/static/scripts.js" type="text/javascript" ></script>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+    <script>
+      feather.replace()
+    </script>
+
+    <!-- Graphs -->
+  </body>
+  {% else %}
+  <body class="text-center">
+    <form style="display: inline-block;" class="form-signin" action="{{ url_for('login') }}" method="post">
+      <img class="mb-4" src="../../assets/brand/bootstrap-solid.svg" alt="" width="72" height="72">
+      <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+      <label for="inputUsername" class="sr-only">User Name</label>
+      <input type="text" id="inputUsername" name="username" class="form-control" placeholder="User Name" required autofocus>
+      <label for="inputPassword" class="sr-only">Password</label>
+      <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
+      <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+      <p class="mt-5 mb-3 text-muted">&copy; 2019</p>
+    </form>
+  </body>
+    {% endif %}
+</html>
+
+
+    

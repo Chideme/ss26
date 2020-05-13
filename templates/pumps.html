@@ -1,25 +1,25 @@
-{% extends "layout.html" %}
+{% extends "inventory_control_layout.html" %}
 
-{% block title %}
-    Pump List
-{% endblock %}
+
 
 {% block main %}
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Manage Pumps</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-      <div class="btn-group mr-2">
-        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddPumpFormModal">Add Pump</button>
-        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeletePumpFormModal">Delete Pump</button>
-      </div>
-    </div>
+    
   </div>
 
-  <h2>Pumps Table</h2>
+  <h2>Pumps Table
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group mr-2">
+          <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddPumpFormModal">Add Pump</button>
+          <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeletePumpFormModal">Delete Pump</button>
+        </div>
+      </div>
+  </h2>
     <div class="row">
         <div class="col-md-6">
-            <table class="table table-hover">
+            <table class="table table-hover table-sm">
                 <thead>
                     <tr>
                         <th>Pump Name</th>
@@ -53,6 +53,12 @@
                                     <div class="form-group  " >
                                         <input type = "text"  name="pump_name" autocomplete="off" placeholder="Pump Name" autofocus class="form-control" required>
                                     </div>
+                                    <div class="form-group  " >
+                                        <input type = "text"  name="litre_reading" autocomplete="off" placeholder="Opening Litre Reading" autofocus class="form-control" required>
+                                    </div>
+                                    <div class="form-group  " >
+                                        <input type = "text"  name="money_reading" autocomplete="off" placeholder="Opening Money Reading" autofocus class="form-control" required>
+                                    </div>
                                     <div class="form-group">
                                         <select class="form-control" name="tank">
                                             <option selected>Choose..</option>
@@ -61,7 +67,7 @@
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <div class="p-2">
+                                    <div>
                                     <button class="btn btn-primary btn-block" type="submit"> Add Pump</button>
                                     </div>
                                  </form>
@@ -85,7 +91,7 @@
                                 </div>
                                 <div class="modal-body">
                                     <form action="{{ url_for('delete_pump') }}" method="post" > 
-                                        <div>
+                                        <div class="form-group">
                                             <select class="form-control" name="pumps">
                                                 <option selected>Choose..</option>
                                                 {% for  pump in pumps %}
@@ -93,8 +99,8 @@
                                                 {% endfor %}
                                             </select>
                                         </div> 
-                                        <div class="p-2">
-                                        <button class="btn btn-success btn-group" type="submit">Delete Pump</button>
+                                        <div>
+                                        <button class="btn btn-warning btn-group" type="submit">Delete Pump</button>
                                         </div>
                                      </form>
                                 </div>

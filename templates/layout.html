@@ -11,7 +11,7 @@
 
     <!-- Bootstrap core CSS -->
 
-    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css"/>
 
     <!-- Custom styles for this template -->
     <link href="/static/dashboard.css" rel="stylesheet">
@@ -20,183 +20,44 @@
   </head>
   {% if session.user_id %}
   <body>
-    <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#"><span style="color: rgb(255, 145, 0);">Driveway</span><span style="color: chartreuse;"> Maker</span></a>
-      <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
-      <ul class="navbar-nav px-3">
-        <li class="nav-item text-nowrap">
-          <a class="nav-link" href="#">Sign out</a>
-        </li>
-      </ul>
+    <nav class="navbar navbar-expand-md   fixed-top bg-dark flex-md-nowrap p-0 shadow rounded" style="font-weight: bolder;">
+      <div class="navbar-header">
+        <a class="navbar-brand col-sm-3 col-md-2 col-lg-12" href="#"><span style="color: lime;">Sense</span> <span style="color: lightgray;"> Driveway</span></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+      </div>
+      <div class="collapse navbar-collapse justify-content-md-center" id="navbarsExample04">
+        <ul class="navbar-nav px3">
+          <li class="nav-item text-nowrap">
+            <a class="nav-link" href="{{ url_for('dashboard',heading='Sales') }}">Dashboard</a>
+          </li>
+          <li class="nav-item text-nowrap">
+            <a class="nav-link" href="{{ url_for('get_driveway') }}">Reports</a>
+          </li>
+          <li class="nav-item text-nowrap">
+            <a class="nav-link" href="{{ url_for('ss26') }}">Driveway</a>
+          </li>
+         
+          <li class="nav-item text-nowrap">
+            <a class="nav-link" href="{{ url_for('pumps') }}">Inventory</a>
+          </li>
+          <li class="nav-item text-nowrap">
+            <a class="nav-link" href="{{ url_for('customers') }}"><span class="glyphicon glyphicon-user"></span>Customers & Suppliers</a>
+          </li>
+          <li class="nav-item text-nowrap">
+            <a class="nav-link" href="{{ url_for('manage_users') }}"><span class="glyphicon glyphicon-user"></span>Company Information</a>
+          </li>
+        </ul>
+        
+      </div>
+      <div class="navbar-right">
+        <a class="nav-link" href="{{ url_for('logout') }}">Log out</a>
+      </div>
     </nav>
     <div class="container-fluid p-5">
-      <div class="row">
-        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
-          <div class="sidebar-sticky">
-            
-            {% if session.user_id != 1 %}
-            <ul class="nav flex-column">
-              <li class="nav-item">
-                <a class="nav-link active" href="{{ url_for('dashboard') }}">
-                  <span data-feather="home"></span>
-                  Dashboard 
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('start_shift_update') }}">
-                  <span data-feather="users"></span>
-                  Start Shift Update
-                </a>
-              </li>
-              <li class="nav-item disabled">
-                <a class="nav-link" href="#">
-                  <span data-feather="layers"></span>
-                  Integrations
-                </a>
-              </li>
-            </ul>
-            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-              <span>Reports</span>
-              <a class="d-flex align-items-center text-muted" href="#">
-                <span data-feather="plus-circle"></span>
-              </a>
-            </h6>
-            <ul class="nav flex-column mb-2">
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('shift_driveway') }}">
-                  <span data-feather="file-text"></span>
-                  Driveway
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">
-                  <span data-feather="file-text"></span>
-                  SS28
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">
-                  <span data-feather="file-text"></span>
-                  Profit Statement
-                </a>
-              </li>
-            </ul>
-          </div>
-          {% else %}<!--Admin View-->
-          <ul class="nav flex-column">
-            <li class="nav-item">
-              <a class="nav-link active" href="{{ url_for('dashboard') }}">
-                <span data-feather="home"></span>
-                Dashboard <span class="sr-only">(current)</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('start_shift_update') }}">
-                <span data-feather="plus-circle"></span>
-                Start Shift Update
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('ss26') }}">
-                <span data-feather="plus-circle"></span>
-                SS26
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span data-feather="layers"></span>
-                Integrations
-              </a>
-            </li>
-          </ul>
-
-          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-            <span>Reports</span>
-            <a class="d-flex align-items-center text-muted" href="#">
-              <span data-feather="plus-circle"></span>
-            </a>
-          </h6>
-          <ul class="nav flex-column mb-2">
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('get_driveway') }}">
-                <span data-feather="file-text"></span>
-                Driveway
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span data-feather="file-text"></span>
-                SS28
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span data-feather="file-text"></span>
-                Profit Statement
-              </a>
-            </li>
-          </ul>
-          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-            <span>Admin</span>
-            <a class="d-flex align-items-center text-muted" href="#">
-              <span data-feather="plus-circle"></span>
-            </a>
-          </h6>
-          <ul class="nav flex-column mb-2">
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('manage_users')}}">
-                <span data-feather="users"></span>
-                Users
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('customers')}}">
-                <span data-feather="users"></span>
-                Customers
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('suppliers')}}">
-                <span data-feather="users"></span>
-                Suppliers
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('accounts') }}">
-                <span data-feather="file-text"></span>
-                Accounts
-              </a>
-            </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="databasedropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span data-feather="Database"></span>Item Lists</a>
-              <div class="dropdown-menu" aria-labelledby="databasedropdown">
-              <a class="dropdown-item" href="{{ url_for('pumps') }}"><span style="font-size: .875rem;" data-feather="archive">Pumps</span></a>
-              <a class="dropdown-item" href="{{ url_for('tanks') }}"><span style="font-size: .875rem;" data-feather="archive">Tanks</span></a>
-              <a class="dropdown-item" href="{{ url_for('products') }}"><span style="font-size: .875rem;">Products</span></a>
-              </div>
-          </li>
-
-          </ul>
-          {% endif %}
-        </div>
-
-        </nav>
-
-        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
-          {% if get_flashed_messages() %}
-            <header>
-                <div class="alert alert-info border text-center" role="alert">
-                    {{ get_flashed_messages() | join(" ") }}
-                </div>
-            </header>
-        {% endif %}
-            {% block main %}{% endblock %}
-            <footer class="text-center text-muted">
-              &copy; 2020
-            </footer>
-        </main>
-
-      </div>
+      {% block sidebar %}{% endblock %}
+    </div>
        
 
     <!-- Bootstrap core JavaScript

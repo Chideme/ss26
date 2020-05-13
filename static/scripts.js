@@ -21,7 +21,11 @@ $(document).ready(function(){
         function printTable (){
             var toprint = document.getElementById("printTable");
             newWIn = window.open("");
-            newWIn.document.write(toprint.outerHTML);
+            newWIn.document.write('<html><body>');
+            newWIn.document.write('<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css"/>');
+            newWIn.document.write('<link href="/static/style.css" rel="stylesheet">');
+            newWIn.document.write(toprint.innerHTML);
+            newWIn.document.write('</body></html>');
             newWIn.print();
             newWIn.close();
         };
@@ -31,6 +35,16 @@ $(document).ready(function(){
         });
 
         //Http request to display driveway data to do.
-         
+
+        // return to page position after reload ( for driveway updates)
+        
+        var scrollpos = localStorage.getItem('scrollpos');
+        if (scrollpos) window.scrollTo(0,scrollpos);
+
+        window.onbeforeunload = function(e) {
+            localStorage.setItem('scrollpos',window.scrollY);
+        };
+        console.log(scrollpos);
+
         
     });

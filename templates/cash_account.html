@@ -1,0 +1,26 @@
+<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css"/>
+<link href="/static/dashboard.css" rel="stylesheet">
+<link href="/static/style.css" rel="stylesheet">
+
+<a href="{{ url_for('cash_accounts',) }}"><span style="color: royalblue;">Back</span></a>
+<h4 class="h4 text-center p3">{{ account.account_name }} Report</h4>
+<h5 class="text-center">Balance: {{ balances }}</h5>
+<div class="p-5 text-center">
+    <table class="table table-sm table-striped">
+        <thead>
+            <th>Date</th>
+            <th>Sales Receipts</th>
+            <th>Pay Outs</th>
+            <th>Balance</th>
+        </thead>
+        <tbody>
+            {% for r in report %}
+            <tr>
+                <td>{{ r }}</td>
+                <td>{{ report[r]["rcpt"] }}</td>
+                <td><a href="{{ url_for('daily_payouts',date=r,cashaccount_id=account_id) }}">{{ report[r]["pay"] }}</a></td>
+                <td>{{ report[r]["bal"] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>

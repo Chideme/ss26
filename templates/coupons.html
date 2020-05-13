@@ -1,0 +1,108 @@
+{% extends "inventory_control_layout.html" %}
+
+{% block main %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Manage Coupons</h1>
+    
+  </div>
+
+  <h2>Coupon Table
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group mr-2">
+          <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddCouponFormModal">Add Coupon</button>
+          <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteCouponFormModal">Delete Coupon</button>
+        </div>
+      </div>
+  </h2>
+    <div class="row">
+        <div class="col-md-6">
+            <table class="table table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th>Coupon Name</th>
+                        <th>Coupon Qty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for coupon in coupons %}
+                    <tr>
+                        <td>{{ coupon.name }}</td>
+                        <td>{{ coupon.coupon_qty }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+             </div>           
+
+        
+                <!-- Add Coupon Modal -->
+                <div class="modal fade" id="AddCouponFormModal" tabindex="-1" role="dialog" aria-labelledby="AddCouponFormModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="AddCouponFormLabel">Add Coupon</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                            </div>
+                            <div class="modal-body">
+                                <form  action="{{ url_for('add_coupon') }}" method="post" > 
+                                    <div class="form-group" >
+                                        <input type = "text"  name="coupon_name" autocomplete="off" placeholder="Coupon Name" autofocus class="form-control" required>
+                                    </div>
+                
+                                    <div class="form-group " >
+                                        <input type = "number"  name="coupon_qty" autocomplete="off" placeholder="Coupon Qty" autofocus class="form-control" required>
+                                    </div>
+
+                                    
+                                    <button class="btn btn-primary btn-block" type="submit">Add Coupon</button>
+                            
+                                 </form>
+                            </div>
+                            <div class="modal-footer">  
+                                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div><!--Add Coupon-->
+                
+                    <!--Delete Coupon Modal -->
+                    <div class="modal fade" id="DeleteCouponFormModal" tabindex="-1" role="dialog" aria-labelledby="DeleteCouponFormModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="DeleteCouponFormLabel">Remove Coupon</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form action="{{ url_for('delete_coupon') }}" method="post" > 
+                                        <div class="form-group">
+                                            <select class="form-control" name="Coupons">
+                                                <option selected>Coupon</option>
+                                                {% for  coupon in coupons %}
+                                                <option  value="{{ coupon.id }}">{{ coupon.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div> 
+                                        <div class="p-2">
+                                        <button class="btn btn-primary btn-group" type="submit">Delete Coupon</button>
+                                        </div>
+                                     </form>
+                                </div>
+                                <div class="modal-footer">  
+                                    <button type="button" class="btn btn-primary btn-group" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!--Deletes Coupon-->
+        </div>
+    </div>
+
+    
+
+    
+{% endblock %}

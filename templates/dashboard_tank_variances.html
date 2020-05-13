@@ -4,17 +4,15 @@
 
 {% block main %}
       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2" id="heading" value="{{ h }}">{{ h }}</h1>
-        <form style="display: inline-block;" action="{{ url_for('dashboard_reports') }}" id="form" method="post">
+        <h1 class="h2">Tank Variance</h1>
+        <form style="display: inline-block;" action="{{ url_for('dashboard_variance') }}" id="form" method="post">
           <div class="btn-toolbar mb-2 mb-md-0">
           <div class="btn-group mr-2">
-              <select class="form-control"  id="product">
-                <option selected >Fuel</option>
-                <option>Lubricants</option>
-              </select>
-              <select class="form-control"  id="frequency">
-                <option selected >Day-to-day</option>
-                <option>Month-to-month</option>
+              <select class="form-control"  id="tank">
+                <option selected >Select Tank</option>
+                {% for tank in tanks %}
+                <option value="{{ tank.id }}">{{ tank.name }}</option>
+                {% endfor %}
               </select>
               <input type = "date"  id="start_date" autocomplete="off" autofocus class="form-control" required>
               <input type = "date"   id="end_date" autocomplete="off"  class="form-control" required>
@@ -164,7 +162,7 @@
         </table>
       </div>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
-      <script src="{{ url_for('static',filename='dashboard.js') }}"></script>
+      <script src="{{ url_for('static',filename='variances.js') }}"></script>
       <script>
 
         var ctx = document.getElementById("myChart");

@@ -37,6 +37,7 @@ class PumpReading(db.Model):
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     
 
+
 class TankDip(db.Model):
     __tablename__ = "tank_dips"
     id = db.Column(db.Integer, primary_key=True)
@@ -70,6 +71,32 @@ class Product(db.Model):
         name =self.name
         return "{}".format(name)
 
+
+class LubeProduct(db.Model):
+    __tablename__="lube_products"
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name = db.Column(db.String,nullable=False,unique=True)
+    cost_price = db.Column(db.Float,nullable=False)
+    selling_price = db.Column(db.Float,nullable=False)
+    mls = db.Column(db.Float,nullable=False)
+    
+    def __repr__(self):
+        name =self.name
+        return "{}".format(name)
+
+class LubeQty(db.Model):
+    __tablename__="lube_qty"
+    id = db.Column(db.Integer, primary_key=True)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    qty = db.Column(db.Float,nullable=False)
+    delivery_qty = db.Column(db.Float,nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("lube_products.id"), nullable=False)
+    
+
+
+
+
 class Role(db.Model):
     __tablename__="roles"
     id = db.Column(db.Integer,primary_key=True,nullable=False)
@@ -90,16 +117,18 @@ class Customer(db.Model):
     def __repr__(self):
         return "{}".format(self.name)
 
-class Supplier(db.Model):
-    __tablename__="supplier"
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name= db.Column(db.String,nullable=False)
-    contact_person =db.Column(db.String,nullable=True)
-    phone_number = db.Column(db.String,nullable=True)
 
+class CustomerPayments(db.Model):
+    __tablename__="customer_payments"
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date =db.Column(db.Date, nullable=False)
+    customer_id = db.Column(db.Integer,db.ForeignKey("customers.id"),nullable=False)
+    amount= db.Column(db.Float,nullable=False)
+    ref = db.Column(db.String,nullable=True)
+    
 
     def __repr__(self):
-        return "{}".format(self.name)
+        return "{}".format(self.amount)
 
     
 
@@ -109,7 +138,6 @@ class Shift(db.Model):
     date = db.Column(db.Date,nullable=False)
     daytime = db.Column(db.String,nullable=True)
 
-
     def __repr__(self):
         return "{}".format(self.id)
     
@@ -118,6 +146,7 @@ class Shift_Underway(db.Model):
     __tablename__="shift_underway"
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     state = db.Column(db.Boolean,nullable=False)
+    current_shift = db.Column(db.Integer,nullable=True)
 
 class Fuel_Delivery(db.Model):
     __tablename__="fuel_delivery"
@@ -136,7 +165,7 @@ class Invoice(db.Model):
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
     qty = db.Column(db.Float,nullable=False)
-    product = db.Column(db.String,nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
     price= db.Column(db.Float,nullable=False)
     vehicle_number = db.Column(db.String,nullable=True)
     driver_name = db.Column(db.String,nullable=True)
@@ -158,7 +187,8 @@ class SaleReceipt(db.Model):
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     account_id= db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
     amount= db.Column(db.Integer,nullable=False)
-   
+
+
 
 class PayOut(db.Model):
     __tablename__="payouts"
@@ -175,11 +205,22 @@ class CashUp(db.Model):
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
-    account_id= db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
-    expected_amount= db.Column(db.Integer,nullable=False)
-    actual_amount= db.Column(db.Integer,nullable=False)
-    expected_amount= db.Column(db.Integer,nullable=False)
+    sales_amount = db.Column(db.Integer,nullable=False)
+    expected_amount= db.Column(db.Integer,nullable=False) #sales- exp
+    actual_amount= db.Column(db.Integer,nullable=False) # cash banked
+    variance = db.Column(db.Integer,nullable=False) #expected-actual
+
+
+class LubesCashUp(db.Model):
+    __tablename__="lubes_cash_up"
+    id=db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    sales_amount = db.Column(db.Integer,nullable=False)
+    expected_amount= db.Column(db.Integer,nullable=False) #sales- exp
+    actual_amount= db.Column(db.Integer,nullable=False) # cash banked
     variance = db.Column(db.Integer,nullable=False)
+
 
 class Price(db.Model):
     __tablename__="prices"
@@ -191,8 +232,28 @@ class Price(db.Model):
     selling_price= db.Column(db.Float,nullable=False)
 
     
+class Coupon(db.Model):
+    __tablename__="coupons"
+    id=db.Column(db.Integer,primary_key=True,nullable=False)
+    name = db.Column(db.String,nullable=False)
+    coupon_qty = db.Column(db.Float,nullable=False)
 
+class CouponSale(db.Model):
+    __tablename__="coupon_sales"
+    id=db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    product_id= db.Column(db.Integer,db.ForeignKey("products.id"),nullable=False)
+    coupon_id = db.Column(db.Integer,db.ForeignKey("coupons.id"),nullable=False)
+    qty= db.Column(db.Integer,nullable=False)
 
-
-
-    
+class CompanyInformation(db.Model):
+    __tablename__="company_information"
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name = db.Column(db.String,nullable=False,unique=True)
+    address =  db.Column(db.String,nullable=False)
+    company_email =db.Column(db.String,nullable=False)
+    heroku_email =db.Column(db.String,nullable=False)
+    payment_plan = db.Column(db.String,nullable=False)
+    database_url = db.Column(db.String,nullable=False)
+    app_url = db.Column(db.String,nullable=False)

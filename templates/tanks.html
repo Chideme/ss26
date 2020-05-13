@@ -1,25 +1,23 @@
-{% extends "layout.html" %}
-
-{% block title %}
-    Tank List
-{% endblock %}
+{% extends "inventory_control_layout.html" %}
 
 {% block main %}
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Manage Tanks</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-      <div class="btn-group mr-2">
-        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddTankFormModal">Add Tank</button>
-        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteTankFormModal">Delete Tank</button>
-      </div>
-    </div>
+    
   </div>
 
-  <h2>Tanks Table</h2>
+  <h2>Tanks Table
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group mr-2">
+          <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddTankFormModal">Add Tank</button>
+          <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteTankFormModal">Delete Tank</button>
+        </div>
+      </div>
+  </h2>
     <div class="row">
         <div class="col-md-6">
-            <table class="table table-hover">
+            <table class="table table-hover table-sm">
                 <thead>
                     <tr>
                         <th>Tank Name</th>
@@ -29,8 +27,8 @@
                 <tbody>
                     {% for tank in tank_product %}
                     <tr>
-                        <td>{{ tank[1]}}</td>
-                        <td>{{ tank[0] }}</td>
+                        <td><a href="{{ url_for('tank_variances',tank_id=tank[0].id) }}">{{ tank[0]}}</a></td>
+                        <td>{{ tank[1].name }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -61,7 +59,7 @@
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <div class="p-2">
+                                    <div>
                                     <button class="btn btn-primary btn-block" type="submit">Add Tank</button>
                                     </div>
                                  </form>
@@ -93,7 +91,7 @@
                                                 {% endfor %}
                                             </select>
                                         </div> 
-                                        <div class="p-2">
+                                        <div>
                                         <button class="btn btn-primary btn-group" type="submit">Delete Tank</button>
                                         </div>
                                      </form>

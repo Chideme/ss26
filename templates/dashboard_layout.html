@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Dashboard
+{% endblock %}
+
+{% block sidebar %}
+      <div class="row">
+        <nav class="col-md-2 d-none d-md-block  sidebar sidelayout">
+          <div class="sidebar-sticky">
+            
+            
+          <!--Admin View-->
+          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <span>Dashboard</span>
+            <a class="d-flex align-items-center text-muted" href="#">
+              <span data-feather="plus-circle"></span>
+            </a>
+          </h6>
+          
+          <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('dashboard',heading='Sales') }}">
+                  <span data-feather="plus-circle"></span>
+                   Sales
+                </a>
+              </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('dashboard',heading='Profit') }}">
+                <span data-feather="file-text"></span>
+                 Profit
+              </a>
+            </li>
+            <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('dashboard_tank_variance') }}">
+                <span data-feather="layers"></span>
+                Tank Variances
+              </a>
+            </li>
+          </ul>
+          </nav>
+
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+          {% if get_flashed_messages() %}
+            <header>
+                <div class="alert alert-info border text-center" role="alert">
+                    {{ get_flashed_messages() | join(" ") }}
+                </div>
+            </header>
+        {% endif %}
+            {% block main %}{% endblock %}
+            <footer class="text-center text-muted">
+              &copy; 2020
+            </footer>
+        </main>
+
+      </div>
+       
+{% endblock %}
+   
+
+    

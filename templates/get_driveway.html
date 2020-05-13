@@ -1,30 +1,27 @@
-{% extends "layout.html" %}
-
-{% block title %}
-  Driveway
-{% endblock %}
+{% extends "report_layout.html" %}
 
 
 {% block main %}
-      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#ShiftSelection">
+          Select Shift
+        </button>
         <div class="btn-toolbar mb-2 mb-md-0">
           <div class="btn-group mr-2">
             <button  type="button" id="print" class="btn btn-sm btn-outline-secondary">Print</button>
             <button class="btn btn-sm btn-outline-secondary">Export</button>
           </div>
-          <button class="btn btn-sm btn-outline-secondary dropdown-toggle">
-            <span data-feather="calendar"></span>
-            This week
-          </button>
+
         </div>
       </div>
 
     
       
       <h2>Driveway</h2>
-      <div class="table-responsive driveway">
-      <div class="row" id="printTable">
-        <div class="col-md-4">
+      <div class="table-responsive driveway" id="printTable">
+  
+      
     
         <table class="driveway-table">
           <thead class="driveway-table">
@@ -63,22 +60,25 @@
               {% endfor %}
               <thead class="driveway-table">
                 <th class="driveway-table">Product</th>
+                <th class="driveway-table">Cost Price</th>
                 <th class="driveway-table">Selling Price</th>
                 <th class="driveway-table">Litres</th>
                 <th class="driveway-table">Amount</th>
               </thead>
               <tbody>
+                {% for product in product_sales_ltr %}
                 <tr class="driveway-table">
-                  <td class="driveway-table">Diesel</td>
-                  <td class="driveway-table">{{ diesel_sales[1][0][1].selling_price }}</td>
-                  <td class="driveway-table">{{ diesel_sales[0] }}</td>
-                  <td class="numbers driveway-table">{{ diesel_sales[0]*diesel_sales[1][0][1].selling_price }}</td>
+                  <td class="driveway-table">{{ product }}</td>
+                  <td class="driveway-table">{{ product_sales_ltr[product][1].cost_price }}</td>
+                  <td class="driveway-table">{{ product_sales_ltr[product][1].selling_price }}</td>
+                  <td class="driveway-table">{{ product_sales_ltr[product][0] }}</td>
+                  <td class="numbers driveway-table">{{ product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price }}</td>
                 </tr>
+                {% endfor %}
                 <tr class="driveway-table">
-                  <td class="driveway-table">Petrol</td>
-                  <td class="driveway-table">{{ petrol_sales[1][0][1].selling_price }}</td>
-                  <td class="driveway-table">{{ petrol_sales[0] }}</td>
-                  <td class="numbers driveway-table">{{ petrol_sales[0]* petrol_sales[1][0][1].selling_price }}</td>
+                  <th class="driveway-table" colspan="3">Total</th>
+                  <td class="driveway-table">{{ total_sales_ltr }}</td>
+                  <td class="numbers driveway-table">{{ total_sales_amt }}</td>
                 </tr>
               </tbody>
             <thead>
@@ -95,72 +95,132 @@
               <tr class="driveway-table">
                 <td>{{ tank }}</td>
                 <td class="numbers driveway-table">{{ tank_dips[tank][0] }}</td>
-                <td class="numbers driveway-table">2000</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][3] }} </td>
                 <td class="numbers driveway-table">{{ tank_dips[tank][1] }}</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank][0]-tank_dips[tank][1] }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][0]+ tank_dips[tank][3]-tank_dips[tank][1] }}</td>
                 <td class="numbers driveway-table">{{ tank_dips[tank][2] }} ltrs</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank][2]-(tank_dips[tank][0]-tank_dips[tank][1]) }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank][2]-(tank_dips[tank][0]+tank_dips[tank][3]-tank_dips[tank][1]) }}</td>
               </tr>
               {% endfor %}
             </tbody>
             
         </table>
-        </div>
-        <div class="col-md-2"></div>
-        <div class="col-md-4">
+        
+        
+        
         <h4>Sales Breakdown</h4>
-        <table class="driveway-table">
+        <table class="table table-sm">
               <thead>
-                <th class="driveway-table">Account</th>
-                <th class="driveway-table">Amount</th>
+                <th>Account</th>
+                <th>Amount</th>
               </thead>
               <tbody>
                 {% for i in sales_breakdown %}
                 <tr>
-                  <td class="driveway-table">{{ i }}</td>
-                  <td class="numbers driveway-table">{{ sales_breakdown[i] }}</td>
+                  <td>{{ i }}</td>
+                  <td class="numbers">{{ sales_breakdown[i] }}</td>
                 </tr>
                {% endfor %}
+               <tr>
+                 <th>Total:</th>
+                 <td></td>
+               </tr>
               </tbody>
         </table>
         <h4 class="p-2">Cash Payouts</h4>
-        <table>
+        <table class="table table-sm">
+          <tr>
+            <th scope="row">Total Cash Sales:</th>
+            <td class="numbers">{{ sales_breakdown["Cash"] }}</td>
+          </tr>
+          <th  colspan="2">Expenses:</th>
+          {% if expenses %}
+          {% for expense in expenses %}
+          <tr>
+            <td>{{ expense[1].account_name }}</td>
+            <td class="numbers">{{ expense[0].amount }}</td>
+          </tr>
+          {% endfor %}
+          {% else %}
+          <tr>
+            <td>--</td>
+            <td>--</td>
+          </tr>
+          {% endif %}
+          <tr>
+              <th  scope="row">Expected Cash</th>
+        
+              <td class="numbers">{{ sales_breakdown["Cash"]-total_cash_expenses }}</td>
+
+          </tr>
+          <tr>
+            <th  scope="row"> Actual Cash Banked</th>
+      
+            <td class="numbers">{{ cash_up.actual_amount }}</td>
+
+          </tr>
+        </table>
+        <h4 class="p-2">Key Metrics</h4>
+        <table class="table table-sm">
+          <thead>
+            <th>Product</th>
+            <th>Qty Sold During Shift</th>
+            <th>This Month Average Daily Sales</th>
+            <th>Month to date Sales</th>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Fuels</td>
+              <td>{{ total_sales_ltr }}</td>
+              <td>{{ avg_sales }}</td>
+              <td>{{ mnth_sales }}</td>
+            </tr>
+            <tr>
+              <td>Lubricants</td>
+              <td>{{ total_lubes_shift_sales }}</td>
+              <td>{{ lube_avg }}</td>
+              <td>{{ lubes_mnth_sales }}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+      
+      </div>
     
-            <tr>
-              <th class="driveway-table" scope="row">Total Cash Sales:</th>
-              {%  if Cash in sales_breakdown %}
-              <td class="numbers driveway-table">{{ sales_breakdown["Cash"] }}</td>
-              {% else %}
-              <td class="numbers driveway-table">$0.00</td>
-              {% endif %}
-            </tr>
-            <th class="driveway-table" colspan="2">Expenses:</th>
-            {% if expenses %}
-            {% for expense in expenses %}
-            <tr>
-              <td class="driveway-table">{{ expense[1].name }}</td>
-              <td class="numbers driveway-table">{{ expense[0].amount }}</td>
-            </tr>
-            {% endfor %}
-            {% else %}
-            <tr>
-              <td class="driveway-table">--</td>
-              <td class="driveway-table">--</td>
-            </tr>
-            {% endif %}
-            <tr>
-              <th class="driveway-table" scope="row">Cash Banked</th>
-              {% if "Cash" in sales_breakdown %}
-              <td class="numbers driveway-table">{{ sales_breakdown["Cash"]-total_cash_expenses }}</td>
-              {% else %}
-              <td class="numbers driveway-table">0</td>
-              {% endif %}
-            </tr>
-        </table>
-        </table>
+     <!--Shift Slection Modal-->
+   <div class="modal fade" id="ShiftSelection" tabindex="-1" role="dialog" aria-labelledby="ShiftSelectionFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ShiftSelectionFormLabel">Select Shift</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form  action="{{ url_for('get_driveway') }}" method="post" > 
+                    <div class="form-group">
+                        <input type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                      <select class="form-control" name="shift">
+                        <option selected>Total</option>
+                        <option>Day</option>
+                        <option>Night</option>
+                    </select>
+                  </div>
+
+                    <button class="btn btn-primary btn-block" type="submit">Enter</button>
+            
+                 </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
         </div>
-      </div>
-      </div>
+    </div>
+</div>
+<!--Shift Selection Modal-->
   
     {% endblock %}
    

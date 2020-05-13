@@ -1,29 +1,31 @@
-{% extends "layout.html" %}
+{% extends "customers_layout.html" %}
 
-{% block title %}
-    Customer List
-{% endblock %}
+
 
 {% block main %}
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#CustomerPayment">
+        Receive Customer Payment
+      </button>
     <div class="btn-toolbar mb-2 mb-md-0">
       <div class="btn-group mr-2">
         <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddCustomerFormModal">Add Customer</button>
         <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteCustomerFormModal">Delete Customer</button>
       </div>
     </div>
-  </div>
+</div>
 
-  <h4>Customer Table</h4>
-    <div class="row">
-        <div class="col-md-6">
-            <table class="table table-hover">
+<div class="text-center">
+<h4>Customer Table</h4>
+    
+            <table class="table table-sm table-hover">
                 <thead>
                     <tr>
                         <th>Customer</th>
                         <th>Contact Person</th>
                         <th>Phone Number</th>
+                        <th>Balance</th>
                         <th>Modify</th>
                     </tr>
                 </thead>
@@ -33,8 +35,9 @@
                         <td>{{ customer.name }}</td>
                         <td>{{ customer.contact_person }}</td>
                         <td>{{ customer.phone_number }}</td>
+                        <td><a href="{{ url_for('customer',customer_id=customer.id) }}">{{ balances[customer] }}</a></td>
                         <td>
-                            <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditCustomer{{ customer.name }}">
+                            <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditCustomer{{ customer.id }}">
                                 Edit Customer
                             </button>
                         </td>
@@ -43,14 +46,14 @@
                     {% endfor %}
                 </tbody>
             </table>
-             </div>           
+</div>               
                             <!--Edit Customer Modal -->
                             {% for customer in customers %}
-                            <div class="modal fade" id="EditCustomer{{ customer.name }}" tabindex="-1" role="dialog" aria-labelledby="EditCustomerFormModalLabel" aria-hidden="true">
+                            <div class="modal fade" id="EditCustomer{{ customer.id }}" tabindex="-1" role="dialog" aria-labelledby="EditCustomer{{ customer.id }}FormModalLabel" aria-hidden="true">
                                 <div class="modal-dialog" role="document">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title" id="EditCustomerFormLabel">Edit {{ customer.name }}</h5>
+                                            <h5 class="modal-title" id="EditCustomer{{ customer.id }}FormLabel">Edit {{ customer.name }}</h5>
                                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                     <span aria-hidden="true">&times;</span>
                                                 </button>
@@ -150,8 +153,47 @@
                             </div>
                         </div>
                     </div><!--Deletes Customer Account-->
-        </div>
-    </div>
+                    <!--Customer Payment-->
+                    <div class="modal fade" id="CustomerPayment" tabindex="-1" role="dialog" aria-labelledby="CustomerPaymentFormModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="CustomerPaymentFormLabel">Customer Payment</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form action="{{ url_for('customer_payment') }}" method="post" > 
+                                        <div class="form-group">
+                                            <div class="form-group">
+                                                <input type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
+                                            </div>
+                                            <select class="form-control" name="customers">
+                                                <option selected>Choose..</option>
+                                                {% for  customer in customers %}
+                                                <option  value="{{ customer.id }}">{{ customer.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group  ">
+                                            <input type ="number"  name="amount" autocomplete="off" placeholder="Amount ($)" autofocus class="form-control" required>
+                                        </div>
+                                        <div class="form-group ">
+                                            <input type ="text"  name="ref" autocomplete="off" placeholder="Reference" autofocus class="form-control">
+                                        </div>
+                                
+                                        <button class="btn btn-primary btn-block btn-group" type="submit">Add Payment</button>
+                                
+                                     </form>
+                                </div>
+                                <div class="modal-footer">  
+                                    <button type="button" class="btn btn-primary btn-group" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!--Customer Payment-->
+   
 
     
 

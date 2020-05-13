@@ -1,0 +1,27 @@
+{% extends "report_layout.html" %}
+
+
+{% block main %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    
+</div>
+
+<div class="text-center">
+    <h4>Cash Accounts</h4>
+    <table class="table table-sm table-hover">
+        <thead>
+            <th>Account</th>
+            <th>Balance</th>
+        </thead>
+        <tbody>
+            {% for account in accounts %}
+            <tr>
+                <td><a href="{{ url_for('cash_account',account_id=account.id) }}">{{ account }}</a></td>
+                <td>{{ balances[account] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -19,7 +19,7 @@ db.init_app(app)
 
 def main():
     db.create_all()
-    admin_role = Role(name = "Admin")
+    """admin_role = Role(name = "Admin")
     db.session.add(admin_role)
     db.session.commit()
     supervisor_role = Role(name="Supervisor")
@@ -31,7 +31,7 @@ def main():
     db.session.commit()
     shift_state = Shift_Underway(state=False)
     db.session.add(shift_state)
-    db.session.commit()
+    db.session.commit()"""
 if __name__=="__main__":
     with app.app_context():
         main()
