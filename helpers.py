@@ -269,9 +269,9 @@ def product_sales_litres(shift_id,prev_shift_id):
 def fuel_daily_profit_report(start_date,end_date):
     """ fuel day-to-day profit"""
     shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).all()
+    profit = {}
     if shifts:
         dates = [i.date for i in shifts ]
-        profit = {}
         for dat in dates:
             current_shift= Shift.query.filter_by(date=dat).order_by(Shift.id.desc()).first()
             prev_date = dat- timedelta(days=1)
@@ -289,8 +289,7 @@ def fuel_daily_profit_report(start_date,end_date):
                 pass
 
         return profit
-    else:
-        return False
+    
 
 
 def fuel_mnth_profit_report(start_date,end_date):

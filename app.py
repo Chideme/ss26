@@ -175,9 +175,11 @@ def logout():
 def dashboard(heading):
     """ Dashboard for Sales and Profit, to choose either, it is defined in the heading"""
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-    
+        end_date = date.today()
+
+        start_date =  end_date- timedelta(days=360)
         h = heading
-        return render_template("dashboard.html",h=heading)
+        return render_template("dashboard.html",h=heading,start_date=start_date,end_date=end_date)
 
 
 @app.route("/dashboard/reports",methods=["POST"])

@@ -16,9 +16,9 @@
                 <option selected >Day-to-day</option>
                 <option>Month-to-month</option>
               </select>
-              <input type = "date"  id="start_date" autocomplete="off" autofocus class="form-control" required>
-              <input type = "date"   id="end_date" autocomplete="off"  class="form-control" required>
-              <button type="submit"  class="btn btn-sm btn-outline-secondary">Enter</button>
+              <input type = "date"  value="{{ start_date }}" id="start_date" autocomplete="off" autofocus class="form-control" required>
+              <input type = "date"  value="{{ end_date }}" id="end_date" autocomplete="off"  class="form-control" required>
+              <button type="submit"  id="clickbutton" class="btn btn-sm btn-outline-secondary">Enter</button>
           </div>
           </div>
           </form>
@@ -29,9 +29,7 @@
           </div>
           </div>
       </div>
-      <div id="json">
-
-      </div>
+     
 
       <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
       
@@ -42,7 +40,9 @@
       <!--<script src="{{ url_for('static',filename='dashboard.js') }}"></script>-->
   
       <script>
-
+        window.onload = function(){
+          document.getElementById('clickbutton').click()
+        }
         document.addEventListener('DOMContentLoaded',() => {
           document.querySelector('#form').onsubmit = () => {
             const request = new XMLHttpRequest()
@@ -63,10 +63,6 @@
                 return report[key]
               });
               
-            
-              document.getElementById("json").innerHTML=data;
-              
-              
 
               var ctx = document.getElementById("myChart");
                   var myChart = new Chart(ctx, {
@@ -86,12 +82,16 @@
                       scales: {
                         yAxes: [{
                           ticks: {
-                            beginAtZero: false
+                            beginAtZero: true
                           }
                         }]
                       },
                       legend: {
                         display: false,
+                      },
+                      title: {
+                        display:true,
+                        text:frequency.concat(' ',heading,' Report')
                       }
                     }
                   });
