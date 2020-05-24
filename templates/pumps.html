@@ -24,13 +24,17 @@
                     <tr>
                         <th>Pump Name</th>
                         <th>Tank</th>
+                        <th>Litre Reading</th>
+                        <th>Money Reading</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for pump in pumps %}
+                    {% for pump in pump_tank %}
                     <tr>
-                        <td>{{ pump.name }}</td>
-                        <td>{{ pump.tank_id }}</td>
+                        <td>{{ pump[1].name }}</td>
+                        <td>{{ pump[0].name }}</td>
+                        <td>{{ pump[1].litre_reading }}</td>
+                        <td>{{ pump[1].money_reading }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -60,7 +64,7 @@
                                         <input type = "text"  name="money_reading" autocomplete="off" placeholder="Opening Money Reading" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group">
-                                        <select class="form-control" name="tank">
+                                        <select class="form-control" name="tank" type="number">
                                             <option selected>Choose..</option>
                                             {% for  tank in tanks %}
                                             <option  value="{{ tank.id }}">{{ tank.name }}</option>

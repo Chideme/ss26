@@ -1,11 +1,23 @@
 import os
 import urllib.request
+#from decorator import decorator
 from flask import redirect, render_template, request, session,flash,url_for
+from flask_login import current_user
 from functools import wraps
 from models import *
 from collections import *
-from sqlalchemy import and_ , or_
+from sqlalchemy import and_ , or_,MetaData
+from sqlalchemy_sqlschema import maintain_schema
 from datetime import timedelta
+
+
+##########
+DATABASE_URL ="postgres://localhost/ss26"
+
+####################
+
+
+
 
 def login_required(f):
 
@@ -27,6 +39,47 @@ def login_required(f):
         return f(*args, **kwargs)
 
     return decorated_function
+
+
+def check_schema(f):
+
+   
+    """
+    Decorate routes to require users to be in the correct schema
+    http://flask.pocoo.org/docs/0.12/patterns/viewdecorators/
+    """
+    
+
+    @wraps(f)
+
+    def decorated_function(*args, **kwargs):
+        
+            
+
+        if session['user_tenant'] != session['tenant']:
+            flash("Not Authorised to view company data")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+
+
+def set_user_schema(f):
+
+    """ calls maintain_schema with current_user'schema"""
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+
+        with maintain_schema(session["schema"], db.session):
+            return f(*args, **kwargs)
+
+    return decorated_function
+
+    
+        
 
 def admin_required(f):
 
@@ -61,8 +114,7 @@ def start_shift_first(f):
     @wraps(f)
 
     def decorated_function(*args, **kwargs):
-        shift_underway = Shift_Underway.query.get(1)
-        if shift_underway.state == False:
+        if session["shift_underway"] == False:
             flash("Start shift first!!")
             return redirect(url_for('start_shift_update'))
 
@@ -83,8 +135,8 @@ def end_shift_first(f):
     @wraps(f)
 
     def decorated_function(*args, **kwargs):
-        shift_underway = Shift_Underway.query.get(1)
-        if shift_underway.state == True:
+        
+        if session["shift_underway"] == True:
             flash("End shift first!!")
             return redirect(url_for('ss26'))
 
@@ -94,31 +146,6 @@ def end_shift_first(f):
     return decorated_function
 
 
-def lubes_cash_up(f):
-
-    """
-
-    Decorate routes if user attempts to do a cash up on lubes already done
-    http://flask.pocoo.org/docs/0.12/patterns/viewdecorators/
-
-    """
-
-    @wraps(f)
-
-    def decorated_function(*args, **kwargs):
-        shift_underway = Shift_Underway.query.get(1)
-        current_shift = shift_underway.current_shift
-        current_shift = Shift.query.get(current_shift)
-        shift_id = current_shift.id
-        check_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
-        if check_cash_up:
-            flash("Cash up for lubes done for this shift")
-            return redirect(url_for('ss26'))
-
-
-        return f(*args, **kwargs)
-
-    return decorated_function
 
 
 def sales_before_receipts(shift_id,product_id):
@@ -245,9 +272,9 @@ def fuel_daily_profit_report(start_date,end_date):
     if shifts:
         dates = [i.date for i in shifts ]
         profit = {}
-        for date in dates:
-            current_shift= Shift.query.filter_by(date=date).order_by(Shift.id.desc()).first()
-            prev_date = date- timedelta(days=1)
+        for dat in dates:
+            current_shift= Shift.query.filter_by(date=dat).order_by(Shift.id.desc()).first()
+            prev_date = dat- timedelta(days=1)
             prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
             if prev_shift and current_shift:
                 shift_id = current_shift.id
@@ -255,7 +282,8 @@ def fuel_daily_profit_report(start_date,end_date):
                 litres = product_sales_litres(shift_id,prev_shift_id)
                 sales = sum([litres[i][0]*litres[i][1].selling_price for i in litres])
                 cost = sum([litres[i][0]*litres[i][1].cost_price for i in litres])
-                profit[date]= (sales - cost)
+                
+                profit[dat] = (sales - cost)
             else :
                 
                 pass
@@ -270,7 +298,7 @@ def fuel_mnth_profit_report(start_date,end_date):
     days = fuel_daily_profit_report(start_date,end_date)
     report = {}
     for day in days:
-        month = day.month
+        month = day.strftime('%b-%y')
         if month in report:
             report[month] += days[day]
         else:
@@ -307,25 +335,26 @@ def get_tank_variance(start_date,end_date,tank_id):
     cumulativeP = 0
     for shift in shifts:
         prev = Shift.query.filter(Shift.id < shift.id).order_by(Shift.id.desc()).first()
-        prev_shift_id = prev.id
-        curr_pump_reading  = db.session.query(Tank,Pump,PumpReading).filter(and_(Tank.id == Pump.tank_id,Pump.id == PumpReading.pump_id,PumpReading.shift_id==shift.id,Tank.id==tank_id)).all()
-        prev_pump_reading  = db.session.query(Tank,Pump,PumpReading).filter(and_(Tank.id == Pump.tank_id,Pump.id == PumpReading.pump_id,PumpReading.shift_id==prev_shift_id,Tank.id==tank_id)).all()
-        prev_shift_dip = TankDip.query.filter(and_(TankDip.shift_id ==prev_shift_id,TankDip.tank_id == tank_id)).first()
-        #exclude starting shift (shift 1)
-        if prev_pump_reading and prev_shift_dip:
-            pump_sales = sum([i[2].litre_reading for i in curr_pump_reading])-sum([i[2].litre_reading for i in prev_pump_reading])
+        if prev:
+            prev_shift_id = prev.id
+            curr_pump_reading  = db.session.query(Tank,Pump,PumpReading).filter(and_(Tank.id == Pump.tank_id,Pump.id == PumpReading.pump_id,PumpReading.shift_id==shift.id,Tank.id==tank_id)).all()
+            prev_pump_reading  = db.session.query(Tank,Pump,PumpReading).filter(and_(Tank.id == Pump.tank_id,Pump.id == PumpReading.pump_id,PumpReading.shift_id==prev_shift_id,Tank.id==tank_id)).all()
             prev_shift_dip = TankDip.query.filter(and_(TankDip.shift_id ==prev_shift_id,TankDip.tank_id == tank_id)).first()
-            prev_shift_dip = prev_shift_dip.dip
-            current_shift_dip= TankDip.query.filter(and_(TankDip.shift_id == shift.id,TankDip.tank_id == tank_id)).first()
-            current_shift_dip = current_shift_dip.dip
-            delivery = Fuel_Delivery.query.filter(and_(Fuel_Delivery.shift_id==shift.id,Fuel_Delivery.tank_id==tank_id)).all()
-            deliveries = sum([i.qty for i in delivery])
-            tank_sales = prev_shift_dip+deliveries-current_shift_dip
-            shrinkage2sales = (pump_sales-tank_sales)
-            shrinkage2salesP = shrinkage2sales/pump_sales *100 if pump_sales !=0 else 0
-            cumulative = cumulative + shrinkage2sales
-            cumulativeP = cumulativeP + shrinkage2salesP
-            tank_dips[shift.id]=[shift.date,prev_shift_dip,current_shift_dip,deliveries,tank_sales,pump_sales,shrinkage2sales,shrinkage2salesP,cumulative,cumulativeP]
+            #exclude starting shift (shift 1)
+            if prev_pump_reading and prev_shift_dip:
+                pump_sales = sum([i[2].litre_reading for i in curr_pump_reading])-sum([i[2].litre_reading for i in prev_pump_reading])
+                prev_shift_dip = TankDip.query.filter(and_(TankDip.shift_id ==prev_shift_id,TankDip.tank_id == tank_id)).first()
+                prev_shift_dip = prev_shift_dip.dip
+                current_shift_dip= TankDip.query.filter(and_(TankDip.shift_id == shift.id,TankDip.tank_id == tank_id)).first()
+                current_shift_dip = current_shift_dip.dip
+                delivery = Fuel_Delivery.query.filter(and_(Fuel_Delivery.shift_id==shift.id,Fuel_Delivery.tank_id==tank_id)).all()
+                deliveries = sum([i.qty for i in delivery])
+                tank_sales = prev_shift_dip+deliveries-current_shift_dip
+                shrinkage2sales = (pump_sales-tank_sales)
+                shrinkage2salesP = shrinkage2sales/pump_sales *100 if pump_sales !=0 else 0
+                cumulative = cumulative + shrinkage2sales
+                cumulativeP = cumulativeP + shrinkage2salesP
+                tank_dips[shift.id]=[shift.date,prev_shift_dip,current_shift_dip,deliveries,tank_sales,pump_sales,shrinkage2sales,shrinkage2salesP,cumulative,cumulativeP]
 
     return tank_dips
 
@@ -340,26 +369,35 @@ def cash_sales(amount,customer_id,shift_id,date):
     for product in products:
         product_qty = receipt_product_qty(amount,shift_id,product.id)
         if product_qty >1:
-            products_qty[product.name]=product_qty
+            products_qty[product.name]=int(product_qty)
         else:
             pass
     
     for prod in products_qty:
-        product = Product.query.filter_by(name=prod).first()
-        sales_price = get_product_price(shift_id,product.id)
-        if products_qty[prod]*sales_price < amount:
-            qty = products_qty[prod]
-            invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price)
-            db.session.add(invoice)
-            inv_amt = float(products_qty[prod] * sales_price)
-            products_qty[prod] = products_qty[prod]-qty
-        elif products_qty[prod]*sales_price > amount:
-            qty = amount/sales_price
-            invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price)
-            db.session.add(invoice)
-            break
-        elif products_qty[prod] < 1:
-            break
+        while products_qty[prod] and amount:
+            product = Product.query.filter_by(name=prod).first()
+            sales_price = get_product_price(shift_id,product.id)
+            if products_qty[prod]*sales_price < amount:
+                qty = products_qty[prod]
+                invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price)
+                db.session.add(invoice)
+                db.session.flush()
+                inv_amt = int(products_qty[prod] * sales_price)
+                amount = int(amount-inv_amt)
+                products_qty[prod] = int(products_qty[prod]-qty)
+            
+            elif products_qty[prod]*sales_price > amount:
+                qty = amount/sales_price
+                invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price)
+                db.session.add(invoice)
+                inv_amt = int(qty * sales_price)
+                amount = int(amount-inv_amt)
+                
+                products_qty[prod] = int(products_qty[prod]-qty)
+                
+        
+            elif products_qty[prod] < 1:
+                break
 
     
 
@@ -400,24 +438,21 @@ def get_month_day1(end_date):
 def fuel_daily_sales(start_date,end_date):
     """fuel day to day  sales"""
     
-    shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).all()
+    shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).order_by(Shift.id.desc()).all()
     daily_sales = {}
-    dates = [i.date for i in shifts]
-    oneday = timedelta(days=1)
-    for d in dates:
-        current_shift= Shift.query.filter_by(date=d).order_by(Shift.id.desc()).first()
-        prev_date = d -oneday
-        prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
-        if current_shift and prev_shift:
-            shift_id = current_shift.id
+    
+    for shift in shifts:
+        shift_id = shift.id
+        prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+        if prev_shift:
             prev_shift_id = prev_shift.id
             product_sales = product_sales_litres(shift_id,prev_shift_id)
             total = sum([product_sales[i][0] for i in product_sales])
-            daily_sales[d]= total
-        
-        else:
-
-            pass
+            
+            if shift.date in daily_sales:
+                daily_sales[shift.date]+=total
+            else:
+                daily_sales[shift.date]=total
 
     return daily_sales
     
@@ -428,7 +463,7 @@ def fuel_mnth_sales(start_date,end_date):
     days = fuel_daily_sales(start_date,end_date)
     report = {}
     for day in days:
-        month = day.month
+        month = day.strftime('%b-%y')
         if month in report:
             report[month] += days[day]
         else:
@@ -440,7 +475,7 @@ def lubes_mnth_sales(start_date,end_date):
     days = lubes_daily_sales(start_date,end_date)
     report = {}
     for day in days:
-        month = day.month
+        month = day.strftime('%b-%y')
         if month in report:
             report[month] += days[day]
         else:
@@ -455,8 +490,11 @@ def fuel_sales_avg(start_date,end_date):
     daily_sales = fuel_daily_sales(start_date,end_date)
     total = sum([daily_sales[i] for i in daily_sales ])
     start_date,end_date = shifts[0].date,shifts[-1].date
-    days= (end_date - start_date).days
-    avg = total/days
+    days= (end_date - start_date).days 
+    try:
+        avg = total/days
+    except ZeroDivisionError:
+        avg = total
 
     return avg
 
@@ -464,21 +502,21 @@ def lubes_daily_sales(start_date,end_date):
     """Lubes  sales between particular dates"""
 
     shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).all()
-    daily_sales = {}
-    oneday = timedelta(days=1)
-    dates = [i.date for i in shifts]
-
-    for d in dates:
-        current_shift= Shift.query.filter_by(date=d).order_by(Shift.id.desc()).first()
-        prev_date = d -oneday
-        prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
-        if current_shift and prev_shift:
-            shift_id = current_shift.id
+    daily_sales ={}
+    for shift in shifts:
+        shift_id = shift.id
+        prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+        if prev_shift:
             prev_shift_id = prev_shift.id
             product_sales = lube_sales(shift_id,prev_shift_id)
-            total = sum([product_sales[i][2]*product_sales[i][5] for i in product_sales])/1000
-            daily_sales[d]= total
+            total = sum([product_sales[i][0] for i in product_sales])
+            
+            if shift.date in daily_sales:
+                daily_sales[shift.date]+=total
+            else:
+                daily_sales[shift.date]=total
 
+        
 
     return daily_sales
     
@@ -492,7 +530,10 @@ def lubes_sales_avg(start_date,end_date):
         end_date= shifts[-1].date
         start_date= shifts[0].date
         days= (end_date - start_date).days
-        avg = total/days
+        try:    
+            avg = total/days
+        except ZeroDivisionError:
+            avg = total
 
         return avg
     else:
@@ -506,50 +547,62 @@ def get_pump_readings(shift_id,prev_shift_id):
     for pump in pumps:
         prev_shift_reading = PumpReading.query.filter(and_(PumpReading.shift_id == prev_shift_id,PumpReading.pump_id == pump.id)).first()
         current_shift_reading = PumpReading.query.filter(and_(PumpReading.shift_id == shift_id,PumpReading.pump_id == pump.id)).first()
-        if prev_shift_reading and current_shift_reading:
-            prev_shift_reading = prev_shift_reading.litre_reading,prev_shift_reading.money_reading
-            current_shift_reading = current_shift_reading.litre_reading,current_shift_reading.money_reading
-            pump_readings[pump.name]=[prev_shift_reading,current_shift_reading]
+        if prev_shift_reading:
+            if current_shift_reading:
+                prev_shift_reading = prev_shift_reading.litre_reading,prev_shift_reading.money_reading
+                current_shift_reading = current_shift_reading.litre_reading,current_shift_reading.money_reading
+                pump_readings[pump.name]=[prev_shift_reading,current_shift_reading]
+        else:
+            if current_shift_reading:
+                current_shift_reading = current_shift_reading.litre_reading,current_shift_reading.money_reading
+                pump_readings[pump.name]=[(0,0),current_shift_reading]
     return pump_readings
 
 def get_tank_dips(shift_id,prev_shift_id):
     tank_dips = {}
     tanks = Tank.query.all()
     for tank in tanks:
-        prev_shift_dip = prev_shift_dip.dip
-        current_shift_dip = current_shift_dip.dip
-        curr_pump_reading  = db.session.query(Tank,Pump,PumpReading).filter(and_(Tank.id == Pump.tank_id,Pump.id == PumpReading.pump_id,PumpReading.shift_id==shift_id,Tank.id==tank.id)).all()
-        prev_pump_reading  = db.session.query(Tank,Pump,PumpReading).filter(and_(Tank.id == Pump.tank_id,Pump.id == PumpReading.pump_id,PumpReading.shift_id==prev_shift_id,Tank.id==tank.id)).all()
-        pump_sales = sum([i[2].litre_reading for i in curr_pump_reading])-sum([i[2].litre_reading for i in prev_pump_reading])
-        
         prev_shift_dip = TankDip.query.filter(and_(TankDip.shift_id ==prev_shift_id,TankDip.tank_id == tank.id)).first()
         current_shift_dip= TankDip.query.filter(and_(TankDip.shift_id == shift_id,TankDip.tank_id == tank.id)).first()
-        delivery = Fuel_Delivery.query.filter(and_(Fuel_Delivery.shift_id==shift_id,Fuel_Delivery.tank_id==tank.id)).all()
-        deliveries = sum([i.qty for i in delivery])
-        tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries]
+        
+        curr_pump_reading  = db.session.query(Tank,Pump,PumpReading).filter(and_(Tank.id == Pump.tank_id,Pump.id == PumpReading.pump_id,PumpReading.shift_id==shift_id,Tank.id==tank.id)).all()
+        prev_pump_reading  = db.session.query(Tank,Pump,PumpReading).filter(and_(Tank.id == Pump.tank_id,Pump.id == PumpReading.pump_id,PumpReading.shift_id==prev_shift_id,Tank.id==tank.id)).all()
+        if curr_pump_reading and prev_pump_reading:
+            try:
+                pump_sales = sum([i[2].litre_reading for i in curr_pump_reading])-sum([i[2].litre_reading for i in prev_pump_reading])
+            except:
+                pump_sales = 0
+        if prev_shift_dip and current_shift_dip:
+            prev_shift_dip = prev_shift_dip.dip
+            current_shift_dip = current_shift_dip.dip
+            delivery = Fuel_Delivery.query.filter(and_(Fuel_Delivery.shift_id==shift_id,Fuel_Delivery.tank_id==tank.id)).all()
+            deliveries = sum([i.qty for i in delivery])
+            tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries]
     return tank_dips
 
-
-    product_sales_ltr = product_sales_litres(shift_id,prev_shift_id)
-    cash_account = Customer.query.filter_by(name="Cash").first()
-    customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Invoice.customer_id != cash_account.id))
-    sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
-    total_sales_ltr= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
-    total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price for product in product_sales_ltr])
-    sales_breakdown["Cash"] = total_sales_amt- sum([sales_breakdown[i] for i in sales_breakdown])
-    expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.shift_id==shift_id)).all()
-    total_cash_expenses = sum([i[0].amount for i in expenses ])
-    cash_up = CashUp.query.filter_by(shift_id=shift_id).first()
-    products = Product.query.all()
-    customers = Customer.query.all()
-    cash_customers = Customer.query.filter_by(account_type="Cash")
-    accounts = Account.query.all()
-    end_date = current_shift.date
-    avg_sales = fuel_sales_avg(get_month_day1(end_date),end_date)
-    daily_sales = fuel_daily_sales(get_month_day1(end_date),end_date) 
-    mnth_sales = sum([daily_sales[i] for i in daily_sales])
-    lubes_daily_sale = lubes_daily_sales(get_month_day1(end_date),end_date)
-    lubes_mnth_sales = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
-    lube_avg = lubes_sales_avg(get_month_day1(end_date),end_date)
+def create_tenant_tables(schema):
+    engine= create_engine(DATABASE_URL)
+    meta = MetaData()
+    meta.reflect(bind=engine,resolve_fks=True,schema='tenant')
+    with engine.connect().execution_options(schema_translate_map={"tenant":schema,'public':'public'}) as conn:
+        meta.create_all(bind=conn,checkfirst=True)
     
     return True
+
+def create_schema_name(company_name):
+    n =company_name.lower()
+    ln = n.split(' ')
+    if len(ln)>1:
+        schema = n.replace(' ','_')
+    else:
+        schema = n
+    tenants = Tenant.query.all()
+    
+    return schema
+
+def create_dict(pumps):
+    """Creates a dict out of a pump query list to generate variable names"""
+    pump_dict ={}
+    for pump in pumps:
+        pump_dict[pump.name] = pump
+    return pump_dict

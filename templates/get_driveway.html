@@ -19,10 +19,12 @@
     
       
       <h2>Driveway</h2>
+  
       <div class="table-responsive driveway" id="printTable">
   
       
-    
+      <h2>{{ session["org_name"] }}</h2>
+      <h6>Prepared by: {{ shift.prepared_by }}</h6>
         <table class="driveway-table">
           <thead class="driveway-table">
             <th class="driveway-table" colspan="2">Date</th>
@@ -32,7 +34,7 @@
           <tbody>
             <tr class="driveway-table">
               <td class="driveway-table" colspan="2">{{ date }}</td>
-              <td class="driveway-table">{{ shift_number }}</td>
+              <td class="driveway-table">{{ shift.id }}</td>
               <td class="driveway-table" colspan="2">{{ shift_daytime }}</td>
             </tr>
             <thead>

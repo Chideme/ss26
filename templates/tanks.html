@@ -22,13 +22,15 @@
                     <tr>
                         <th>Tank Name</th>
                         <th>Product</th>
+                        <th>Dip</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for tank in tank_product %}
                     <tr>
-                        <td><a href="{{ url_for('tank_variances',tank_id=tank[0].id) }}">{{ tank[0]}}</a></td>
+                        <td>{{ tank[0] }}</td>
                         <td>{{ tank[1].name }}</td>
+                        <td><a href="{{ url_for('tank_variances',tank_id=tank[0].id) }}">{{ tank[0].dip }}</a></td>   
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -58,6 +60,12 @@
                                             <option  value="{{ product.id }}">{{ product.name }}</option>
                                             {% endfor %}
                                         </select>
+                                    </div>
+                                    <div class="form-group  " >
+                                        <input type = "date"  name="date" autocomplete="off" placeholder="Date" autofocus class="form-control" required>
+                                    </div>
+                                    <div class="form-group  " >
+                                        <input type = "text"  name="dip" autocomplete="off" placeholder="Opening Dip" autofocus class="form-control" required>
                                     </div>
                                     <div>
                                     <button class="btn btn-primary btn-block" type="submit">Add Tank</button>

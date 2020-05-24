@@ -18,7 +18,7 @@
     <link href="/static/style.css" rel="stylesheet">
     
   </head>
-  {% if session.user_id %}
+  {% if  session.user_id %}
   <body>
     <nav class="navbar navbar-expand-md   fixed-top bg-dark flex-md-nowrap p-0 shadow rounded" style="font-weight: bolder;">
       <div class="navbar-header">
@@ -78,18 +78,27 @@
     <!-- Graphs -->
   </body>
   {% else %}
-  <body class="text-center">
-    <form style="display: inline-block;" class="form-signin" action="{{ url_for('login') }}" method="post">
-      <img class="mb-4" src="../../assets/brand/bootstrap-solid.svg" alt="" width="72" height="72">
-      <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-      <label for="inputUsername" class="sr-only">User Name</label>
-      <input type="text" id="inputUsername" name="username" class="form-control" placeholder="User Name" required autofocus>
-      <label for="inputPassword" class="sr-only">Password</label>
-      <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
-      <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-      <p class="mt-5 mb-3 text-muted">&copy; 2019</p>
-    </form>
-  </body>
+    <body class="text-center">
+      <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+        {% if get_flashed_messages() %}
+        <header>
+            <div class="alert alert-info border text-center" role="alert">
+                {{ get_flashed_messages() | join(" ") }}
+            </div>
+        </header>
+        {% endif %}
+      <form style="display: inline-block;" class="form-signin" action="{{ url_for('user_login') }}" method="post">
+        <img class="mb-4" src="../../assets/brand/bootstrap-solid.svg" alt="" width="72" height="72">
+        <h1 class="h3 mb-3 font-weight-normal">Please enter yourr    </h1>
+        <label for="inputUsername" class="sr-only">User Name</label>
+        <input type="text" id="inputUsername" name="username" class="form-control" placeholder="User Name" required autofocus>
+        <label for="inputPassword" class="sr-only">Password</label>
+        <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        <p class="mt-5 mb-3 text-muted">&copy; 2019</p>
+      </form>
+      </main>
+    </body>
     {% endif %}
 </html>
 

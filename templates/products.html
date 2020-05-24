@@ -4,22 +4,26 @@
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Manage Products</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-      <div class="btn-group mr-2">
-        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddProductFormModal">Add Product</button>
-        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteProductFormModal">Delete Product</button>
-      </div>
-    </div>
+    
   </div>
 
-  <h2>Products Table</h2>
+  <h2>Products Table
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group mr-2">
+          <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddProductFormModal">Add Product</button>
+          <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteProductFormModal">Delete Product</button>
+        </div>
+      </div>
+  </h2>
+
     <div class="row">
         <div class="col-md-6">
-            <table class="table table-hover">
+            <table class="table table-sm table-hover">
                 <thead>
                     <tr>
                         <th>Product Name</th>
                         <th>Product Price</th>
+                        <th>Qty</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -27,6 +31,7 @@
                     <tr>
                         <td>{{ product.name }}</td>
                         <td>{{ product.price }}</td>
+                        <td>{{ product.qty }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -57,6 +62,9 @@
                                     </div>
                                     <div class="form-group " >
                                         <input type = "text"  name="price" autocomplete="off" placeholder="Product Price" autofocus class="form-control" required>
+                                    </div>
+                                    <div class="form-group" >
+                                        <input type = "text"  name="qty" autocomplete="off" placeholder="Quantity" autofocus class="form-control" required>
                                     </div>
 
                                     

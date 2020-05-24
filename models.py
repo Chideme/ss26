@@ -1,30 +1,121 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import date
+from sqlalchemy import create_engine,MetaData
 
-db = SQLAlchemy()
+metadata = MetaData(schema='tenant')
+db = SQLAlchemy(metadata=metadata)
 
+
+class Tenant(db.Model):
+    __tablename__="tenants"
+   
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name = db.Column(db.String,nullable=False,unique=True)
+    address =  db.Column(db.String,nullable=False)
+    company_email =db.Column(db.String,nullable=False)
+    database_url = db.Column(db.String,nullable=False)
+    tenant_code = db.Column(db.String,nullable=False,default="0")
+    contact_person = db.Column(db.String,nullable=True)
+    phone_number = db.Column(db.String,nullable=True)
+    schema = db.Column(db.String,nullable=True,unique=True)
+    active= db.Column(db.Boolean,nullable=True)
+    #users= db.relationship("User",backref="users",lazy=True)
+
+    __table_args__={'schema':'public'}
+ 
+class Role(db.Model):
+    __tablename__="roles"
+    
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name= db.Column(db.String,nullable=False)
+    #users= db.relationship("User",backref="users",lazy=True)
+
+    def __repr__(self):
+        return "{}".format(self.name)
+    
+    __table_args__={'schema':'public'}
+
+
+
+class User(db.Model):
+    __tablename__="users"
+    
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    username = db.Column(db.String,nullable=False,unique=True)
+    password = db.Column(db.String,nullable=False)
+    role_id = db.Column(db.Integer,db.ForeignKey("public.roles.id"),nullable=False)
+    tenant_id = db.Column(db.Integer,db.ForeignKey("public.tenants.id"),nullable=False)
+    schema = db.Column(db.String,nullable=False)
+
+    def __repr__(self):
+        username =self.username
+        return "{}".format(username)
+
+    __table_args__={'schema':'tenant'}
+
+
+
+class Shift(db.Model):
+    __tablename__="shift"
+    
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date = db.Column(db.Date,nullable=False)
+    daytime = db.Column(db.String,nullable=True)
+    prepared_by =db.Column(db.String,nullable=True)
+
+    def __repr__(self):
+        return "{}".format(self.id)
+    
+    __table_args__={'schema': 'tenant'}
+
+
+class Product(db.Model):
+    __tablename__="products"
+   
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name = db.Column(db.String,nullable=False)
+    product_type=db.Column(db.String,nullable=False)
+    price = db.Column(db.Float,nullable=False)
+    qty = db.Column(db.Integer,nullable=False)
+    
+    def __repr__(self):
+        name =self.name
+        return "{}".format(name)
+
+    __table_args__={'schema':'tenant'}
 
 class Tank(db.Model):
+
     __tablename__="tanks"
+   
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     name = db.Column(db.String,nullable=False)
     product_id = db.Column(db.Integer,db.ForeignKey("products.id"),nullable=False)
+    dip =db.Column(db.Float,nullable=False)
 
     def __repr__(self):
         name =self.name
         return "{}".format(name)
 
+    __table_args__={'schema':'tenant'}
+
 
 class Pump(db.Model):
+
     __tablename__="pumps"
+    
     id = db.Column(db.Integer,primary_key =True,nullable=False)
     name= db.Column(db.String,nullable=False)
     tank_id = db.Column(db.Integer,db.ForeignKey("tanks.id"),nullable=False)
+    litre_reading = db.Column(db.Float,nullable=False)
+    money_reading = db.Column(db.Float,nullable=False)
 
     def __repr__(self):
         
         name =self.name
         return "{}".format(name)
+
+    __table_args__={'schema':'tenant'}
         
 class PumpReading(db.Model):
     __tablename__ = "pump_readings"
@@ -36,56 +127,40 @@ class PumpReading(db.Model):
     pump_id = db.Column(db.Integer, db.ForeignKey("pumps.id"), nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     
-
+    __table_args__={'schema':'tenant'}
 
 class TankDip(db.Model):
     __tablename__ = "tank_dips"
+    
     id = db.Column(db.Integer, primary_key=True)
     date= db.Column(db.Date, nullable=False)
     dip = db.Column(db.Float,nullable=False)
     tank_id = db.Column(db.Integer, db.ForeignKey("tanks.id"), nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
 
+    __table_args__={'schema':'tenant'}
 
-
-class User(db.Model):
-    __tablename__="users"
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    username = db.Column(db.String,nullable=False)
-    password = db.Column(db.String,nullable=False)
-    role_id = db.Column(db.Integer,db.ForeignKey("roles.id"),nullable=False)
-
-    def __repr__(self):
-        username =self.username
-        return "{}".format(username)
-
-class Product(db.Model):
-    __tablename__="products"
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name = db.Column(db.String,nullable=False)
-    product_type=db.Column(db.String,nullable=False)
-    price = db.Column(db.Float,nullable=False)
-    tanks = db.relationship("Tank",backref="product",lazy=True)
-    
-    def __repr__(self):
-        name =self.name
-        return "{}".format(name)
 
 
 class LubeProduct(db.Model):
     __tablename__="lube_products"
+    
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     name = db.Column(db.String,nullable=False,unique=True)
     cost_price = db.Column(db.Float,nullable=False)
     selling_price = db.Column(db.Float,nullable=False)
     mls = db.Column(db.Float,nullable=False)
+    qty = db.Column(db.Integer,nullable=False)
     
     def __repr__(self):
         name =self.name
         return "{}".format(name)
 
+    __table_args__={'schema':'tenant'}
+
 class LubeQty(db.Model):
     __tablename__="lube_qty"
+
     id = db.Column(db.Integer, primary_key=True)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     date= db.Column(db.Date, nullable=False)
@@ -93,21 +168,12 @@ class LubeQty(db.Model):
     delivery_qty = db.Column(db.Float,nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey("lube_products.id"), nullable=False)
     
+    __table_args__={'schema':'tenant'}
 
-
-
-
-class Role(db.Model):
-    __tablename__="roles"
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name= db.Column(db.String,nullable=False)
-    users= db.relationship("User",backref="user",lazy=True)
-
-    def __repr__(self):
-        return "{}".format(self.name)
 
 class Customer(db.Model):
     __tablename__="customers"
+    
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     name= db.Column(db.String,nullable=False)
     contact_person =db.Column(db.String,nullable=True)
@@ -116,10 +182,13 @@ class Customer(db.Model):
 
     def __repr__(self):
         return "{}".format(self.name)
+    
+    __table_args__={'schema':'tenant'}
 
 
 class CustomerPayments(db.Model):
     __tablename__="customer_payments"
+    
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     date =db.Column(db.Date, nullable=False)
     customer_id = db.Column(db.Integer,db.ForeignKey("customers.id"),nullable=False)
@@ -130,26 +199,20 @@ class CustomerPayments(db.Model):
     def __repr__(self):
         return "{}".format(self.amount)
 
-    
-
-class Shift(db.Model):
-    __tablename__="shift"
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    date = db.Column(db.Date,nullable=False)
-    daytime = db.Column(db.String,nullable=True)
-
-    def __repr__(self):
-        return "{}".format(self.id)
-    
+    __table_args__={'schema':'tenant'}
 
 class Shift_Underway(db.Model):
     __tablename__="shift_underway"
+   
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     state = db.Column(db.Boolean,nullable=False)
     current_shift = db.Column(db.Integer,nullable=True)
 
+    __table_args__={'schema':'tenant'}
+
 class Fuel_Delivery(db.Model):
     __tablename__="fuel_delivery"
+    __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     tank_id = db.Column(db.Integer, db.ForeignKey("tanks.id"), nullable=False)
@@ -160,6 +223,7 @@ class Fuel_Delivery(db.Model):
 
 class Invoice(db.Model):
     __tablename__="invoices"
+    __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
@@ -172,6 +236,7 @@ class Invoice(db.Model):
 
 class Account(db.Model):
     __tablename__="accounts"
+    __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     account_name= db.Column(db.String,nullable=False)
     account_category =db.Column(db.String,nullable=False)
@@ -182,6 +247,7 @@ class Account(db.Model):
 
 class SaleReceipt(db.Model):
     __tablename__="sales_receipts"
+    __table_args__={'schema':'tenant'}
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
@@ -192,6 +258,7 @@ class SaleReceipt(db.Model):
 
 class PayOut(db.Model):
     __tablename__="payouts"
+    __table_args__={'schema':'tenant'}
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
@@ -202,6 +269,7 @@ class PayOut(db.Model):
 
 class CashUp(db.Model):
     __tablename__="cash_up"
+    __table_args__={'schema':'tenant'}
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
@@ -213,6 +281,7 @@ class CashUp(db.Model):
 
 class LubesCashUp(db.Model):
     __tablename__="lubes_cash_up"
+    __table_args__={'schema':'tenant'}
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
@@ -224,6 +293,7 @@ class LubesCashUp(db.Model):
 
 class Price(db.Model):
     __tablename__="prices"
+    __table_args__={'schema':'tenant'}
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
@@ -234,12 +304,14 @@ class Price(db.Model):
     
 class Coupon(db.Model):
     __tablename__="coupons"
+    __table_args__={'schema':'tenant'}
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     name = db.Column(db.String,nullable=False)
     coupon_qty = db.Column(db.Float,nullable=False)
 
 class CouponSale(db.Model):
     __tablename__="coupon_sales"
+    __table_args__={'schema':'tenant'}
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
@@ -247,13 +319,3 @@ class CouponSale(db.Model):
     coupon_id = db.Column(db.Integer,db.ForeignKey("coupons.id"),nullable=False)
     qty= db.Column(db.Integer,nullable=False)
 
-class CompanyInformation(db.Model):
-    __tablename__="company_information"
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name = db.Column(db.String,nullable=False,unique=True)
-    address =  db.Column(db.String,nullable=False)
-    company_email =db.Column(db.String,nullable=False)
-    heroku_email =db.Column(db.String,nullable=False)
-    payment_plan = db.Column(db.String,nullable=False)
-    database_url = db.Column(db.String,nullable=False)
-    app_url = db.Column(db.String,nullable=False)
