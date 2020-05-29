@@ -12,7 +12,7 @@
             
           <!--Admin View-->
           <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-            <span>Item Lists</span>
+            <span style="color: lime;">Item Lists</span>
             <a class="d-flex align-items-center text-muted" href="#">
               <span data-feather="plus-circle"></span>
             </a>
@@ -21,32 +21,41 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('pumps') }}">
                   <span data-feather="plus-circle"></span>
-                  Pumps<span class="sr-only">(current)</span>
+                  <span style="color: lightseagreen;">
+                  Pumps</span>
                 </a>
               </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('tanks') }}">
                 <span data-feather="plus-circle"></span>
+                <span style="color: lightseagreen;">
                 Tanks
+                </span>
               </a>
             </li>
             
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('products') }}">
                 <span data-feather="file-text"></span>
+                <span style="color: lightseagreen;">
                 Fuel Products
+                </span>
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('lube_products') }}">
                 <span data-feather="file-text"></span>
+                <span style="color: lightseagreen;">
                  Lubricants
+                 </span>
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('coupons') }}">
                 <span data-feather="layers"></span>
+                <span style="color: lightseagreen;">
                 Coupons
+                </span>
               </a>
             </li>
           </ul>
@@ -61,7 +70,9 @@
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('get_driveway') }}">
                 <span data-feather="file-text"></span>
+                <span style="color: lightseagreen;">
                 Driveway
+                </span>
               </a>
             </li>
           </ul>

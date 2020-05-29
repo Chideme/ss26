@@ -120,7 +120,7 @@
                 {% for i in sales_breakdown %}
                 <tr>
                   <td>{{ i }}</td>
-                  <td class="numbers">{{ sales_breakdown[i] }}</td>
+                  <td class="numbers">{{ sales_breakdown[i] |round(2)}}</td>
                 </tr>
                {% endfor %}
                <tr>
@@ -133,14 +133,14 @@
         <table class="table table-sm">
           <tr>
             <th scope="row">Total Cash Sales:</th>
-            <td class="numbers">{{ sales_breakdown["Cash"] }}</td>
+            <td class="numbers">{{ sales_breakdown["Cash"] | round(2) }}</td>
           </tr>
           <th  colspan="2">Expenses:</th>
           {% if expenses %}
           {% for expense in expenses %}
           <tr>
             <td>{{ expense[1].account_name }}</td>
-            <td class="numbers">{{ expense[0].amount }}</td>
+            <td class="numbers">{{ expense[0].amount | round(2) }}</td>
           </tr>
           {% endfor %}
           {% else %}
@@ -152,13 +152,16 @@
           <tr>
               <th  scope="row">Expected Cash</th>
         
-              <td class="numbers">{{ sales_breakdown["Cash"]-total_cash_expenses }}</td>
+              <td class="numbers">{{ (sales_breakdown["Cash"]-total_cash_expenses) | round(2) }}</td>
 
           </tr>
           <tr>
             <th  scope="row"> Actual Cash Banked</th>
-      
-            <td class="numbers">{{ cash_up.actual_amount }}</td>
+            {% if cash_up %}
+            <td class="numbers">{{ cash_up.actual_amount | round(2) }}</td>
+            {% else %}
+            <td class="numbers"></td>
+            {% endif %}
 
           </tr>
         </table>
@@ -167,7 +170,7 @@
           <thead>
             <th>Product</th>
             <th>Qty Sold During Shift</th>
-            <th>This Month Average Daily Sales</th>
+            <th>Month-to-date average daily sales</th>
             <th>Month to date Sales</th>
           </thead>
           <tbody>

@@ -116,9 +116,10 @@ def login():
                         session["schema"] = company.schema
                         return redirect(url_for('user_login'))
                 else:
-                        
-                        return redirect(url_for('login'))
+                        flash('Company does not exist, check your code and try again')
+                        return render_template("login.html")
         else:
+                
                 return render_template("login.html")
 
 
@@ -200,29 +201,62 @@ def dashboard_reports():
                         if product=="Fuel":
                                 if heading == "Sales":
                                         data = fuel_daily_sales(start_date,end_date)
-                                        data = {i.strftime('%d-%b-%y'): data[i] for i in data}
-                                        report = jsonify(data)
+                                        sorted_date= sorted_dates([i for i in data])
+                                        data_info = [data[i] for i in sorted_date]
+                                        data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
+                                        report = jsonify({'Date':data_dates,'Data':data_info})
                                 else:
                                         data = fuel_daily_profit_report(start_date,end_date)
-                                        data = {i.strftime('%d-%b-%y'): data[i] for i in data}
-                                        report = jsonify(data)
+                                        sorted_date= sorted_dates([i for i in data])
+                                        data_info = [data[i] for i in sorted_date]
+                                        data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
+                                        report = jsonify({'Date':data_dates,'Data':data_info})
                         else:
-                                data =lubes_daily_sales(start_date,end_date)
-                                data ={str(i): data[i] for i in data} if data else "No data"
-                                report = jsonify(data)
-
+                                if heading == "Sales":
+                                        data = lubes_daily_sales(start_date,end_date)
+                                        sorted_date= sorted_dates([i for i in data])
+                                        data_info = [data[i] for i in sorted_date]
+                                        data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
+                                        report = jsonify({'Date':data_dates,'Data':data_info})
+                                else:
+                                        data = lubes_daily_profit_report(start_date,end_date)
+                                        sorted_date= sorted_dates([i for i in data])
+                                        data_info = [data[i] for i in sorted_date]
+                                        data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
+                                        report = jsonify({'Date':data_dates,'Data':data_info})
                 if frequency == "Month-to-month":
                         if product =="Fuel":
                                 if heading == "Sales":
                                         data = fuel_mnth_sales(start_date,end_date)
-                                        data = {str(i): data[i] for i in data} if data else "No data"
-                                        report = jsonify(data)
+                                        data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
+                                        sorted_date= sorted_dates([i for i in data])
+                                        data_info = [data[i] for i in sorted_date]
+                                        data_dates = [i.strftime('%b-%y')  for i in sorted_date]
+                                        report = jsonify({'Date':data_dates,'Data':data_info})
+                                        
                                 else:
                                         data = fuel_mnth_profit_report(start_date,end_date)
-                                        data ={str(i): data[i] for i in data} if data else "No data"
-                                        report = jsonify(data)
+                                        data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
+                                        sorted_date= sorted_dates([i for i in data])
+                                        data_info = [data[i] for i in sorted_date]
+                                        data_dates = [i.strftime('%b-%y')  for i in sorted_date]
+                                        report = jsonify({'Date':data_dates,'Data':data_info})
                         else:
-                                report = jsonify(lubes_mnth_sales(start_date,end_date))
+                                if heading == "Sales":
+                                        data = lubes_mnth_sales(start_date,end_date)
+                                        data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
+                                        sorted_date= sorted_dates([i for i in data])
+                                        data_info = [data[i] for i in sorted_date]
+                                        data_dates = [i.strftime('%b-%y')  for i in sorted_date]
+                                        report = jsonify({'Date':data_dates,'Data':data_info})
+                                        
+                                else:
+                                        data = lubes_mnth_profit_report(start_date,end_date)
+                                        data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
+                                        sorted_date= sorted_dates([i for i in data])
+                                        data_info = [data[i] for i in sorted_date]
+                                        data_dates = [i.strftime('%b-%y')  for i in sorted_date]
+                                        report = jsonify({'Date':data_dates,'Data':data_info})
                 return report
 
 @app.route("/dashboard/tank_variance",methods=["POST","GET"])
@@ -231,9 +265,10 @@ def dashboard_reports():
 def dashboard_tank_variance():
         """ Returns JSON Dashboard Reports"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-        
+                end_date = date.today()
+                start_date =  end_date- timedelta(days=360)
                 tanks = Tank.query.all()
-                return render_template("dashboard_tank_variances.html",tanks=tanks)
+                return render_template("dashboard_tank_variances.html",tanks=tanks,start_date=start_date,end_date=end_date)
 
 
 @app.route("/dashboard/variance",methods=["POST"])
@@ -249,9 +284,14 @@ def dashboard_variance():
                 start_date = datetime.strptime(start_date,"%Y-%m-%d")
                 end_date = datetime.strptime(end_date,"%Y-%m-%d")
                 tank_id = int(request.form.get("tank"))
-                report = get_tank_variance(start_date,end_date,tank_id)
+                data = tank_variance_daily_report(start_date,end_date,tank_id)
+                sorted_date= sorted_dates([i for i in data])
+                data_info = [data[i] for i in sorted_date]
+                data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
+               
+                
 
-                return report
+                return jsonify({'Date':data_dates,'Data':data_info})
 
         
 
@@ -417,6 +457,7 @@ def price_change():
                 price = Price.query.filter(and_(Price.shift_id==shift_id,Price.product_id==product.id)).first()
                 price.cost_price = cost_price
                 price.selling_price= selling_price
+                product.price = selling_price
                 db.session.commit()
                 return redirect(url_for('readings_entry'))
 
@@ -429,11 +470,14 @@ def pump_readings_entry():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 shift_id = int(request.form.get("shift"))
                 pump_id= request.form.get("pump_name")
+                pump = Pump.query.get(pump_id)
                 litre_reading = request.form.get("litre_reading")
                 money_reading = request.form.get("money_reading")
                 reading = PumpReading.query.filter(and_(PumpReading.shift_id==shift_id,PumpReading.pump_id==pump_id)).first()
                 reading.money_reading = money_reading
                 reading.litre_reading = litre_reading
+                pump.money_reading = money_reading
+                pump.litre_reading = litre_reading
                 db.session.commit()
                 return redirect(url_for('readings_entry'))
 
@@ -447,8 +491,10 @@ def tank_dips_entry():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 shift_id = int(request.form.get("shift"))
                 tank_id = request.form.get("tank_name")
+                tank = Tank.query.get(tank_id)
                 tank_dip = request.form.get("tank_dip")
-                tank = TankDip.query.filter(and_(TankDip.tank_id==tank_id,TankDip.shift_id==shift_id)).first()
+                shift_dip = TankDip.query.filter(and_(TankDip.tank_id==tank_id,TankDip.shift_id==shift_id)).first()
+                shift_dip.dip = tank_dip
                 tank.dip = tank_dip
                 #db.session.query(TankDip).filter(and_(TankDip.tank_id == tank_id,TankDip.shift_id ==shift_id)).update({TankDip.dip: tank_dip}, synchronize_session = False)
                 db.session.commit()
@@ -506,8 +552,8 @@ def update_sales_receipts():
                 current_shift = Shift.query.get(shift_id)
                 date = current_shift.date
                 customer_id= int(request.form.get("account"))
-                customer = Customer.query.get(customer_id).first()
-                account = Account.query.filter_by(account_name==customer.name).first()
+                customer = Customer.query.get(customer_id)
+                account = Account.query.filter_by(account_name=customer.name).first()
                 amount= float(request.form.get("amount"))
                 invoices = Invoice.query.filter(and_(Invoice.shift_id ==shift_id,Invoice.customer_id==customer_id)).all()
                 receipt = SaleReceipt.query.filter(and_(SaleReceipt.shift_id==shift_id,SaleReceipt.account_id==account.id)).first()
@@ -586,7 +632,7 @@ def add_user():
                 user = User(username=username,password=password,role_id=role_id,tenant_id=tenant_id)
                 user_exists = bool(User.query.filter_by(username=username).first())
                 if user_exists:
-                        message = "User already exists, Try using another username!!"
+                        flash("User already exists, Try using another username!!")
                         return redirect(url_for('manage_users'))
                 else:
                         try:
@@ -623,10 +669,17 @@ def delete_user():
         """Deletes Users"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 user = db.session.query(User).get(int(request.form.get("users")))
-                db.session.delete(user)  
-                db.session.commit()
-                flash('User Successfully Removed!!')
-                return redirect(url_for('manage_users'))
+                try:
+                        db.session.delete(user)  
+                        db.session.commit()
+                except:
+                        db.session.rollback()
+                        flash("Could not delete user")
+                        return redirect(url_for('manage_users'))
+                else:
+
+                        flash('User Successfully Removed!!')
+                        return redirect(url_for('manage_users'))
 
 
 
@@ -988,19 +1041,21 @@ def add_lube_product():
                 shift = Shift.query.order_by(Shift.id.desc()).first()
                 shift_underway = Shift_Underway.query.all()
                 #####
+                name=request.form.get("product_name")
+                cost_price=request.form.get("cost_price")
+                selling_price=request.form.get("selling_price")
+                mls=request.form.get("mls")
+                open_qty = request.form.get("open_qty")
+
                 s = Shift.query.order_by(Shift.id.desc()).limit(2).all()
                 current_shift = s[0]
-                prev_shift = s[1]
+                
                 #check if there is a current shift going on and make the update to the correct previous shift
                 if shift_underway[0].state == True:
+                        prev_shift = s[1]
                         update_shift_id = current_shift.id 
                         prev_shift_id =   prev_shift.id
-                        name=request.form.get("product_name")
-                        cost_price=request.form.get("cost_price")
-                        selling_price=request.form.get("selling_price")
-                        mls=request.form.get("mls")
-                        open_qty = request.form.get("open_qty")
-                        product = LubeProduct(name=name,cost_price=cost_price,selling_price=selling_price,mls=mls)
+                        product = LubeProduct(name=name,cost_price=cost_price,selling_price=selling_price,mls=mls,qty=open_qty)
                         try:
                                 db.session.add(product)
                                 db.session.flush()
@@ -1031,11 +1086,6 @@ def add_lube_product():
                         update_shift_id = current_shift.id
 
                         update_shift = Shift.query.get(update_shift_id)
-                        name=request.form.get("product_name")
-                        cost_price=request.form.get("cost_price")
-                        selling_price=request.form.get("selling_price")
-                        mls=request.form.get("mls")
-                        open_qty = request.form.get("open_qty")
                         product = LubeProduct(name=name,cost_price=cost_price,selling_price=selling_price,mls=mls)
                         try:
                                 db.session.add(product)
@@ -1446,8 +1496,11 @@ def profit_statement():
                         end_date = date.today()
                         start_date = end_date - timedelta(days=900)
                         report = fuel_product_profit_statement(start_date,end_date)
+                        total_profit = fuel_daily_profit_report(start_date,end_date)
+                        total_litres = fuel_daily_sales(start_date,end_date)
+                        
 
-                        return render_template("profit_statement.html",reports=report,start_date=start_date,end_date=end_date,products=products)
+                        return render_template("profit_statement.html",reports=report,start_date=start_date,end_date=end_date,products=products,total_profit=total_profit,total_litres=total_litres)
                         
                 else:
                         start_date = request.form.get("start_date")
@@ -1568,9 +1621,10 @@ def get_driveway():
                                 lubes_daily_sale = lubes_daily_sales(get_month_day1(end_date),end_date)
                                 lubes_mnth_sales = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
                                 lube_avg = lubes_sales_avg(get_month_day1(end_date),end_date)
-                                
+                                total_lubes_shift_sales = lube_sales(shift_id,prev_shift_id)
+                                total_lubes_shift_sales=sum([total_lubes_shift_sales[i][5]*total_lubes_shift_sales[i][2] for i in total_lubes_shift_sales])/1000
                                 return render_template("get_driveway.html",avg_sales=avg_sales,mnth_sales=mnth_sales,lubes_daily_sale=lubes_daily_sale,
-                                lubes_mnth_sales=lubes_mnth_sales,lube_avg=lube_avg,
+                                lubes_mnth_sales=lubes_mnth_sales,lube_avg=lube_avg,total_lubes_shift_sales=total_lubes_shift_sales,
                                 products=products,accounts=accounts,cash_customers=cash_customers,customers=customers,
                                 cash_up=cash_up,total_cash_expenses=total_cash_expenses,expenses=expenses,sales_breakdown=sales_breakdown,
                                 shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=tank_dips,pump_readings=pump_readings,
@@ -1617,8 +1671,10 @@ def get_driveway():
                                 lubes_daily_sale = lubes_daily_sales(get_month_day1(end_date),end_date)
                                 lubes_mnth_sales = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
                                 lube_avg = lubes_sales_avg(get_month_day1(end_date),end_date)
+                                total_lubes_shift_sales = lube_sales(shift_id,prev_shift_id)
+                                total_lubes_shift_sales=sum([total_lubes_shift_sales[i][5]*total_lubes_shift_sales[i][2] for i in total_lubes_shift_sales])/1000
                                 return render_template("get_driveway.html",avg_sales=avg_sales,mnth_sales=mnth_sales,lubes_daily_sale=lubes_daily_sale,
-                                lubes_mnth_sales=lubes_mnth_sales,lube_avg=lube_avg,
+                                lubes_mnth_sales=lubes_mnth_sales,lube_avg=lube_avg,total_lubes_shift_sales=total_lubes_shift_sales,
                                 products=products,accounts=accounts,cash_customers=cash_customers,customers=customers,
                                 cash_up=cash_up,total_cash_expenses=total_cash_expenses,expenses=expenses,sales_breakdown=sales_breakdown,
                                 shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=tank_dips,pump_readings=pump_readings,
@@ -1748,8 +1804,11 @@ def update_pump_litre_readings():
                 date = current_shift.date
                 pump = Pump.query.filter_by(name=request.form.get("pump")).first()
                 pump_id = pump.id
-                reading = request.form.get("litre_reading")
-                db.session.query(PumpReading).filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id== shift_id)).update({PumpReading.litre_reading: reading}, synchronize_session = False)
+                litre_reading = request.form.get("litre_reading")
+                reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id== shift_id)).first()
+                pump.litre_reading = litre_reading
+                reading.litre_reading = litre_reading
+                #db.session.query(PumpReading).filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id== shift_id)).update({PumpReading.litre_reading: reading}, synchronize_session = False)
                 db.session.commit()
 
                 return redirect('ss26')
@@ -1770,8 +1829,11 @@ def update_pump_money_readings():
                 date = current_shift.date
                 pump = Pump.query.filter_by(name=request.form.get("pump")).first()# get pumpid
                 pump_id = pump.id
-                reading = request.form.get("money_reading")
-                db.session.query(PumpReading).filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id ==shift_id)).update({PumpReading.money_reading: reading}, synchronize_session = False)
+                reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id== shift_id)).first()
+                money_reading = request.form.get("money_reading")
+                reading.money_reading = money_reading
+                pump.money_reading = money_reading
+
                 db.session.commit()
 
                 return redirect('ss26')
@@ -1792,8 +1854,10 @@ def update_tank_dips():
                 shift_id = current_shift.id
                 tank= Tank.query.filter_by(name=request.form.get("tank")).first()
                 tank_id = tank.id
+                shift_dip = TankDip.query.filter(and_(TankDip.tank_id == tank_id,TankDip.shift_id ==shift_id)).first()
                 tank_dip = request.form.get("tank_dip")
-                db.session.query(TankDip).filter(and_(TankDip.tank_id == tank_id,TankDip.shift_id ==shift_id)).update({TankDip.dip: tank_dip}, synchronize_session = False)
+                shift_dip.dip = tank_dip
+                tank.dip = tank_dip
                 db.session.commit()
                 return redirect('ss26')
 
@@ -1850,6 +1914,7 @@ def update_selling_prices():
                 shift_id = current_shift.id
                 product= Product.query.filter_by(name=request.form.get("product")).first()
                 selling_price = float(request.form.get("selling_price"))
+                product.price = selling_price
                 db.session.query(Price).filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).update({Price.selling_price: selling_price}, synchronize_session = False)
                 db.session.commit()
                 return redirect('ss26')
@@ -2099,12 +2164,12 @@ def update_lube_qty():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 #current_shift = Shift.query.order_by(Shift.id.desc()).first()
                 req =request.form.get("shift_id")# if the update is from  editing a previous shift
+                product = LubeProduct.query.filter_by(name=request.form.get("product")).first() 
                 if req:
                         current_shift = Shift.query.get(req)
                         shift_daytime = current_shift.daytime
                         shift_id = current_shift.id
                         date = current_shift.date
-                        product = LubeProduct.query.filter_by(id=request.form.get("product")).first() 
                         product_qty = LubeQty.query.filter(and_(LubeQty.shift_id==current_shift.id,LubeQty.product_id==product.id)).first()
                         if product_qty:
                                 try:
@@ -2139,14 +2204,15 @@ def update_lube_qty():
                         shift_id = current_shift.id
                         date = current_shift.date
                         try:
-                                product = LubeProduct.query.filter_by(id=request.form.get("product")).first() 
-                                product = LubeQty.query.filter(and_(LubeQty.shift_id==current_shift.id,LubeQty.product_id==product.id)).first()
+                                lube_qty = LubeQty.query.filter(and_(LubeQty.shift_id==shift_id,LubeQty.product_id==product.id)).first()
                                 product.qty = request.form.get("qty")
+                                lube_qty.qty = request.form.get("qty")
                                 db.session.commit()
+                                flash('Done')
                                 return redirect('shift_lube_sales')
                         except:
                                 db.session.rollback()
-                                flash("There was an error")
+                                flash("There was an error updating qty")
                                 return redirect('shift_lube_sales')
                                
 

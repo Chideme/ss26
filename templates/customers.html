@@ -35,7 +35,7 @@
                         <td>{{ customer.name }}</td>
                         <td>{{ customer.contact_person }}</td>
                         <td>{{ customer.phone_number }}</td>
-                        <td><a href="{{ url_for('customer',customer_id=customer.id) }}">{{ balances[customer] }}</a></td>
+                        <td><a href="{{ url_for('customer',customer_id=customer.id) }}">{{ balances[customer] | round(2)}}</a></td>
                         <td>
                             <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditCustomer{{ customer.id }}">
                                 Edit Customer

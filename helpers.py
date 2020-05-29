@@ -265,31 +265,82 @@ def product_sales_litres(shift_id,prev_shift_id):
     
     return product_sales
 
-    
+
+def lube_sales(shift_id,prev_shift_id):
+    """Calcuates lube sales per shift"""
+    products = LubeProduct.query.all()
+    product_sales = {}
+
+    for product in products:
+            prev = LubeQty.query.filter(and_(LubeQty.shift_id == prev_shift_id,LubeQty.product_id== product.id)).first()
+            curr = LubeQty.query.filter(and_(LubeQty.shift_id == shift_id,LubeQty.product_id== product.id)).first()
+            if prev and curr: # check if previous shift exists
+                sales = ( prev.qty + curr.delivery_qty)-curr.qty
+                cost_price = product.cost_price
+                selling_price = product.selling_price
+                mls = product.mls
+                delivery = curr.delivery_qty
+                #remove spaces fron names so as to render modals correctly
+                modal_name = product.name.replace(" ","")
+                product_sales[product.name]= (prev.qty,curr.qty,sales,cost_price,selling_price,mls,delivery,modal_name)
+            else:
+                pass
+
+    return product_sales
+
+def lubes_daily_profit_report(start_date,end_date):
+    """ Lubes day-to-day profit"""
+    shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).all()
+    profit = {}
+    for shift in shifts:
+        shift_id = shift.id
+        prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+        if prev_shift:
+            prev_shift_id = prev_shift.id
+            product_sales = lube_sales(shift_id,prev_shift_id)
+            sales = sum([product_sales[i][0]*product_sales[i][4] for i in product_sales])
+            cost = sum([product_sales[i][0]*product_sales[i][3] for i in product_sales])
+            
+            if shift.date in profit:
+                profit[shift.date] = profit[shift.date] + (sales - cost)
+            else:
+                profit[shift.date]= sales - cost
+
+    return profit
+
+def lubes_mnth_profit_report(start_date,end_date):
+    """fuel month to month profit"""
+    days = lubes_daily_profit_report(start_date,end_date)
+    report = {}
+    for day in days:
+        month = day.strftime('%b-%y')
+        if month in report:
+            report[month] += days[day]
+        else:
+            report[month] = days[day]
+    return report
+
 def fuel_daily_profit_report(start_date,end_date):
     """ fuel day-to-day profit"""
     shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).all()
     profit = {}
-    if shifts:
-        dates = [i.date for i in shifts ]
-        for dat in dates:
-            current_shift= Shift.query.filter_by(date=dat).order_by(Shift.id.desc()).first()
-            prev_date = dat- timedelta(days=1)
-            prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
-            if prev_shift and current_shift:
-                shift_id = current_shift.id
-                prev_shift_id = prev_shift.id
-                litres = product_sales_litres(shift_id,prev_shift_id)
-                sales = sum([litres[i][0]*litres[i][1].selling_price for i in litres])
-                cost = sum([litres[i][0]*litres[i][1].cost_price for i in litres])
-                
-                profit[dat] = (sales - cost)
-            else :
-                
-                pass
+    for shift in shifts:
+        shift_id = shift.id
+        prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+        if prev_shift:
+            prev_shift_id = prev_shift.id
+            litres = product_sales_litres(shift_id,prev_shift_id)
+            sales = sum([litres[i][0]*litres[i][1].selling_price for i in litres])
+            cost = sum([litres[i][0]*litres[i][1].cost_price for i in litres])
+            
+            if shift.date in profit:
+                profit[shift.date] = profit[shift.date] + (sales - cost)
+            else:
+                profit[shift.date]= sales - cost
 
-        return profit
-    
+    return profit
+
+
 
 
 def fuel_mnth_profit_report(start_date,end_date):
@@ -305,27 +356,25 @@ def fuel_mnth_profit_report(start_date,end_date):
     return report
 
 def fuel_product_profit_statement(start_date,end_date):
+    """Profit per product """
     shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).all()
-    if shifts:
-        dates = [i.date for i in shifts]
-        profit = {}
-        for date in dates:
-            current_shift= Shift.query.filter_by(date=date).order_by(Shift.id.desc()).first()
-            prev_date = date- timedelta(days=1)
-            prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
-            if prev_shift and current_shift:
-                shift_id = current_shift.id
-                prev_shift_id = prev_shift.id
-                product = product_sales_litres(shift_id,prev_shift_id)
-                profit[date] = {i:[product[i][0],product[i][1].selling_price,product[i][1].cost_price,product[i][1].selling_price-product[i][1].cost_price] for i in product}
-                
-            else :
-                
-                pass
+    profit = {}
+    for shift in shifts:
+        shift_id = shift.id
+        prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+        if prev_shift:
+            prev_shift_id = prev_shift.id
+            product = product_sales_litres(shift_id,prev_shift_id)
+            if shift.date in profit:
+                for prod in product:
+                    profit[shift.date][prod][0] = profit[shift.date][prod][0]+ product[prod][0]
+            else:
+                profit[shift.date] ={i:[product[i][0],product[i][1].selling_price,product[i][1].cost_price,product[i][1].selling_price-product[i][1].cost_price] for i in product}
+            
 
-        return profit
-    else:
-        return False
+    return profit
+   
+
 
 def get_tank_variance(start_date,end_date,tank_id):
     shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).all()
@@ -357,7 +406,16 @@ def get_tank_variance(start_date,end_date,tank_id):
 
     return tank_dips
 
-
+def tank_variance_daily_report(start_date,end_date,tank_id):
+    """Tank Variance report for dashboard"""
+    report = {}
+    v = get_tank_variance(start_date,end_date,tank_id)
+    for shift in v:
+        if v[shift][0] in report:
+            report[v[shift][0]] += v[shift][6]
+        else:
+            report[v[shift][0]] = v[shift][6]
+    return report
 
 
 def cash_sales(amount,customer_id,shift_id,date):
@@ -403,27 +461,6 @@ def cash_sales(amount,customer_id,shift_id,date):
     return True
 
 
-def lube_sales(shift_id,prev_shift_id):
-    """Calcuates lube sales per shift"""
-    products = LubeProduct.query.all()
-    product_sales = {}
-
-    for product in products:
-            prev = LubeQty.query.filter(and_(LubeQty.shift_id == prev_shift_id,LubeQty.product_id== product.id)).first()
-            curr = LubeQty.query.filter(and_(LubeQty.shift_id == shift_id,LubeQty.product_id== product.id)).first()
-            if prev and curr: # check if previous shift exists
-                sales = ( prev.qty + curr.delivery_qty)-curr.qty
-                cost_price = product.cost_price
-                selling_price = product.selling_price
-                mls = product.mls
-                delivery = curr.delivery_qty
-                #remove spaces fron names so as to render modals correctly
-                modal_name = product.name.replace(" ","")
-                product_sales[product.name]= (prev.qty,curr.qty,sales,cost_price,selling_price,mls,delivery,modal_name)
-            else:
-                pass
-
-    return product_sales
 
 def get_month_day1(end_date):
     """fuel month to date  sales"""
@@ -489,7 +526,7 @@ def fuel_sales_avg(start_date,end_date):
     daily_sales = fuel_daily_sales(start_date,end_date)
     total = sum([daily_sales[i] for i in daily_sales ])
     start_date,end_date = shifts[0].date,shifts[-1].date
-    days= (end_date - start_date).days 
+    days= (end_date - start_date).days  + 1
     try:
         avg = total/days
     except ZeroDivisionError:
@@ -508,7 +545,7 @@ def lubes_daily_sales(start_date,end_date):
         if prev_shift:
             prev_shift_id = prev_shift.id
             product_sales = lube_sales(shift_id,prev_shift_id)
-            total = sum([product_sales[i][0] for i in product_sales])
+            total = sum([product_sales[i][2]*product_sales[i][5] for i in product_sales])/1000
             
             if shift.date in daily_sales:
                 daily_sales[shift.date]+=total
@@ -528,7 +565,7 @@ def lubes_sales_avg(start_date,end_date):
         total = sum([daily_sales[i] for i in daily_sales ])
         end_date= shifts[-1].date
         start_date= shifts[0].date
-        days= (end_date - start_date).days
+        days= (end_date - start_date).days + 1
         try:    
             avg = total/days
         except ZeroDivisionError:

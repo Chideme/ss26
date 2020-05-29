@@ -19,13 +19,31 @@ db.init_app(app)
 
 def main():
     
-    #with db.session.connection(execution_options={"schema_translate_map":{"tenant":'test4'}}):
-    engine= create_engine(DATABASE_URL)
-    meta = MetaData()
-    meta.reflect(bind=engine,resolve_fks=True,schema='tenant')
-    with engine.connect().execution_options(schema_translate_map={"tenant":'test5','public':'public'}) as conn:
-        meta.create_all(bind=conn,checkfirst=True)
+    with db.session.connection(execution_options={"schema_translate_map":{"tenant":'test2'}}):
+
+        start_date = "2019-01-01"
+        end_date = "2020-02-10"
+        #start_date = datetime.strptime(start_date,"%Y-%m-%d")
+        #end_date = datetime.strptime(end_date,"%Y-%m-%d")
+                
+        data = fuel_mnth_sales(start_date,end_date)
+        
+        print(data)
+        data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
+        print(data)
+        sorted_date= sorted_dates([i for i in data])
+        data_info = [data[i] for i in sorted_date]
+        data_dates = [i.strftime('%b-%y')  for i in sorted_date]
+        report = jsonify({'Date':data_dates,'Data':data_info})
+        print(report)     
+
+        
     #db.drop_all()
+
+
+    
+   
+
 if __name__=="__main__":
     with app.app_context():
         main()

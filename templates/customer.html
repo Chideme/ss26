@@ -5,7 +5,7 @@
 <a href="{{ url_for('customers') }}"><span style="color: royalblue;">Back</span></a>
 <h4 class="h4 text-center p3">{{ customer }} Statement</h4>
 <div class="text-center">
-<h5>Balance: {{ net }}</h5>
+<h5>Balance: {{ net | round(2) }}</h5>
 <h6>Period: {{ start }}  TO   {{ end }}</h6>
     <form style="display: inline-block;" action="{{ url_for('customer',customer_id= customer.id) }}"  method="post">
     <div class="btn-toolbar mb-2 mb-md-0">
@@ -60,11 +60,11 @@
                 <td>{{ records[date]["inv"][i][1] }}</td>
                 <td>{{ records[date]["inv"][i][2] }}</td> 
                 <td>{{ records[date]["inv"][i][3] }}</td>
-                <td>{{ records[date]["inv"][i][4] }}</td>
+                <td>{{ records[date]["inv"][i][4] | round(2) }}</td>
                 <td>{{ records[date]["inv"][i][5] }}</td>
-                <td>{{ records[date]["inv"][i][6] }}</td>
+                <td>{{ records[date]["inv"][i][6] | round(2) }}</td>
                 <td></td>
-                <td>{{ records[date]["inv"][i][7] }}</td> 
+                <td>{{ records[date]["inv"][i][7] | round(2) }}</td> 
             </tr>
             {% endfor %}
             
@@ -76,11 +76,11 @@
                 <td>{{ records[date]["inv"][i][1] }}</td>
                 <td>{{ records[date]["inv"][i][2] }}</td> 
                 <td>{{ records[date]["inv"][i][3] }}</td>
-                <td>{{ records[date]["inv"][i][4] }}</td>
+                <td>{{ records[date]["inv"][i][4] | round(2) }}</td>
                 <td>{{ records[date]["inv"][i][5] }}</td>
-                <td>{{ records[date]["inv"][i][6] }}</td>
+                <td>{{ records[date]["inv"][i][6] | round(2) }}</td>
                 <td></td>
-                <td>{{ records[date]["inv"][i][7] }}</td> 
+                <td>{{ records[date]["inv"][i][7] | round(2) }}</td> 
             </tr>
             {% endfor %}
             {% elif records[date]["pmnt"] %}

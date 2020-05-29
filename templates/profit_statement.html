@@ -25,19 +25,24 @@
                 <thead>
                     <tr>
                         <th>Date</th>
+                        <th style="background-color: limegreen;"></th>
                         {% for product in products %}
                         <th colspan="4" class="text-center">{{ product }}</th>
+                        <th style="background-color: limegreen;"></th>
                         {% endfor %}
+                        
                         <th>Total Litres</th>
                         <th>Gross Profit</th>
                     </tr>
                     <tr>
                         <th></th>
+                        <th style="background-color: limegreen;"></th>
                         {% for product in products %}
                         <th>Litres Sold</th>
                         <th>Selling Price</th>
                         <th>Cost Price</th>
                         <th>Gross Profit</th>
+                        <th style="background-color: limegreen;"></th>
                         {% endfor %}
                     </tr>
                 </thead>
@@ -46,12 +51,16 @@
                     <tr>
                         
                         <td>{{ date }}</td>
+                        <td style="background-color: limegreen;"></td>
                         {% for product in products %}
                         <td>{{ reports[date][product][0] }}</td>
-                        <td >{{ reports[date][product][1] }}</td>
-                        <td>{{ reports[date][product][2] }}</td>
-                        <td>{{ reports[date][product][0]*reports[date][product][3] }}</td>
+                        <td >{{ reports[date][product][1] | round(2) }}</td>
+                        <td>{{ reports[date][product][2] | round(2) }}</td>
+                        <td>{{ reports[date][product][0]*reports[date][product][3] | round(2) }}</td>
+                        <td style="background-color: limegreen;"></td>
                         {% endfor %}
+                        <td>{{ total_litres[date] }}</td>
+                        <td>{{ total_profit[date] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

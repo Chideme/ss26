@@ -18,13 +18,13 @@
  
   <body class="text-center">
     <main role="main" class="col-md-12 ml-sm-auto col-lg-12 px-4">
-      {% if get_flashed_messages() %}
-      <header>
-          <div class="alert alert-info border text-center" role="alert">
-              {{ get_flashed_messages() | join(" ") }}
-          </div>
-      </header>
-    {% endif %}
+    {% if get_flashed_messages() %}
+    <header>
+        <div class="alert alert-info border text-center" role="alert">
+            {{ get_flashed_messages() | join(" ") }}
+        </div>
+    </header>
+  {% endif %}
    
     <form class="form-signin" action="{{ url_for('login') }}" method="post">
       
@@ -34,9 +34,10 @@
       <input type="text" id="inputCompany" name="tenant_id" class="form-control" placeholder="Company Code" required autofocus>
       </div>
       <button class="btn btn-lg btn-primary btn-block" type="submit">Enter</button>
-      <p class="mt-5 mb-3 text-muted">&copy; 2020</p>
+      <small class="text-muted">Forgot Login Details?</small>
+      
     </form>
-    <small class="text-muted">Forgot Login Details ?</small>
+    <p class="mt-5 mb-3 text-muted">&copy; 2020</p>
     </main>
    
   </body>
