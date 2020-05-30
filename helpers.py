@@ -12,7 +12,8 @@ from datetime import timedelta
 
 
 ##########
-DATABASE_URL ="postgres://localhost/ss26"
+#DATABASE_URL ="postgres://localhost/ss26"
+DATABASE_URL=os.getenv("DATABASE_URL")
 
 ####################
 
