@@ -1,3 +1,4 @@
+import os
 from flask import Flask,render_template, request
 from models import *
 from werkzeug.security import generate_password_hash
