@@ -14,7 +14,7 @@ from datetime import timedelta,datetime,date
 
 
 # Set Database URL
-#DATABASE_URL ="postgres://vyltpsivhqeaun:c0bb13175e810c1dcb143e03d1dc47b2ebaf46e095d9d6dfc8979d19f6a48e14@ec2-50-16-197-244.compute-1.amazonaws.com:5432/d3ud9s5a665gva"
+
 #DATABASE_URL ="postgres://localhost/ss26"
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] =os.getenv("DATABASE_URL")
