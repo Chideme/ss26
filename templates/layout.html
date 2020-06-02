@@ -18,8 +18,9 @@
     <link href="/static/style.css" rel="stylesheet">
     
   </head>
-  {% if  session.user_id %}
   <body>
+    {% if  session.user_id %}
+
     <nav class="navbar navbar-expand-md   fixed-top bg-dark flex-md-nowrap p-0 shadow rounded" style="font-weight: bolder;">
       <div class="navbar-header">
         <a class="navbar-brand col-sm-3 col-md-2 col-lg-12" href="#"><span style="color: lime;">e</span><span></span><span style="color: lightgray;">Driveway</span></a>
@@ -55,6 +56,24 @@
         <a class="nav-link" href="{{ url_for('logout') }}">Log out</a>
       </div>
     </nav>
+    {% else %}
+    <nav class="navbar navbar-expand-md   fixed-top bg-dark flex-md-nowrap p-0 shadow rounded" style="font-weight: bolder;">
+      <div class="navbar-header">
+        <a class="navbar-brand col-sm-3 col-md-2 col-lg-12" href="{{ url_for('index') }}">Home</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+      </div>
+      <div class="collapse navbar-collapse justify-content-md-end" id="navbarsExample04">
+        <ul class="navbar-nav px3">
+          <li class="nav-item text-nowrap">
+            <a class="nav-link" href="{{ url_for('user_login') }}">Login</a>
+          </li>
+        </ul>
+      </div>
+     
+    </nav>
+    {% endif %}
     <div class="container-fluid p-5">
       {% block sidebar %}{% endblock %}
     </div>
@@ -75,31 +94,9 @@
       feather.replace()
     </script>
 
-    <!-- Graphs -->
+    
   </body>
-  {% else %}
-    <body class="text-center">
-      <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
-        {% if get_flashed_messages() %}
-        <header>
-            <div class="alert alert-info border text-center" role="alert">
-                {{ get_flashed_messages() | join(" ") }}
-            </div>
-        </header>
-        {% endif %}
-      <form style="display: inline-block;" class="form-signin" action="{{ url_for('user_login') }}" method="post">
-        <img class="mb-4" src="../../assets/brand/bootstrap-solid.svg" alt="" width="72" height="72">
-        <h1 class="h3 mb-3 font-weight-normal">Please enter yourr    </h1>
-        <label for="inputUsername" class="sr-only">User Name</label>
-        <input type="text" id="inputUsername" name="username" class="form-control" placeholder="User Name" required autofocus>
-        <label for="inputPassword" class="sr-only">Password</label>
-        <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
-        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-        <p class="mt-5 mb-3 text-muted">&copy; 2019</p>
-      </form>
-      </main>
-    </body>
-    {% endif %}
+ 
 </html>
 
 

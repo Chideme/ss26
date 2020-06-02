@@ -51,7 +51,15 @@
             const product = document.querySelector('#product').value;
             const frequency = document.querySelector('#frequency').value;
             const heading = document.querySelector('#heading').innerHTML;
-          
+            var measurement = (() => {
+              if(heading=='Sales'){
+                return '( Litres )';
+              }
+              else{
+                return '( $ )';
+              }
+
+            })()
             request.open('POST','/dashboard/reports');
             
             // when request finishes
@@ -89,7 +97,7 @@
                       },
                       title: {
                         display:true,
-                        text:frequency.concat(' ',heading,' Report')
+                        text:frequency.concat(' ',heading,' Report ',measurement)
                       }
                     }
                   });

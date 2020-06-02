@@ -97,14 +97,14 @@
                     </button>
                   </td>
                   <td class="driveway-table">{{ product_sales_ltr[product][0] }}</td>
-                  <td class="numbers driveway-table">{{ product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price }}</td>
+                  <td class="numbers driveway-table">{{ product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price |round(2) }}</td>
                 </tr>
                 {% endfor %}
                 <tr class="driveway-table">
                   <th class="driveway-table" colspan="3">Total</th>
                   
-                  <td class="driveway-table">{{ total_sales_ltr }}</td>
-                  <td class="numbers driveway-table">{{ total_sales_amt }}</td>
+                  <td class="driveway-table">{{ total_sales_ltr |round(2) }}</td>
+                  <td class="numbers driveway-table">{{ total_sales_amt | round(2) }}</td>
                 </tr>
               </tbody>
               </table>

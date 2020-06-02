@@ -42,20 +42,20 @@ def signup():
                 contact_person = request.form.get("contact_person").capitalize()
                 phone_number = request.form.get("phone")
                 schema = create_schema_name(company.lower())
-                tenant = Tenant(name =company.capitalize(),address=address,company_email=email,database_url=DATABASE_URL,tenant_code=schema,contact_person=contact_person,schema=schema,active=False)
+                tenant = Tenant(name =company.capitalize(),address=address,company_email=email,database_url=DATABASE_URL,tenant_code=schema,phone_number=phone_number,contact_person=contact_person,schema=schema,active=False)
                 try:
                         db.session.add(tenant)
                         db.session.flush
                 except:
                         flash("Account already created use login in page, or contact support")
-                        return redirect(url_for('signup'))
+                        return redirect(url_for('login'))
                 try:
                 
                         db.session.execute('CREATE SCHEMA IF NOT EXISTS {}'.format(schema))
                         db.session.commit()
                 except:
                         flash("Account already created use login in page or contact support")
-                        return redirect(url_for('signup'))
+                        return redirect(url_for('login'))
                 
                 #####
                 create_tenant_tables(schema)
@@ -96,8 +96,8 @@ def signup2(tenant_schema):
                         session["role_id"] = user.role_id
                         session["shift_underway"]=False
                         db.session.commit()
-                        flash('Finish Setting Up your profile and change Admin password immediately.')
-                        return redirect(url_for('manage_users'))
+                        flash('Account Successfully activated,please login.')
+                        return redirect(url_for('login'))
 
 
 
@@ -340,9 +340,9 @@ def start_shift_update():
                         
                                 if lubes:
                                         for product in lubes_dict:
-                                                prev_qty = LubeQty.query.filter(and_(LubeQty.shift_id==prev_shift_id,LubeQty.product_id==lubes_dict[product].id)).first() if prev else product.qty
+                                                prev_qty = LubeQty.query.filter(and_(LubeQty.shift_id==prev.id,LubeQty.product_id==lubes_dict[product].id)).first() if prev else product.qty
                                                 prev_qty = prev_qty.qty if prev else lubes_dict[product].qty
-                                                lubes_dict[product] = LubeQty(shift_id=shift_id,date=date,qty=prev_qty,delivery_qty=prev.delivery_qty,product_id=lubes_dict[product].id)
+                                                lubes_dict[product] = LubeQty(shift_id=shift_id,date=date,qty=prev_qty,delivery_qty=0,product_id=lubes_dict[product].id)
                                                 db.session.add(lubes_dict[product])
                                                 db.session.flush()
                                 for pump in pumps_dict:
@@ -360,7 +360,7 @@ def start_shift_update():
                                 for tank in tanks_dict:      
                                         if prev:
                                                 prev_dip = TankDip.query.filter(and_(TankDip.shift_id==prev.id,TankDip.tank_id==tanks_dict[tank].id)).first()
-                                                dip = prev_dip.dip if prev_reading else tanks_dip[tank].dip
+                                                dip = prev_dip.dip if prev_dip else tanks_dict[tank].dip
                                                 tanks_dict[tank] = TankDip(date=date,dip=dip,tank_id=tanks_dict[tank].id,shift_id=shift_id)
                                         else:
                                                 tanks_dict[tank] = TankDip(date=date,dip=tank.dip,tank_id=tanks_dict[tank].id,shift_id=shift_id)
@@ -707,7 +707,7 @@ def add_pump():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 shift_underway = Shift_Underway.query.all()
                 ######
-                s = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+                s = Shift.query.order_by(Shift.id.desc()).all()
                 name=request.form.get("pump_name").capitalize()
                 tank_id=request.form.get("tank")
                 litre_reading = request.form.get("litre_reading") # opening readings
@@ -717,86 +717,27 @@ def add_pump():
                 except:
                         flash("Add tank to associate pump with")
                         return redirect(url_for('tanks'))
-       
+                pump = Pump(name=name,tank_id=tank_id,litre_reading=litre_reading,money_reading=money_reading)
                 
-                #check if there is a current shift going on and make the update to the correct previous shift
-                if shift_underway[0].state == True:
-                        current_shift = s[0]
-                        prev_shift = s[1]
-                        current_shift_id = current_shift.id
-                        prev_shift_id = prev_shift.id
-                        update_shift_id = current_shift.id
-                        update_shift = Shift.query.get(update_shift_id)
-                        
-                        pump = Pump(name=name,tank_id=tank_id,litre_reading=litre_reading,money_reading=money_reading)
-                        try:
-                                db.session.add(pump)
+                
+                try:
+                        db.session.add(pump)
+                        db.session.flush()
+                        product = db.session.query(Tank,Product,Pump).filter(and_(Tank.product_id == Product.id,Tank.id==Pump.tank_id,Tank.id == tank_id,Pump.id == pump.id)).first()
+                        product_id = product[1].id
+                        for shift in s:
+                                open_reading = PumpReading(date=shift.date,product_id=product_id,litre_reading=litre_reading,money_reading=money_reading,pump_id=pump.id,shift_id=shift.id)
+                                db.session.add(open_reading)
                                 db.session.flush()
-                                
-                        except:
-                                db.session.rollback()
-                                flash("There was an error adding pump to database")
-                                return redirect(url_for('pumps'))
-                        
-                        else:
-                                product = db.session.query(Tank,Product,Pump).filter(and_(Tank.product_id == Product.id,Tank.id==Pump.tank_id,Tank.id == tank_id,Pump.id == pump.id)).first()
-                                product_id = product[1].id
-                                
-                                try:
-                                        #reading1
-                                        open_readings1 = PumpReading(date=prev_shift.date,product_id=product_id,litre_reading=litre_reading,money_reading=money_reading,pump_id=pump.id,shift_id=prev_shift_id)
-                                        db.session.add(open_readings1)
-                                        #reading2
-                                        open_readings2 = PumpReading(date=current_shift.date,product_id=product_id,litre_reading=litre_reading,money_reading=money_reading,pump_id=pump.id,shift_id=current_shift_id)
-                                        db.session.add(open_readings2)
-                                        db.session.commit()
-                                        
-                                except:
-                                        
-                                        db.session.rollback()
-                                        flash("There was an error !!,try again")
-                                        return redirect(url_for('pumps'))
-                        
-                        
-                                else:
-                                        flash('Pump Successfully Added !!')
-                                        return redirect(url_for('pumps'))
-
+                        db.session.commit()
+                except:
+                        db.session.rollback()
+                        flash("There was an error adding pump to database")
+                        return redirect(url_for('pumps'))
                 else:
-                        
-                        try:
-                                pump = Pump(name=name,tank_id=tank_id,litre_reading=litre_reading,money_reading=money_reading)
-                                db.session.add(pump)
-                                db.session.flush()
-                                
-                        except:
-                                flash("There was an error")
-                                return redirect(url_for('pumps'))
-       
-                        #add readings 
-                        if tank:
+                        flash('Pump Successfully Added !!')
+                        return redirect(url_for('pumps'))
 
-                                
-                                try: 
-                                        current_shift = s[0]
-                                        product = db.session.query(Tank,Product,Pump).filter(and_(Tank.product_id == Product.id,Tank.id==Pump.tank_id,Tank.id == tank_id,Pump.id == pump.id)).first()
-                                        product_id = product[1].id
-                                        open_readings = PumpReading(date=current_shift.date,product_id=product_id,litre_reading=litre_reading,money_reading=money_reading,pump_id=pump.id,shift_id=current_shift.id)
-                                        db.session.add(open_readings)
-                                        db.session.commit()
-                                except:
-                                        flash("There was an error")
-                                        db.session.rollback()
-                                        return redirect(url_for('pumps'))
-                                else:
-                                        
-                                        flash('Pump Successfully Added !!')
-                                        return redirect(url_for('pumps'))
-                                        
-                                                               
-                        else:
-                                flash('Add tank to associate pump with')
-                                return redirect(url_for('tanks'))
                                         
                                         
 
@@ -835,99 +776,26 @@ def add_tank():
                 product_id=request.form.get("product")
                 dip = request.form.get("dip")
                 date= request.form.get("date")
-                s = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+                s = Shift.query.order_by(Shift.id.desc()).all()
 
                 tank = Tank(name=name,product_id=product_id,dip=dip)
-                
-                #check if there is a current shift going on and make the update to the correct previous shift
-                if shift_underway[0].state == True:
-                        current_shift = s[0]
-                        prev_shift = s[1]
-                        current_shift_id = current_shift.id
-                        prev_shift_id = prev_shift.id
-
-                        try:
-                                db.session.add(tank)
+                try:
+                        db.session.add(tank)
+                        db.session.flush()
+                        for shift in s:
+                                shift_dip = TankDip(date=shift.date,shift_id=shift.id,dip=dip,tank_id=tank.id)
+                                db.session.add(shift_dip)
                                 db.session.flush()
-                                
-                        except:
-                                db.session.rollback()
-                                flash("There was a problem whilst adding tank")
-                                return redirect(url_for('tanks'))
-                                
-                                
-                        try:
-                                #reading1
-                                open_dip1 = TankDip(date=prev_shift.date,shift_id=prev_shift_id,dip=dip,tank_id=tank.id,)
-                                db.session.add(open_dip1)
-                                #reading2
-                                open_dip2 = TankDip(date=current_shift.date,shift_id=current_shift_id,dip=dip,tank_id=tank.id,)
-                                db.session.add(open_dip2)
-                                db.session.commit()
-                        
-                        except:
-                               
-                                db.session.rollback()
-                                flash("There was a problem whilst adding tank")
-                                return redirect(url_for('tanks'))
-                        else:
-                                
-                                flash("Tank Added Successfully !!")
-                                return redirect(url_for('tanks'))
+                        db.session.commit()
+                except:
+                        db.session.rollback()
+                        flash("There was a problem whilst adding tank")
+                        return redirect(url_for('tanks'))
                 else:
-                        if s:
-                                current_shift = s[0]
-                                current_shift_id = current_shift.id
-                                try:
-                                        
-                                        db.session.add(tank)
-                                        db.session.flush()
-                                        
-                                except:
-                                        db.session.rollback()
-                                        
-                                        flash("There was a problem whilst adding tank")
-                                        return redirect(url_for('tanks'))
-                                       
-                                try:
-                                        #reading2
-                                        tank = Tank.query.filter_by(name=name).first()
-                                        open_dip2 = TankDip(date=current_shift.date,shift_id=current_shift_id,dip=dip,tank_id=tank.id,)
-                                        db.session.add(open_dip2)
-                                        db.session.commit()
-                                                
-                                except:
-                                        
-                                        db.session.rollback()
-                                        flash("There was a problem whilst adding tank")
-                                        return redirect(url_for('tanks'))
-                                else:
-                                        
-                                        flash("Tank Added Successfully !!")
-                                        return redirect(url_for('tanks'))
-                        else:
-                                shift = Shift(date=date,daytime='day')
-                                tank = Tank(name=name,product_id=product_id,dip=dip)
-                                try:
-                                        db.session.add(shift)
-                                        db.session.add(tank)
-                                        db.session.flush()
-                                except:
-                                        flash("There was an error !!")
-                                        return redirect(url_for('tanks'))
-                                
-                                try:
-                                        open_dip2 = TankDip(date=shift.date,shift_id=shift.id,dip=dip,tank_id=tank.id,)
-                                        db.session.add(open_dip2)
-                                        db.session.commit()
-                                except:
-                                        db.session.rollback()
-                                        flash("There was an error !!")
-                                        return redirect(url_for('tanks'))
-                                else:
-                                        
-                                        flash("Tank Added Successfully !!")
-                                        return redirect(url_for('tanks'))
+                        flash("Tank Added Successfully !!")
+                        return redirect(url_for('tanks'))
+                #check if there is a current shift going on and make the update to the correct previous shift
+               
 
 
 @app.route("/inventory/tanks/delete_tank",methods=["POST"])
@@ -1048,66 +916,27 @@ def add_lube_product():
                 mls=request.form.get("mls")
                 open_qty = request.form.get("open_qty")
 
-                s = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+                s = Shift.query.order_by(Shift.id.desc()).all()
                 current_shift = s[0]
+                product = LubeProduct(name=name,cost_price=cost_price,selling_price=selling_price,mls=mls,qty=open_qty)
                 
-                #check if there is a current shift going on and make the update to the correct previous shift
-                if shift_underway[0].state == True:
-                        prev_shift = s[1]
-                        update_shift_id = current_shift.id 
-                        prev_shift_id =   prev_shift.id
-                        product = LubeProduct(name=name,cost_price=cost_price,selling_price=selling_price,mls=mls,qty=open_qty)
-                        try:
-                                db.session.add(product)
-                                db.session.flush()
-                        except:
-                                db.session.rollback()
-                                flash("There was an error adding product to database")
-                                return redirect(url_for('lube_products'))
-                       
-                        
-                                
-                        try:
-                                # add opening qty 
-                                qty1 = LubeQty(shift_id = prev_shift.id,date=prev_shift.date,qty=open_qty,delivery_qty=0,product_id=product.id)
-                                db.session.add(qty1)
-                                # add closing qty 
-                                qty2 = LubeQty(shift_id = current_shift.id,date=current_shift.date,qty=open_qty,delivery_qty=0,product_id=product.id)
-                                db.session.add(qty2)
-                                db.session.commit()
-                        except:
-                                db.session.rollback()
-                                flash("There was an error")
-                                return redirect(url_for('lube_products'))
-                        else:
-                                
-                                flash("Product Added !!")
-                                return redirect(url_for('lube_products')) 
-                else:
-                        update_shift_id = current_shift.id
-
-                        update_shift = Shift.query.get(update_shift_id)
-                        product = LubeProduct(name=name,cost_price=cost_price,selling_price=selling_price,mls=mls)
-                        try:
-                                db.session.add(product)
-                                db.session.flush()
-                        except:
-                                db.session.rollback()
-                                flash("There was an error")
-                                return redirect(url_for('lube_products'))
-                        
-                        try:
-
-                                qty = LubeQty(shift_id = update_shift.id,date=update_shift.date,qty=open_qty,delivery_qty=0,product_id=product.id)
+                try:
+                        db.session.add(product)
+                        db.session.flush()
+                        for shift in s:
+                                qty = LubeQty(shift_id = shift.id,date=shift.date,qty=open_qty,delivery_qty=0,product_id=product.id)
                                 db.session.add(qty)
-                                db.session.commit()
-                        except:
-                                db.session.rollback()
-                                flash("There was an error")
-                                return redirect(url_for('lube_products'))
-                        else:
-                                flash("Product Added !!")
-                                return redirect(url_for('lube_products'))
+                                db.session.flush()
+                        db.session.commit()
+                except:
+                        db.session.rollback()
+                        flash("There was an error adding product to database")
+                        return redirect(url_for('lube_products'))
+                else:
+                        flash("Product Added !!")
+                        return redirect(url_for('lube_products'))
+                #check if there is a current shift going on and make the update to the correct previous shift
+                
 
 
 @app.route("/inventory/lubes/delete_lube_product/",methods=["POST"])
@@ -2209,11 +2038,13 @@ def update_lube_qty():
                                 product.qty = request.form.get("qty")
                                 lube_qty.qty = request.form.get("qty")
                                 db.session.commit()
-                                flash('Done')
-                                return redirect('shift_lube_sales')
+                               
                         except:
                                 db.session.rollback()
                                 flash("There was an error updating qty")
+                                return redirect('shift_lube_sales')
+                        else:
+                                flash('Done')
                                 return redirect('shift_lube_sales')
                                
 
@@ -2243,8 +2074,8 @@ def update_lubes_deliveries():
                                 
                 else:
                                 
-                        shift_underway = Shift_Underway.query.get(1)
-                        current_shift = shift_underway.current_shift
+                        shift_underway = Shift_Underway.query.all()
+                        current_shift = shift_underway[0].current_shift
                         current_shift = Shift.query.get(current_shift)
                         shift_daytime = current_shift.daytime
                         shift_id = current_shift.id
@@ -2353,3 +2184,14 @@ def lubes_cash_up():
                         
                         flash("Cash up for Lubricants done!!")
                         return redirect(url_for('ss26'))
+
+
+@app.errorhandler(500)
+def internal_app_error(error):
+
+        return render_template('error.html'),500
+
+@app.errorhandler(404)
+def missing_page_error(error):
+        
+        return render_template('error.html'),404

@@ -3,10 +3,12 @@
 <link href="/static/style.css" rel="stylesheet">
 
 <a href="{{ url_for('customers') }}"><span style="color: royalblue;">Back</span></a>
+<button  type="button" id="print" class="btn btn-sm btn-outline-secondary">Print</button>
+
 <h4 class="h4 text-center p3">{{ customer }} Statement</h4>
 <div class="text-center">
 <h5>Balance: {{ net | round(2) }}</h5>
-<h6>Period: {{ start }}  TO   {{ end }}</h6>
+
     <form style="display: inline-block;" action="{{ url_for('customer',customer_id= customer.id) }}"  method="post">
     <div class="btn-toolbar mb-2 mb-md-0">
     <div class="btn-group mr-2">
@@ -16,7 +18,7 @@
     </div>
     </div>
     </form>
-
+    <h6>Period: {{ start }}  TO   {{ end }}</h6>
 </div>
 <div class="p-5 text-center">
     <table class="table table-sm table-striped">

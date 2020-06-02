@@ -400,7 +400,10 @@ def get_tank_variance(start_date,end_date,tank_id):
                 deliveries = sum([i.qty for i in delivery])
                 tank_sales = prev_shift_dip+deliveries-current_shift_dip
                 shrinkage2sales = (pump_sales-tank_sales)
-                shrinkage2salesP = shrinkage2sales/pump_sales *100 if pump_sales !=0 else 0
+                try:
+                    shrinkage2salesP = shrinkage2sales/pump_sales *100 
+                except ZeroDivisionError:
+                    shrinkage2salesP = -100
                 cumulative = cumulative + shrinkage2sales
                 cumulativeP = cumulativeP + shrinkage2salesP
                 tank_dips[shift.id]=[shift.date,prev_shift_dip,current_shift_dip,deliveries,tank_sales,pump_sales,shrinkage2sales,shrinkage2salesP,cumulative,cumulativeP]
@@ -413,9 +416,16 @@ def tank_variance_daily_report(start_date,end_date,tank_id):
     v = get_tank_variance(start_date,end_date,tank_id)
     for shift in v:
         if v[shift][0] in report:
-            report[v[shift][0]] += v[shift][6]
+            report[v[shift][0]][0] += v[shift][5]
+            report[v[shift][0]][1] += v[shift][6]
         else:
-            report[v[shift][0]] = v[shift][6]
+            report[v[shift][0]] = [v[shift][5],v[shift][6]]
+    
+    for day in report:
+        try:
+            report[day] = report[day][1]/report[day][0] *100
+        except ZeroDivisionError:
+            report[day] =report[day][1]/report[day][1] *100
     return report
 
 

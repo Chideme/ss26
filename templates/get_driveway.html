@@ -74,7 +74,7 @@
                   <td class="driveway-table">{{ product_sales_ltr[product][1].cost_price }}</td>
                   <td class="driveway-table">{{ product_sales_ltr[product][1].selling_price }}</td>
                   <td class="driveway-table">{{ product_sales_ltr[product][0] }}</td>
-                  <td class="numbers driveway-table">{{ product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price }}</td>
+                  <td class="numbers driveway-table">{{ product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price | round(2) }}</td>
                 </tr>
                 {% endfor %}
                 <tr class="driveway-table">

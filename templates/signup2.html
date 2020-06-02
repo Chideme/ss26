@@ -19,11 +19,8 @@
   <body class="text-center">
     <form class="form-signin" action="{{ url_for('signup2',tenant_schema= session['schema']) }}" method="post">
 
-      <h4>Please remember the following details and use for login</h4>
-      <p>Your Company login code is {{ session.tenant }}
-      <br>Username: Admin
-      <br>Password: 1234
-      </p>
+      <h4>After activation, Please use details sent for login</h4>
+      
       <h2 class="h3 mb-3 font-weight-normal">Click below to activate your account</h2>
       <div class="form-group">
       <button class="btn btn-lg btn-primary btn-block" type="submit">Activate</button>
