@@ -20,6 +20,7 @@ DATABASE_URL=os.getenv("DATABASE_URL")
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] =os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}  
 app.config["FLASK_ENV"] = os.getenv("FLASK_ENV")
 app.secret_key = os.urandom(24)
 db.init_app(app)
@@ -320,21 +321,15 @@ def start_shift_update():
                         if  pumps and  tanks:                      
                                 shift_underway = Shift_Underway.query.all()
                                 shift_underway[0].state = True
-                                #db.session.commit()
-                                #with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                        
                                 shift = Shift(date=day,daytime=shift_daytime,prepared_by=session["user"])
                                 db.session.add(shift)
                                 db.session.flush()
-                                ####
-                                #with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                               
 
                                 current_shift = Shift.query.order_by(Shift.id.desc()).first()
                                 shift_id = current_shift.id 
                                 prev = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
-                                #prev_shift_id=prev.id
-                                if prev:
-                                        prev_prices = db.session.query(Product,Price).filter(and_(Product.id == Price.product_id,Price.shift_id == prev.id)).all()
-                                ####
                                 shift_daytime = current_shift.daytime
                                 date = current_shift.date
                         
@@ -354,7 +349,7 @@ def start_shift_update():
                                                 money_reading = prev_reading.money_reading if prev_reading else pump.money_reading
                                                 pumps_dict[pump] =PumpReading(date=date,product_id=product_id,litre_reading=litre_reading,money_reading=money_reading,pump_id=pumps_dict[pump].id,shift_id=shift_id)
                                         else:
-                                                pumps_dict[pump] =PumpReading(date=date,product_id=product_id,litre_reading=pump.litre_reading,money_reading=pump.money_reading,pump_id=pumps_dict[pump].id,shift_id=shift_id)
+                                                pumps_dict[pump] =PumpReading(date=date,product_id=product_id,litre_reading=pumps_dict[pump].litre_reading,money_reading=pumps_dict[pump].money_reading,pump_id=pumps_dict[pump].id,shift_id=shift_id)
                                         db.session.add(pumps_dict[pump])
                                         db.session.flush()
                                 for tank in tanks_dict:      
@@ -363,7 +358,7 @@ def start_shift_update():
                                                 dip = prev_dip.dip if prev_dip else tanks_dict[tank].dip
                                                 tanks_dict[tank] = TankDip(date=date,dip=dip,tank_id=tanks_dict[tank].id,shift_id=shift_id)
                                         else:
-                                                tanks_dict[tank] = TankDip(date=date,dip=tank.dip,tank_id=tanks_dict[tank].id,shift_id=shift_id)
+                                                tanks_dict[tank] = TankDip(date=date,dip=tanks_dict[tank].dip,tank_id=tanks_dict[tank].id,shift_id=shift_id)
                                         db.session.add(tanks_dict[tank])
                                         db.session.flush()
                                 for tank in tanks:
@@ -908,7 +903,7 @@ def add_lube_product():
         """Add Product"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 shift = Shift.query.order_by(Shift.id.desc()).first()
-                shift_underway = Shift_Underway.query.all()
+                
                 #####
                 name=request.form.get("product_name")
                 cost_price=request.form.get("cost_price")
@@ -917,7 +912,7 @@ def add_lube_product():
                 open_qty = request.form.get("open_qty")
 
                 s = Shift.query.order_by(Shift.id.desc()).all()
-                current_shift = s[0]
+        
                 product = LubeProduct(name=name,cost_price=cost_price,selling_price=selling_price,mls=mls,qty=open_qty)
                 
                 try:
@@ -1426,7 +1421,7 @@ def get_driveway():
                                 shift_id = current_shift.id
                                 #####
                                 prev = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
-                                prev_shift_id=prev.id
+                                prev_shift_id=prev.id if  prev else shift_id
                                 ######
                                 pump_readings = get_pump_readings(shift_id,prev_shift_id)
                                 tank_dips = get_tank_dips(shift_id,prev_shift_id)
@@ -1472,7 +1467,7 @@ def get_driveway():
                                         prev_shift_id = prev_shift.id
                                 else:
                                         prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
-                                        prev_shift_id = prev_shift.id
+                                        prev_shift_id = prev_shift.id if prev_shift else shift_id
                                 pump_readings = get_pump_readings(shift_id,prev_shift_id)
                                 pumps = Pump.query.all()
                                 tank_dips = get_tank_dips(shift_id,prev_shift_id)
@@ -1512,15 +1507,12 @@ def get_driveway():
                         
                 else:
 
-                        #shift_underway = Shift_Underway.query.get(1)
-                        #current_shift = shift_underway.current_shift
-                        #current_shift = Shift.query.get(current_shift)
-                        #####
+                       
                         shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
                         
                         if shifts:
                                 current_shift = shifts[0]
-                                prev_shift = shifts[1]
+                                prev_shift = shifts[1] if len(shifts)>1 else shifts[0]
                                 shift_daytime = current_shift.daytime
                                 shift_id = current_shift.id
                                 date = current_shift.date
@@ -1580,7 +1572,7 @@ def ss26():
                 
                 if shifts:
                         current_shift = shifts[0]
-                        prev_shift = shifts[1]
+                        prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
                         shift_daytime = current_shift.daytime
                         shift_id = current_shift.id
                         date = current_shift.date
@@ -1629,9 +1621,9 @@ def update_pump_litre_readings():
                 shift_underway = Shift_Underway.query.all()
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
-                shift_daytime = current_shift.daytime
+                
                 shift_id = current_shift.id
-                date = current_shift.date
+               
                 pump = Pump.query.filter_by(name=request.form.get("pump")).first()
                 pump_id = pump.id
                 litre_reading = request.form.get("litre_reading")
@@ -1887,7 +1879,7 @@ def cash_up():
                 actual_amount= float(request.form.get("actual_amount"))
                 variance= float(request.form.get("variance"))
                 cash_account = Account.query.filter_by(account_name="Cash").first()
-                amount= float(cash_sales_amount)
+                amount= cash_sales_amount
                 try:
                         cash_up = CashUp(date=date,shift_id=shift_id,sales_amount=cash_sales_amount,expected_amount=expected_amount,actual_amount=actual_amount,variance=variance)
                         receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
@@ -1898,9 +1890,9 @@ def cash_up():
                         
                         db.session.commit()
                         return redirect(url_for('ss26'))
-                except:
+                except Exception as e:
                         db.session.rollback()
-                        flash("There was an error")
+                        flash(str(e))
                         return redirect(url_for('ss26'))
 
 @app.route("/payouts",methods=["POST"])

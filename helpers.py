@@ -183,7 +183,6 @@ def product_sales(shift_id,product_id):
     return amount
 
 def receipt_product_qty(amount,shift_id,product_id):
-    product = Product.query.get(product_id)
     product_id = product_id
     price = Price.query.filter(and_(Price.shift_id == shift_id, Price.product_id == product_id)).first()
     price = price.selling_price
@@ -442,7 +441,7 @@ def cash_sales(amount,customer_id,shift_id,date):
             pass
     
     for prod in products_qty:
-        while products_qty[prod] and amount:
+        while products_qty[prod] > 1 and amount:
             product = Product.query.filter_by(name=prod).first()
             sales_price = get_product_price(shift_id,product.id)
             if products_qty[prod]*sales_price < amount:
@@ -454,7 +453,7 @@ def cash_sales(amount,customer_id,shift_id,date):
                 amount = int(amount-inv_amt)
                 products_qty[prod] = int(products_qty[prod]-qty)
             
-            elif products_qty[prod]*sales_price > amount:
+            elif products_qty[prod]*sales_price > amount or products_qty[prod]*sales_price == amount :
                 qty = amount/sales_price
                 invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price)
                 db.session.add(invoice)
