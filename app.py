@@ -3,7 +3,7 @@ import os
 from flask import Flask, session, render_template,flash,request,redirect,url_for,jsonify,make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_, or_,MetaData,Table
-#from sqlalchemy_sqlschema import maintain_schema
+
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import *
 from models import *
