@@ -63,13 +63,13 @@ def signup():
                 
                 session['schema'] =tenant.schema
                 session['tenant']= tenant.id
-                return redirect(url_for('signup2',tenant_schema=session['schema']))
+                return redirect(url_for('activate',tenant_schema=session['schema']))
                 
         return render_template("signup.html")
 
 
 @app.route("/<tenant_schema>/activate",methods=["GET","POST"])
-def signup2(tenant_schema):
+def activate(tenant_schema):
         
         if request.method =="GET":
                 
@@ -97,7 +97,7 @@ def signup2(tenant_schema):
                         session["role_id"] = user.role_id
                         session["shift_underway"]=False
                         db.session.commit()
-                        flash('Account Successfully activated,please login.')
+                        flash('Account Successfully activated. Please use details sent to your email to login.')
                         return redirect(url_for('login'))
 
 
@@ -113,12 +113,22 @@ def login():
         if request.method == "POST":
                 tenant_id = request.form.get("tenant_id")
                 company = Tenant.query.get(tenant_id)
-                if company:
+                active =  Tenant.active
+
+                if company and active == True:
                         session['tenant'] = company.id
                         session["schema"] = company.schema
                         return redirect(url_for('user_login'))
+
+                elif company:
+                        session["schema"] = company.schema
+                        session['tenant'] = company.id
+                        flash('Company is not yet active. Please activate your company profile')
+                        return redirect(url_for('activate',tenant_schema=session['schema']))
+                        
+
                 else:
-                        flash('Company does not exist, check your code and try again')
+                        flash('Company does not exist, check your code and try again or contact support')
                         return render_template("login.html")
         else:
                 
