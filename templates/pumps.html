@@ -14,6 +14,7 @@
         <div class="btn-group mr-2">
           <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddPumpFormModal">Add Pump</button>
           <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeletePumpFormModal">Delete Pump</button>
+         
         </div>
       </div>
   </h2>
@@ -26,6 +27,7 @@
                         <th>Tank</th>
                         <th>Litre Reading</th>
                         <th>Money Reading</th>
+                        <th>Modify Pump </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -35,6 +37,11 @@
                         <td>{{ pump[0].name }}</td>
                         <td>{{ pump[1].litre_reading }}</td>
                         <td>{{ pump[1].money_reading }}</td>
+                        <td>
+                            <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditPump{{ pump[1].name }}">
+                                Edit Pump
+                            </button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -114,6 +121,48 @@
                             </div>
                         </div>
                     </div><!--Deletes Pump-->
+                    <!--Edit Pump-->
+                    {% for pump in pump_tank %}
+                            <div class="modal fade" id="EditPump{{ pump[1].name }}" tabindex="-1" role="dialog" aria-labelledby="EditPumpFormModalLabel" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="EditPumpFormLabel">Edit {{ pump[1].name }}</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form  action="{{ url_for('edit_pump') }}" method="post" > 
+                                                <div class="form-group" >
+                                                    <input type = "text"  value="{{ pump[1].id }}" name="pump_id" autocomplete="off"  autofocus class="form-control" readonly>
+                                                </div>
+                                                <div class="form-group" >
+                                                    <input type = "text"  value="{{ pump[1].name }}" name="name" autocomplete="off"  autofocus class="form-control" required>
+                                                </div>
+                                    
+                                                <div class="form-group">
+                                                    <select class="form-control" name="tank" type="number">
+                                                        <option selected>Choose..</option>
+                                                        {% for  tank in tanks %}
+                                                        <option  value="{{ tank.id }}">{{ tank.name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                              
+                                                <div> 
+                                                <button class="btn btn-primary btn-block" type="submit">Modify Pump Settings</button>
+                                                </div>
+                                             </form>
+                                        </div>
+                                        <div class="modal-footer">  
+                                            <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                    <!--Edit Pump-->
         </div>
     </div>
 

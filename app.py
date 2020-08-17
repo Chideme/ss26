@@ -115,16 +115,17 @@ def login():
                 company = Tenant.query.get(tenant_id)
                 active =  Tenant.active
 
-                if company and active == True:
-                        session['tenant'] = company.id
-                        session["schema"] = company.schema
-                        return redirect(url_for('user_login'))
+                if company:
+                        if active:
+                                session['tenant'] = company.id
+                                session["schema"] = company.schema
+                                return redirect(url_for('user_login'))
 
-                elif company:
-                        session["schema"] = company.schema
-                        session['tenant'] = company.id
-                        flash('Company is not yet active. Please activate your company profile')
-                        return redirect(url_for('activate',tenant_schema=session['schema']))
+                        else :
+                                session["schema"] = company.schema
+                                session['tenant'] = company.id
+                                flash('Company is not yet active. Please activate your company profile')
+                                return redirect(url_for('activate',tenant_schema=session['schema']))
                         
 
                 else:
@@ -157,7 +158,7 @@ def user_login():
                                 if org.active == False and User.query.filter_by(session["tenant"]).all() == None:
 
                                         flash("Please finish setting up your account")
-                                        return redirect(url_for('signup2',tenant_schema= org.schema))
+                                        return redirect(url_for('activate',tenant_schema= org.schema))
                                 else:     
                                         flash("Login details not correct,check your details and try again !!")
                                         return redirect(url_for('user_login'))
@@ -755,12 +756,10 @@ def delete_pump():
         """Delete Pump"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 pump = db.session.query(Pump).get(int(request.form.get("pumps")))
-                reading_record = PumpReading.query.filter_by(pump_id=pump.id).all()
                 try:
                         db.session.delete(pump)   
                         db.session.commit()
-                        
-                        
+                               
                 except:
                         db.session.rollback()
                         flash("Can not delete record !!")
@@ -768,6 +767,22 @@ def delete_pump():
                 else:
                         flash('Pump Successfully Removed!!')
                         return redirect(url_for('pumps'))
+
+@app.route("/inventory/pumps/edit_pump",methods=["POST"])
+@login_required
+@admin_required
+@check_schema
+def edit_pump():
+        """Modify Pump Settings"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                pump_id = request.form.get("pump_id")
+                name = request.form.get("name")
+                pump = Pump.query.get(pump_id)
+                pump.tank_id =request.form.get("tank")
+                pump.name=  name
+                db.session.commit()
+                flash('Pump Successfully Updated')
+                return redirect(url_for('pump'))
 
 @app.route("/inventory/tanks/add_tank",methods=["POST"])
 @login_required
@@ -823,6 +838,24 @@ def delete_tank():
                         
                         flash('Tank Successfully Removed!!')
                         return redirect(url_for('tanks'))
+
+@app.route("/inventory/tanks/edit_tank",methods=["POST"])
+@login_required
+@admin_required
+@check_schema
+def edit_tank():
+        """Modify Tank Settings"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                tank_id = request.form.get("tank_id")
+                tank = Tank.query.get(tank_id)
+                name =request.form.get("tank")
+                product_id = request.form.get("product")
+                tank.name=  name
+                tank.product_id = product_id
+                db.session.commit()
+                flash('Tank Successfully Updated')
+                return redirect(url_for('tanks'))
+
 
 @app.route("/inventory/tanks/",methods=["GET","POST"])
 @login_required

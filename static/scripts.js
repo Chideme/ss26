@@ -45,6 +45,16 @@ $(document).ready(function(){
             localStorage.setItem('scrollpos',window.scrollY);
         };
         console.log(scrollpos);
-
+        
+        // DataTables function
+        $('#export').DataTable( {
+            dom: 'Bfrtip',
+            buttons: [
+                'copyHtml5',
+                'excelHtml5',
+                'csvHtml5',
+                'pdfHtml5'
+            ]
+        } );
         
     });
