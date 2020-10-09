@@ -28,23 +28,13 @@
     <table class="display" id="export">
         <thead>
             <th>Date</th>
-            <th class="text-center"colspan="7">Invoices</th>
+            <th class="text-center"colspan="6">Details</th>
+            <th>Sales Amount</th>
             <th>Payments</th>
             <th>Balance</th>
         </thead>
         <tbody>
-            <tr>
-                <td></td>
-                <td>Invoice Number</td>
-                <td>Driver</td>
-                <td>Vehicle Number</td>
-                <td>Product</td>
-                <td>Qty</td>
-                <td>Selling Price</td>
-                <td>Amount</td>
-                <td></td>
-                <td></td>
-            </tr>
+            
             {% for date in dates %}
             {% if records[date]["pmnt"]  and records[date]["inv"] %}
             <tr>

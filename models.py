@@ -75,7 +75,8 @@ class Product(db.Model):
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     name = db.Column(db.String,nullable=False)
     product_type=db.Column(db.String,nullable=False)
-    price = db.Column(db.Float,nullable=False)
+    cost_price =  db.Column(db.Float,nullable=True)
+    selling_price = db.Column(db.Float,nullable=False)
     qty = db.Column(db.Integer,nullable=False)
     
     def __repr__(self):
@@ -319,3 +320,5 @@ class CouponSale(db.Model):
     coupon_id = db.Column(db.Integer,db.ForeignKey("coupons.id"),nullable=False)
     qty= db.Column(db.Integer,nullable=False)
 
+
+    

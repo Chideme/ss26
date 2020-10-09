@@ -19,14 +19,10 @@ db.init_app(app)
 
 def main():
     
-         
-
-        
-    db.drop_all()
-
-
-    
-   
+    with db.session.connection(execution_options={"schema_translate_map":{"tenant":"test10"}}):
+        x = Pump.query.get(3)
+        x.name = "Ab2"
+        db.session.commit()
 
 if __name__=="__main__":
     with app.app_context():

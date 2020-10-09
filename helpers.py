@@ -1,12 +1,12 @@
 import os
 import urllib.request
-#from decorator import decorator
+
 from flask import redirect, render_template, request, session,flash,url_for
 from flask_login import current_user
 from functools import wraps
 from models import *
 from collections import *
-from sqlalchemy import and_ , or_,MetaData
+from sqlalchemy import and_ , or_,MetaData,create_engine
 
 from datetime import timedelta
 
@@ -155,7 +155,7 @@ def sales_before_receipts(shift_id,product_id):
     invoices = Invoice.query.filter(and_(Invoice.shift_id == shift_id,Invoice.product_id == product_id)).all()
     total__invoices = sum([invoice.qty for invoice in invoices])
     price = Price.query.filter(and_(Price.shift_id == shift_id, Price.product_id == product_id)).first()
-    price = price.selling_price
+    price = products.price
     
     amount = total__invoices * price
     return amount
@@ -178,14 +178,15 @@ def product_sales(shift_id,product_id):
         sale = current_shift_reading - prev_shift_reading 
         sales += sale
     price = Price.query.filter(and_(Price.shift_id == shift_id, Price.product_id == product_id)).first()
-    price = price.selling_price
+    price = product.price
     amount = sales * price
     return amount
 
 def receipt_product_qty(amount,shift_id,product_id):
     product_id = product_id
-    price = Price.query.filter(and_(Price.shift_id == shift_id, Price.product_id == product_id)).first()
-    price = price.selling_price
+    product = Product.query.get(product_id)
+    #price = Price.query.filter(and_(Price.shift_id == shift_id, Price.product_id == product_id)).first()
+    price = product.price
     product_available = product_sales(shift_id,product_id)-sales_before_receipts(shift_id,product_id) #amount
 
     if product_available != 0 and product_available > 0:
@@ -210,7 +211,7 @@ def get_product_price(shift_id,product_id):
     product = Product.query.filter_by(id=product_id).first()
     product_id = product.id
     price = Price.query.filter(and_(Price.shift_id == shift_id, Price.product_id == product_id)).first()
-    price = price.selling_price
+    price = product.price
     return price
 
 def total_customer_sales(results):
@@ -260,9 +261,11 @@ def product_sales_litres(shift_id,prev_shift_id):
             previous_product_reading = sum([i[1].litre_reading for i in prev_readings if i[0].id == product.id])
             sales = current_product_reading-previous_product_reading
             prices = db.session.query(Product,Price).filter(and_(Product.id==Price.product_id,Price.shift_id==shift_id,Product.id==product.id)).first()
-            product_sales[product.name] = (sales,prices[1])
-    
-    
+            if prices:
+                product_sales[product.name] = (sales,prices)
+            else:
+                product_sales[product.name] = (sales,product)
+                
     return product_sales
 
 
@@ -408,6 +411,21 @@ def get_tank_variance(start_date,end_date,tank_id):
                 tank_dips[shift.id]=[shift.date,prev_shift_dip,current_shift_dip,deliveries,tank_sales,pump_sales,shrinkage2sales,shrinkage2salesP,cumulative,cumulativeP]
 
     return tank_dips
+
+def daily_sales_summary(tanks,start_date,end_date):
+    sales_summary= {}
+
+    for tank in tanks:
+    
+        tank_dips = get_tank_variance(start_date,end_date,tank.id) # get details per tank per shift
+        for shift in tank_dips:
+            # aggregate to get data per day and all tanks
+            if  tank_dips[shift][0] in sales_summary:
+                n = len(sales_summary[tank_dips[shift][0]])
+                for i in range(n):
+                    sales_summary[tank_dips[shift][0]][i]+=tank_dips[shift][i+1]
+           
+    return sales_summary     
 
 def tank_variance_daily_report(start_date,end_date,tank_id):
     """Tank Variance report for dashboard"""
@@ -601,7 +619,8 @@ def get_pump_readings(shift_id,prev_shift_id):
         else:
             if current_shift_reading:
                 current_shift_reading = current_shift_reading.litre_reading,current_shift_reading.money_reading
-                pump_readings[pump.name]=[(0,0),current_shift_reading]
+                prev_shift_reading = pump_readings[pump.name].litre_reading,pump_readings[pump.name].money_reading
+                pump_readings[pump.name]=[prev_shift_reading,current_shift_reading]
     return pump_readings
 
 def get_tank_dips(shift_id,prev_shift_id):
@@ -623,7 +642,7 @@ def get_tank_dips(shift_id,prev_shift_id):
             current_shift_dip = current_shift_dip.dip
             delivery = Fuel_Delivery.query.filter(and_(Fuel_Delivery.shift_id==shift_id,Fuel_Delivery.tank_id==tank.id)).all()
             deliveries = sum([i.qty for i in delivery])
-            tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries]
+            tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
     return tank_dips
 
 def create_tenant_tables(schema):

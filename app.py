@@ -2,8 +2,8 @@ import os
 
 from flask import Flask, session, render_template,flash,request,redirect,url_for,jsonify,make_response
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail, Message
 from sqlalchemy import and_, or_,MetaData,Table
-
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import *
 from models import *
@@ -20,6 +20,16 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 app.config["FLASK_ENV"] = os.getenv("FLASK_ENV")
 app.secret_key = os.urandom(24)
 db.init_app(app)
+app.config.update(dict(
+    DEBUG = True,
+    MAIL_SERVER = 'smtp.gmail.com',
+    MAIL_PORT = 465,
+    MAIL_USE_TLS = True,
+    MAIL_USE_SSL = False,
+    MAIL_USERNAME = 'kudakwashechideme@gmail.com',
+    MAIL_PASSWORD = '@cee%kay',
+))
+mail = Mail(app)
 
 
 
@@ -59,6 +69,7 @@ def signup():
                 
                 session['schema'] =tenant.schema
                 session['tenant']= tenant.id
+                
                 return redirect(url_for('activate',tenant_schema=session['schema']))
                 
         return render_template("signup.html")
@@ -92,9 +103,19 @@ def activate(tenant_schema):
                         session["user_tenant"]= user.tenant_id
                         session["role_id"] = user.role_id
                         session["shift_underway"]=False
-                        db.session.commit()
-                        flash('Account Successfully activated. Please use details sent to your email to login.')
-                        return redirect(url_for('login'))
+                        msg = Message("Hello",
+                                sender="kudakwashechideme@gmail.com",
+                                recipients=["kudakwashechideme@gmail.com"])
+                        try:
+                                #mail.send(msg)
+                                db.session.commit()
+                                flash('Account Successfully activated. Please use details sent to your email to login.')
+                                return redirect(url_for('login'))
+                                
+                        except:  
+                                db.session.commit()
+                                flash('Account Successfully activated. Please use details sent to your email to login.')
+                                return redirect(url_for('login'))
 
 
 
@@ -109,7 +130,12 @@ def login():
         if request.method == "POST":
                 tenant_id = request.form.get("tenant_id")
                 company = Tenant.query.get(tenant_id)
-                active =  Tenant.active
+                try:
+                        active =  company.active
+
+                except:
+                        flash('Company does not exist, check your code and try again or contact support')
+                        return render_template("login.html")
 
                 if company:
                         if active:
@@ -117,7 +143,7 @@ def login():
                                 session["schema"] = company.schema
                                 return redirect(url_for('user_login'))
 
-                        else :
+                        else:
                                 session["schema"] = company.schema
                                 session['tenant'] = company.id
                                 flash('Company is not yet active. Please activate your company profile')
@@ -333,7 +359,7 @@ def start_shift_update():
                                 db.session.add(shift)
                                 db.session.flush()
                                
-
+                                shift_underway[0].current_shift = shift.id
                                 current_shift = Shift.query.order_by(Shift.id.desc()).first()
                                 shift_id = current_shift.id 
                                 prev = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
@@ -377,7 +403,7 @@ def start_shift_update():
                              
                                
                                 for i in fuels_dict:
-                                        fuels_dict[i] = Price(date=date,shift_id=shift_id,product_id=fuels_dict[i].id,cost_price=fuels_dict[i].price,selling_price=fuels_dict[i].price)
+                                        fuels_dict[i] = Price(date=date,shift_id=shift_id,product_id=fuels_dict[i].id,cost_price=fuels_dict[i].cost_price,selling_price=fuels_dict[i].selling_price)
                                         db.session.add(fuels_dict[i])
                                         db.session.flush()
                                 
@@ -711,9 +737,10 @@ def add_pump():
                 ######
                 s = Shift.query.order_by(Shift.id.desc()).all()
                 name=request.form.get("pump_name").capitalize()
+                name = name.strip()
                 tank_id=request.form.get("tank")
-                litre_reading = request.form.get("litre_reading") # opening readings
-                money_reading = request.form.get("money_reading")
+                litre_reading = request.form.get("litre_reading").strip() # opening readings
+                money_reading = request.form.get("money_reading").strip()
                 try:
                         tank = Tank.query.get(tank_id)
                 except:
@@ -789,6 +816,7 @@ def add_tank():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 shift_underway = Shift_Underway.query.all()
                 name =request.form.get("tank_name").capitalize()
+                name = name.strip()
                 product_id=request.form.get("product")
                 dip = request.form.get("dip")
                 date= request.form.get("date")
@@ -884,10 +912,11 @@ def add_product():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 name=request.form.get("product_name").capitalize()
                 price=request.form.get("price")
+                cost = request.form.get("cost")
                 qty=request.form.get("qty")
                 product_type=request.form.get("product_type")
                 try:
-                        product = Product(name=name,price=price,qty=qty,product_type=product_type)
+                        product = Product(name=name,selling_price=price,qty=qty,product_type=product_type,cost_price=cost)
                         db.session.add(product)
                         db.session.commit()
                 except:
@@ -1438,7 +1467,35 @@ def tank_variances(tank_id):
 
                         return render_template("tank_variances.html",tank_dips=tank_dips,tank=tank)
                 
+@app.route("/reports/sales_summary",methods=["GET","POST"])
+@login_required
+@admin_required
+@check_schema
+def sales_summary():
+        """Sales Summary Report"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                
+                if request.method =="GET":
+                        shift_underway = Shift_Underway.query.all()
+                        current_shift = shift_underway[0].current_shift
+                        current_shift = Shift.query.get(current_shift)
+                        end_date = current_shift.date if current_shift else "1994-05-04"
+                        start_date = end_date - timedelta(days=30) if current_shift else "1994-05-04"
+                        tanks = Tank.query.all()
+                        products = Product.query.all()
+                        sales_summary= daily_sales_summary(tanks,start_date,end_date)
 
+                        return render_template("sales_summary.html",report=sales_summary,products=products)
+                else:
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        start_date = check_first_date(start_date)
+                        tanks = Tank.query.all()
+                        products = Product.query.all()
+                        sales_summary= daily_sales_summary(tanks,start_date,end_date)
+
+                        return render_template("sales_summary.html",report=sales_summary,products=products)
+                        
 
 @app.route("/reports/driveway",methods=["GET","POST"])
 @login_required
@@ -1469,7 +1526,7 @@ def get_driveway():
                                 customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
                                 sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
                                 total_sales_ltr= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
-                                total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price for product in product_sales_ltr])
+                                total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
                                 sales_breakdown["Cash"] = total_sales_amt- sum([sales_breakdown[i] for i in sales_breakdown])
                                 expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.shift_id==shift_id)).all()
                                 total_cash_expenses = sum([i[0].amount for i in expenses])
@@ -1516,7 +1573,7 @@ def get_driveway():
                                 customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
                                 sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
                                 total_sales_ltr= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
-                                total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price for product in product_sales_ltr])
+                                total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
                                 sales_breakdown["Cash"] = total_sales_amt- sum([sales_breakdown[i] for i in sales_breakdown])
                                 expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.date==date)).all()
                                 total_cash_expenses = sum([i[0].amount for i in expenses])
@@ -1565,7 +1622,7 @@ def get_driveway():
                                 customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name !="Cash"))
                                 sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
                                 total_sales_ltr= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
-                                total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price for product in product_sales_ltr])
+                                total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
                                 sales_breakdown["Cash"] = total_sales_amt- sum([sales_breakdown[i] for i in sales_breakdown])
                                 expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.shift_id==shift_id)).all()
                                 total_cash_expenses = sum([i[0].amount for i in expenses ])
@@ -1608,7 +1665,6 @@ def ss26():
                 shift_underway = Shift_Underway.query.all()
                 #######
                 shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
-                
                 if shifts:
                         current_shift = shifts[0]
                         prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
@@ -1625,7 +1681,7 @@ def ss26():
                         customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
                         sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
                         total_sales_ltr= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
-                        total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price for product in product_sales_ltr])
+                        total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
                         sales_breakdown["Cash"] = total_sales_amt- sum([sales_breakdown[i] for i in sales_breakdown])
                         expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.shift_id==shift_id)).all()
                         total_cash_expenses = sum([i[0].amount for i in expenses])
@@ -1878,7 +1934,7 @@ def coupon_sales():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 #current_shift = Shift.query.order_by(Shift.id.desc()).first()
                 shift_underway = Shift_Underway.query.all()
-                current_shift = shift_underway.current_shift
+                current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
                 date = current_shift.date
                 shift_id = current_shift.id

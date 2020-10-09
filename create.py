@@ -14,7 +14,7 @@ db.init_app(app)
 
 def main():
 
-    db.create_all()
+    #db.create_all()
     admin_role = Role(name = "Owner")
     db.session.add(admin_role)
     supervisor_role = Role(name="Manager")

@@ -88,16 +88,16 @@
                   <td class="driveway-table">{{ product }}</td>
                   <td class="driveway-table">
                     <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#{{ product }}CostPrice">
-                    {{ product_sales_ltr[product][1].cost_price }}
+                    {{ product_sales_ltr[product][1][1].cost_price }}
                   </button>
                 </td>
                   <td class="driveway-table">
                     <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#{{ product }}SellingPrice">
-                    {{ product_sales_ltr[product][1].selling_price }}
+                    {{ product_sales_ltr[product][1][1].selling_price }}
                     </button>
                   </td>
                   <td class="driveway-table">{{ product_sales_ltr[product][0] }}</td>
-                  <td class="numbers driveway-table">{{ product_sales_ltr[product][0]*product_sales_ltr[product][1].selling_price |round(2) }}</td>
+                  <td class="numbers driveway-table">{{ product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price |round(2) }}</td>
                 </tr>
                 {% endfor %}
                 <tr class="driveway-table">
@@ -124,12 +124,12 @@
                 <td>{{ tank }}</td>
                 <td class="numbers driveway-table">{{ tank_dips[tank][0] }}</td>
                 <td class="numbers driveway-table">
-                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#FuelDelivery{{ tank }}">
+                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#FuelDelivery{{ tank_dips[tank][4] }}">
                     {{ tank_dips[tank][3] }} 
                   </button>
                 </td>
                 <td class="numbers driveway-table">
-                  <button type="button" id="postion" class="btn btn-light" data-toggle="modal" data-target="#ClosingTankDip{{ tank }}">
+                  <button type="button" id="postion" class="btn btn-light" data-toggle="modal" data-target="#ClosingTankDip{{ tank_dips[tank][4] }}">
                   {{ tank_dips[tank][1] }}
                   </button>
                 </td>
@@ -233,7 +233,7 @@
                               <input type = "text"  value="{{ pump }}" name="pump" autocomplete="off"  autofocus class="form-control" required>
                           </div>
                           <div class="form-group">
-                              <input type ="number" value="{{ pump_readings[pump][1][0] }}" name="litre_reading" autocomplete="off"autofocus class="form-control" required>
+                              <input type ="number" step="any" value="{{ pump_readings[pump][1][0] }}" name="litre_reading" autocomplete="off"autofocus class="form-control" required>
                           </div>
    
                           <button class="btn btn-primary btn-block" type="submit">Update Reading</button>
@@ -264,7 +264,7 @@
                               <input type = "text"  value="{{ pump }}" name="pump" autocomplete="off"  autofocus class="form-control" required>
                           </div>
                           <div class="form-group">
-                              <input type ="number" value="{{ pump_readings[pump][1][1] }}" name="money_reading" autocomplete="off" autofocus class="form-control" required>
+                              <input type ="number" step="0.01" value="{{ pump_readings[pump][1][1] }}" name="money_reading" autocomplete="off" autofocus class="form-control" required>
                           </div>
    
                           <button class="btn btn-primary btn-block" type="submit">Update Reading</button>
@@ -281,11 +281,11 @@
 
       <!--Delivery Modal-->
       {% for tank in tank_dips %}
-      <div class="modal fade" id="FuelDelivery{{ tank }}" tabindex="-1" role="dialog" aria-labelledby="FuelDelivery{{ tank }}FormModalLabel" aria-hidden="true">
+      <div class="modal fade" id="FuelDelivery{{ tank_dips[tank][4] }}" tabindex="-1" role="dialog" aria-labelledby="FuelDelivery{{ tank_dips[tank][4] }}FormModalLabel" aria-hidden="true">
           <div class="modal-dialog" role="document">
               <div class="modal-content">
                   <div class="modal-header">
-                      <h5 class="modal-title" id="FuelDelivery{{ tank }}FormLabel">Enter Delivery</h5>
+                      <h5 class="modal-title" id="FuelDelivery{{ tank_dips[tank][4] }}FormLabel">Enter Delivery</h5>
                           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                               <span aria-hidden="true">&times;</span>
                           </button>
@@ -296,7 +296,7 @@
                               <input type = "text"  value="{{ tank }}" name="tank" autocomplete="off"  autofocus class="form-control" required>
                           </div>
                           <div class="form-group">
-                              <input type ="text" value="{{ tank_dips[tank][3] }} " name="delivery" autocomplete="off"autofocus class="form-control" required>
+                              <input type ="number" step="any" value="{{ tank_dips[tank][3] }} " name="delivery" autocomplete="off"autofocus class="form-control" required>
                           </div>
    
                           <button class="btn btn-primary btn-block" type="submit">Enter Delivery</button>
@@ -314,11 +314,11 @@
 
        <!--Dips Modal-->
        {% for tank in tank_dips %}
-       <div class="modal fade" id="ClosingTankDip{{ tank }}" tabindex="-1" role="dialog" aria-labelledby="ClosingTankDip{{ tank }}FormModalLabel" aria-hidden="true">
+       <div class="modal fade" id="ClosingTankDip{{ tank_dips[tank][4] }}" tabindex="-1" role="dialog" aria-labelledby="ClosingTankDip{{ tank_dips[tank][4] }}FormModalLabel" aria-hidden="true">
            <div class="modal-dialog" role="document">
                <div class="modal-content">
                    <div class="modal-header">
-                       <h5 class="modal-title" id="ClosingTankDip{{ tank }}FormLabel">Enter Dip</h5>
+                       <h5 class="modal-title" id="ClosingTankDip{{ tank_dips[tank][4] }}FormLabel">Enter Dip</h5>
                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                <span aria-hidden="true">&times;</span>
                            </button>
@@ -329,7 +329,7 @@
                                <input type = "text"  value="{{ tank }}" name="tank" autocomplete="off"  autofocus class="form-control" required>
                            </div>
                            <div class="form-group">
-                               <input type ="text" value="{{ tank_dips[tank][1] }}" name="tank_dip" autocomplete="off"autofocus class="form-control" required>
+                               <input type ="number" step="any" value="{{ tank_dips[tank][1] }}" name="tank_dip" autocomplete="off"autofocus class="form-control" required>
                            </div>
     
                            <button class="btn btn-primary btn-block" type="submit">Enter Dip</button>
@@ -362,7 +362,7 @@
                                 <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
                             </div>
                             <div class="form-group">
-                                <input type ="text" value="{{ product_sales_ltr[product][1].cost_price }}" name="cost_price" autocomplete="off"autofocus class="form-control" required>
+                                <input type ="number" step="0.01" value="{{ product_sales_ltr[product][1][1].cost_price }}" name="cost_price" autocomplete="off"autofocus class="form-control" required>
                             </div>
      
                             <button class="btn btn-primary btn-block" type="submit">Update Price</button>
@@ -395,9 +395,8 @@
                               <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
                           </div>
                           <div class="form-group">
-                              <input type ="text" value="{{ product_sales_ltr[product][1].selling_price }}" name="selling_price" autocomplete="off"autofocus class="form-control" required>
+                              <input type ="number" step="0.01" value="{{ product_sales_ltr[product][1][1].selling_price }}" name="selling_price" autocomplete="off"autofocus class="form-control" required>
                           </div>
-   
                           <button class="btn btn-primary btn-block" type="submit">Update Price</button>
                   
                        </form>
@@ -502,10 +501,10 @@
                             </select>
                         </div>
                         <div class="form-group col-md-4">
-                            <input type="text" name="sales_price"  placeholder="Price" class="form-control">
+                            <input type="number" step="0.01" name="sales_price"  placeholder="Price" class="form-control">
                         </div>
                         <div class="form-group col-md-4">
-                            <input type="text" name="qty"  placeholder="litres" class="form-control">
+                            <input type="number"  step="any" name="qty"  placeholder="litres" class="form-control">
                         </div>
                     </div>
                     <div class="form-row">
@@ -547,7 +546,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <input type = "number"  name="amount" autocomplete="off" placeholder="Amount" autofocus class="form-control">
+                        <input type = "number"  step="0.01" name="amount" autocomplete="off" placeholder="Amount" autofocus class="form-control">
                     </div>
                 <button  class="btn btn-primary btn-block" type="submit">Save</button>      
             </form>
@@ -630,7 +629,7 @@
                         </select>
                     </div>
                     <div class="form-group" >
-                        <input type = "text"  name="amount" autocomplete="off" placeholder="Amount" autofocus class="form-control">
+                        <input type = "number" step="0.01"  name="amount" autocomplete="off" placeholder="Amount" autofocus class="form-control">
                     </div>
                 <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
             </form>
@@ -648,7 +647,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="CashUpFormLabel">Cash UP</h5>
+                <h5 class="modal-title" id="CashUpFormLabel">Cash Up</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -656,16 +655,21 @@
             <div class="modal-body">
                     <form role="form"   action="{{ url_for('cash_up') }}" method="post" > 
                         <div class="form-group" >
-                            <input type = "text"  name="actual_amount" autocomplete="off" placeholder="Actual Amount" autofocus class="form-control">
+                            <label for="CashSales">Cash Sales</label>
+                            <input id="CashSales" type = "number" step="0.01" value="{{ sales_breakdown['Cash'] }}"  name="cash_sales_amount" autocomplete="off" autofocus class="form-control" readonly>
                         </div>
                         <div class="form-group">
-                            <input type = "text" value="{{ sales_breakdown['Cash']-total_cash_expenses }}"  name="expected_amount" autocomplete="off" autofocus class="form-control">
+                            <label for="ExpectedAmount">Expected Amount</label>
+                            <input id="ExpectedAmount" type = "number"  step="0.01" value="{{ sales_breakdown['Cash']-total_cash_expenses }}"  name="expected_amount" autocomplete="off" autofocus class="form-control" readonly>
+                        </div>
+                        
+                        <div class="form-group" >
+                            <label for="ActualAmount">Actual Amount</label>
+                            <input  id="ActualAmount" type = "number" step="0.01"  name="actual_amount" autocomplete="off" placeholder="Actual Amount" autofocus class="form-control">
                         </div>
                         <div class="form-group" >
-                            <input type = "number" value="{{ sales_breakdown['Cash'] }}"  name="cash_sales_amount" autocomplete="off" autofocus class="form-control" readonly>
-                        </div>
-                        <div class="form-group" >
-                            <input type = "text"  name="variance" autocomplete="off" placeholder="Variance" autofocus class="form-control">
+                            <label for="Variance">Variance</label>
+                            <input id="Variance" type = "number" step="any"  name="variance" autocomplete="off" placeholder="Variance" autofocus class="form-control">
                         </div>
                     <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
                 </form>

@@ -8,17 +8,23 @@
 
 <div class="text-center">
 <h4>Daily Fuel Gross Profit</h4>
-<h6>Period: {{ start_date }}  TO   {{ end_date }}</h6>
+
 
     <form style="display: inline-block;" action="{{ url_for('profit_statement') }}"  method="post">
-    <div class="btn-toolbar mb-2 mb-md-0">
-    <div class="btn-group mr-2">
-        <input type = "date"  name="start_date" autocomplete="off"autofocus class="form-control" required>
-        <input type = "date"  name="end_date" autocomplete="off"autofocus class="form-control" required>
-        <button type="submit" class="btn btn-sm btn-outline-secondary">Enter</button>
-    </div>
-    </div>
+        <div class="form-group">
+            <label for="StartDate">Start Date: </label>
+        <input id="StartDate" type = "date"  name="start_date" autocomplete="off"autofocus class="form-control" required>
+        </div>
+        <label for="EndDate">End Date :</label>
+        <div class="form-group">
+        <input id="EndDate" type = "date"  name="end_date" autocomplete="off"autofocus class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-block btn-primary">Filter</button>
+    
     </form>
+</div>
+<div class="p-3 text-center">
+    <h6>Period: {{ start_date }}  TO   {{ end_date }}</h6>
 </div>
 <div class="p-3"></div>
             <table class="table table-sm table-hover">

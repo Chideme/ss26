@@ -118,7 +118,7 @@
                               <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
                           </div>
                           <div class="form-group">
-                              <input type ="number" value="{{ product_sales[product][2] }}" name="qty" autocomplete="off"autofocus class="form-control" required>
+                              <input type ="number" step="any" value="{{ product_sales[product][2] }}" name="qty" autocomplete="off"autofocus class="form-control" required>
                           </div>
    
                           <button class="btn btn-primary btn-block" type="submit">Update Quantity</button>
@@ -151,7 +151,7 @@
                               <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
                           </div>
                           <div class="form-group">
-                              <input type ="text" value="{{ product_sales[product][6] }} " name="qty" autocomplete="off"autofocus class="form-control" required>
+                              <input type = "number" step="any" value="{{ product_sales[product][6] }} " name="qty" autocomplete="off"autofocus class="form-control" required>
                           </div>
    
                           <button class="btn btn-primary btn-block" type="submit">Enter Delivery</button>
@@ -186,7 +186,7 @@
                                 <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
                             </div>
                             <div class="form-group">
-                                <input type ="text" value="{{ product_sales[product][3] }}" name="cost_price" autocomplete="off"autofocus class="form-control" required>
+                                <input type = "number" step="0.01" value="{{ product_sales[product][3] }}" name="cost_price" autocomplete="off"autofocus class="form-control" required>
                             </div>
      
                             <button class="btn btn-primary btn-block" type="submit">Update Price</button>
@@ -219,7 +219,7 @@
                               <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
                           </div>
                           <div class="form-group">
-                              <input type ="text" value="{{ product_sales[product][4] }}" name="selling_price" autocomplete="off"autofocus class="form-control" required>
+                              <input type = "number" step="0.01" value="{{ product_sales[product][4] }}" name="selling_price" autocomplete="off"autofocus class="form-control" required>
                           </div>
    
                           <button class="btn btn-primary btn-block" type="submit">Update Price</button>
@@ -309,10 +309,10 @@
                     <form role="form"   action="{{ url_for('lubes_cash_up') }}" method="post" > 
                         
                         <div class="form-group" >
-                            <input type = "number"   name="cash_sales_amount" placeholder="Total Amount Available" autocomplete="off" autofocus class="form-control">
+                            <input type = "number" step="0.01"   name="cash_sales_amount" placeholder="Total Amount Available" autocomplete="off" autofocus class="form-control">
                         </div>
                         <div class="form-group">
-                            <input type = "text" value="{{ total_sales_amt }}"  name="expected_amount" autocomplete="off" autofocus class="form-control" readonly>
+                            <input type = "number" step="0.01" value="{{ total_sales_amt }}"  name="expected_amount" autocomplete="off" autofocus class="form-control" readonly>
                         </div>
                        
                     <button  class="btn btn-primary btn-block" type="submit">Enter</button>      

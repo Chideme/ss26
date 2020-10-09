@@ -9,10 +9,15 @@
           <div class="btn-toolbar mb-2 mb-md-0">
           <div class="btn-group mr-2">
               <select class="form-control"  id="tank" required>
+                {% if tanks %}
                 <option  value="{{ tanks[0].id }}" selected >{{ tanks[0].name }}</option>
                 {% for tank in tanks[1:] %}
                 <option value="{{ tank.id }}">{{ tank.name }}</option>
                 {% endfor %}
+
+                {% else %}
+                <option selected>Add Tank </option>
+                {% endif %}
               </select>
               <input type = "date"  value="{{ start_date }}" id="start_date" autocomplete="off" autofocus class="form-control" required>
               <input type = "date" value="{{ end_date }}"  id="end_date" autocomplete="off"  class="form-control" required>
