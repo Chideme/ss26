@@ -23,7 +23,7 @@ db.init_app(app)
 app.config.update(dict(
     DEBUG = True,
     MAIL_SERVER = 'smtp.gmail.com',
-    MAIL_PORT = 465,
+    MAIL_PORT = 587,
     MAIL_USE_TLS = True,
     MAIL_USE_SSL = False,
     MAIL_USERNAME = 'kudakwashechideme@gmail.com',
@@ -90,11 +90,13 @@ def activate(tenant_schema):
                         #db.create_all()
                         #tenant = Tenant.query.filter_by(schema=tenant_schema).first()
                         super_user = "Admin"
-                        password = generate_password_hash('1234')
+                        password= get_random_string()
+                        hash_password = generate_password_hash(password)
                         tenant_id = session['tenant']
                         tenant = Tenant.query.get(tenant_id)
-                        user=User(username=super_user,password=password,role_id=1,tenant_id=tenant_id,schema=session["schema"])
+                        user=User(username=super_user,password=hash_password,role_id=1,tenant_id=tenant_id,schema=session["schema"])
                         shift_underway = Shift_Underway(state=False,current_shift=0)
+                        msg_body = "<h3>Please find your login details :</h3><body><p>Company Code: {}</p><p>User Name: Admin</p><p>Password: {}</p><small>Make sure to change your password once logged in</small></body>".format(tenant.id,password)
                         db.session.add(shift_underway)  
                         db.session.add(user)
                         db.session.flush()
@@ -103,11 +105,12 @@ def activate(tenant_schema):
                         session["user_tenant"]= user.tenant_id
                         session["role_id"] = user.role_id
                         session["shift_underway"]=False
-                        msg = Message("Hello",
+                        msg = Message(subject="Welcome Admin!",
                                 sender="kudakwashechideme@gmail.com",
-                                recipients=["kudakwashechideme@gmail.com"])
+                                recipients=[tenant.company_email],
+                                html=msg_body)
                         try:
-                                #mail.send(msg)
+                                mail.send(msg)
                                 db.session.commit()
                                 flash('Account Successfully activated. Please use details sent to your email to login.')
                                 return redirect(url_for('login'))
@@ -215,7 +218,10 @@ def dashboard(heading):
 
         start_date =  end_date- timedelta(days=360)
         h = heading
-        return render_template("dashboard.html",h=heading,start_date=start_date,end_date=end_date)
+        if h == "Sales" or h =="Profit":
+                return render_template("dashboard.html",h=heading,start_date=start_date,end_date=end_date)
+        else:
+                return render_template("404.html")
 
 
 @app.route("/dashboard/reports",methods=["POST"])
@@ -2427,18 +2433,6 @@ def lubes_cash_up():
                         return redirect(url_for('ss26'))
 
 
-@app.errorhandler(500)
-def internal_app_error(error):
-
-        return render_template('error.html'),500
-
-@app.errorhandler(404)
-def missing_page_error(error):
-        
-        return render_template('404.html'),404
-
-
-
 @app.route("/forgot_password",methods=['GET','POST'])
 def forgot_password():
         """ Reset Password for Admin"""
@@ -2457,4 +2451,14 @@ def forgot_password():
                         mail.send(msg)
                         flash("Check you email inbox")
                         return redirect(url_for('index'))
-                        
+
+
+@app.errorhandler(500)
+def internal_app_error(error):
+
+        return render_template('error.html'),500
+
+@app.errorhandler(404)
+def page_not_found(error):
+        
+        return render_template('404.html'),404

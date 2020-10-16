@@ -13,37 +13,82 @@
     <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css" />
 
     <!-- Custom styles for this template -->
-    <link href="/static/signin.css" rel="stylesheet">
+    <style>
+        body {
+     background-position: center;
+     background-color: #eee;
+     background-repeat: no-repeat;
+     background-size: cover;
+     color: #505050;
+     font-family: "Rubik", Helvetica, Arial, sans-serif;
+     font-size: 14px;
+     font-weight: normal;
+     line-height: 1.5;
+     text-transform: none
+ }
+
+ .forgot {
+     background-color: #fff;
+     padding: 12px;
+     border: 1px solid #dfdfdf
+ }
+
+ .padding-bottom-3x {
+     padding-bottom: 72px !important
+ }
+
+ .card-footer {
+     background-color: #fff
+ }
+
+ .btn {
+     font-size: 13px
+ }
+
+ .form-control:focus {
+     color: #495057;
+     background-color: #fff;
+     border-color: #76b7e9;
+     outline: 0;
+     box-shadow: 0 0 0 0px #28a745
+ }
+    </style>
   </head>
 
   <body>
-    <form class="form-signin" action="{{ url_for('signup') }}" method="post">
-      
-      <h1 class="h3 mb-3 font-weight-normal">Sign Up</h1>
-      <div class="form-group">
-      <label for="inputCompanyName">Company Name</label>
-      <input type="text" id="inputCompanyName" name="tenant" class="form-control" placeholder="Company Name" required autofocus>
-      </div>
-      <div class="form-group">
-      <label for="inputEmail" >Company Email</label>
-      <input type="email" id="inputEmail" name="email" class="form-control" placeholder="Company Email" required>
-      </div>
-      
-      <div class="form-group">
-        <label for="inputContact">Contact Person</label>
-        <input type="text" id="inputContact" name="contact_person" class="form-control" placeholder="Contact Person" required>
-        </div>
-        <div class="form-group">
-          <label for="inputContact">Contact Number</label>
-          <input type="tel" id="inputContactNumber" name="phone" class="form-control" placeholder="Contact Number" required>
-          </div>
-        <div class="form-group">
-          <label for="inputAddress">Address</label>
-          <input type="text" id="inputAddress" name="address" class="form-control" placeholder="Address" required>
-          </div>
-      <button class="btn btn-lg btn-primary btn-block" type="submit">Sign Up</button>
-      <p class="mt-5 mb-3 text-muted">&copy; 2020</p>
+    <div class="container padding-bottom-3x mb-2 mt-5">
+	    <div class="row justify-content-center">
+	        <div class="col-lg-8 col-md-10">
+            <form class="card mt-4" action="{{ url_for('signup') }}" method="post">
+              <div class="card-body">
+                <h1>Sign Up</h1>
+                <div class="form-group">
+                <label for="inputCompanyName">Company Name</label>
+                <input type="text" id="inputCompanyName" name="tenant" class="form-control" placeholder="Company Name" required autofocus>
+                
+                <div class="form-group">
+                <label for="inputEmail" >Company Email</label>
+                <input type="email" id="inputEmail" name="email" class="form-control" placeholder="Company Email" required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="inputContact">Contact Person</label>
+                  <input type="text" id="inputContact" name="contact_person" class="form-control" placeholder="Contact Person" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="inputContact">Contact Number</label>
+                    <input type="tel" id="inputContactNumber" name="phone" class="form-control" placeholder="Contact Number" required>
+                    </div>
+                  <div class="form-group">
+                    <label for="inputAddress">Address</label>
+                    <input type="text" id="inputAddress" name="address" class="form-control" placeholder="Address" required>
+                    </div>
+              </div>
+              <div class="card-footer">
+                <button class="btn btn-lg btn-primary" type="submit">Sign Up</button>
+                </div>
     </form>
+    <p class="mt-5 mb-3 text-muted">&copy; 2020</p>
   </body>
 </html>
 

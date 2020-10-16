@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash
 from random import randint
 from sqlalchemy import and_ , or_,create_engine,MetaData,Table,inspect
 #from sqlalchemy_sqlschema import maintain_schema
+from flask_mail import Mail, Message
 
 from sqlalchemy.orm import Session
 from helpers import *
@@ -17,14 +18,23 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] =  os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
-
+app.config.update(dict(
+    DEBUG = True,
+    MAIL_SERVER = 'smtp.gmail.com',
+    MAIL_PORT = 587,
+    MAIL_USE_TLS = True,
+    MAIL_USE_SSL = False,
+    MAIL_USERNAME = 'kudakwashechideme@gmail.com',
+    MAIL_PASSWORD = '@cee%kay',
+))
+mail = Mail(app)
 def main():
-    with db.session.connection(execution_options={"schema_translate_map":{"tenant":'test10'}}):
-        s = Supplier(name="kuda",contact_person="kuda",phone_number="1234")
-        db.session.add(s)
-        db.session.commit()
-
-        
+   
+    msg = Message("Hello",
+                        sender="kudakwashechideme@gmail.com",
+                        recipients=["kudakwashechideme@gmail.com"])
+    mail.send(msg)
+    print("Done!!")   
 with app.app_context():
         main()
 
