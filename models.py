@@ -186,6 +186,19 @@ class Customer(db.Model):
     
     __table_args__={'schema':'tenant'}
 
+class Supplier(db.Model):
+    __tablename__="supplier"
+    
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name= db.Column(db.String,nullable=False)
+    contact_person =db.Column(db.String,nullable=True)
+    phone_number = db.Column(db.String,nullable=True)
+    
+
+    def __repr__(self):
+        return "{}".format(self.name)
+    
+    __table_args__={'schema':'tenant'}
 
 class CustomerPayments(db.Model):
     __tablename__="customer_payments"
@@ -219,8 +232,10 @@ class Fuel_Delivery(db.Model):
     tank_id = db.Column(db.Integer, db.ForeignKey("tanks.id"), nullable=False)
     date= db.Column(db.Date, nullable=False)
     qty = db.Column(db.Float,nullable=False)
+    cost_price = db.Column(db.Float,nullable=False)
     product_id = db.Column(db.Integer,db.ForeignKey("products.id"),nullable=True)
-    document_number = db.Column(db.String,nullable=True)#remove this column
+    document_number = db.Column(db.String,nullable=True)
+    supplier = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
 
 class Invoice(db.Model):
     __tablename__="invoices"

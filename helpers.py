@@ -1,5 +1,7 @@
 import os
 import urllib.request
+import random
+import string
 
 from flask import redirect, render_template, request, session,flash,url_for
 from flask_login import current_user
@@ -240,7 +242,7 @@ def check_first_date(date):
     check_shift = Shift.query.filter_by(date=date).first()
     if check_shift == None:
         if shifts:
-            return shifts[2].date
+            return shifts[1].date
             
         else:
             return date
@@ -333,8 +335,8 @@ def fuel_daily_profit_report(start_date,end_date):
         if prev_shift:
             prev_shift_id = prev_shift.id
             litres = product_sales_litres(shift_id,prev_shift_id)
-            sales = sum([litres[i][0]*litres[i][1].selling_price for i in litres])
-            cost = sum([litres[i][0]*litres[i][1].cost_price for i in litres])
+            sales = sum([litres[i][0]*litres[i][1][1].selling_price for i in litres])
+            cost = sum([litres[i][0]*litres[i][1][1].cost_price for i in litres])
             
             if shift.date in profit:
                 profit[shift.date] = profit[shift.date] + (sales - cost)
@@ -372,7 +374,7 @@ def fuel_product_profit_statement(start_date,end_date):
                 for prod in product:
                     profit[shift.date][prod][0] = profit[shift.date][prod][0]+ product[prod][0]
             else:
-                profit[shift.date] ={i:[product[i][0],product[i][1].selling_price,product[i][1].cost_price,product[i][1].selling_price-product[i][1].cost_price] for i in product}
+                profit[shift.date] ={i:[product[i][0],product[i][1][1].selling_price,product[i][1][1].cost_price,product[i][1][1].selling_price-product[i][1][1].cost_price] for i in product}
             
 
     return profit
@@ -424,9 +426,16 @@ def daily_sales_summary(tanks,start_date,end_date):
                 n = len(sales_summary[tank_dips[shift][0]])
                 for i in range(n):
                     sales_summary[tank_dips[shift][0]][i]+=tank_dips[shift][i+1]
-           
-    return sales_summary     
+            else:
+                sales_summary[tank_dips[shift][0]]= [0.0]*8     
+                for i in range(8):
+                    
+                    sales_summary[tank_dips[shift][0]][i] = tank_dips[shift][i+1]
+        
+    return sales_summary 
 
+    
+    
 def tank_variance_daily_report(start_date,end_date,tank_id):
     """Tank Variance report for dashboard"""
     report = {}
@@ -442,7 +451,7 @@ def tank_variance_daily_report(start_date,end_date,tank_id):
         try:
             report[day] = report[day][1]/report[day][0] *100
         except ZeroDivisionError:
-            report[day] =report[day][1]/report[day][1] *100
+            report[day] =0
     return report
 
 
@@ -520,7 +529,30 @@ def fuel_daily_sales(start_date,end_date):
 
     return daily_sales
     
+def daily_sales_analysis(start_date,end_date):
+    shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).order_by(Shift.id.desc()).all()
+    daily_sales = {}
+    
+    for shift in shifts:
+        shift_id = shift.id
+        prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+        if prev_shift:
+            customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id)).all()
+            prev_shift_id = prev_shift.id
+            product_sales = product_sales_litres(shift_id,prev_shift_id)
+            total = sum([product_sales[i][0] for i in product_sales])
+            expected_deposits= sum([product_sales[i][0]*product_sales[i][1][1].selling_price for i in product_sales])
+            sales_per_customer = total_customer_sales(customer_sales)
+            actual_deposits = sum([sales_per_customer[i] for i in sales_per_customer])
+            if shift.date in daily_sales:
+                daily_sales[shift.date][0]+=total
+                daily_sales[shift.date][1]+=expected_deposits
+                daily_sales[shift.date][2]+=actual_deposits
+                
+            else:
+                daily_sales[shift.date]=total,expected_deposits,actual_deposits
 
+    return daily_sales
 
 def fuel_mnth_sales(start_date,end_date):
     """fuel month to month sales"""
@@ -623,6 +655,41 @@ def get_pump_readings(shift_id,prev_shift_id):
                 pump_readings[pump.name]=[prev_shift_reading,current_shift_reading]
     return pump_readings
 
+
+def pump_meter_reading(pump_id,start_date,end_date):
+    """Query for pump readings per day """
+    pump = Pump.query.get(pump_id)
+    shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).all()
+    dates = [shift.date for shift in shifts]
+    dates = sorted_dates(dates)
+    pump_readings = {}
+    if shifts:
+        for date in dates:
+            current_shift= Shift.query.filter_by(date=date).order_by(Shift.id.desc()).first()
+            shift_id = current_shift.id
+            prev_date = current_shift.date -timedelta(days=1)
+            prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
+            if prev_shift:
+                prev_shift_id = prev_shift.id
+            else:
+                prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+                prev_shift_id = prev_shift.id if prev_shift else shift_id
+            prev_shift_reading = PumpReading.query.filter(and_(PumpReading.shift_id == prev_shift_id,PumpReading.pump_id == pump.id)).first()
+            current_shift_reading = PumpReading.query.filter(and_(PumpReading.shift_id == shift_id,PumpReading.pump_id == pump.id)).first()
+            if prev_shift_reading:
+                if current_shift_reading:
+                    prev_shift_reading = prev_shift_reading.litre_reading,prev_shift_reading.money_reading
+                    current_shift_reading = current_shift_reading.litre_reading,current_shift_reading.money_reading
+                    pump_readings[date]=[prev_shift_reading[0],current_shift_reading[0]]
+            else:
+                if current_shift_reading:
+                    current_shift_reading = current_shift_reading.litre_reading,current_shift_reading.money_reading
+                    prev_shift_reading = pump_readings[pump.name].litre_reading,pump_readings[pump.name].money_reading
+                    pump_readings[date]= [prev_shift_reading[0],current_shift_reading[0]]
+    return pump_readings
+
+
+
 def get_tank_dips(shift_id,prev_shift_id):
     tank_dips = {}
     tanks = Tank.query.all()
@@ -671,3 +738,8 @@ def create_dict(pumps):
     for pump in pumps:
         pump_dict[pump.name] = pump
     return pump_dict
+
+def get_random_string():
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(8))
+    return result_str

@@ -28,10 +28,10 @@
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link" href="{{ url_for('pump_meter_readings') }}">
                 <span data-feather="file-text"></span>
                 <span style="color: lightseagreen;">
-                Pump Readings
+                Pump Meter Readings
                 </span>
               </a>
             </li>
@@ -44,10 +44,18 @@
               </a>
             </li>
             <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('sales_analysis') }}">
+                <span data-feather="file-text"></span>
+                <span style="color: lightseagreen;">
+                Sales Analysis
+                </span>
+              </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('profit_statement') }}">
                   <span data-feather="file-text"></span>
                   <span style="color: lightseagreen;">
-                  Daily Fuel Gross Profit Statement
+                  Profit Analysis
                   </span>
                 </a>
               </li>
@@ -63,7 +71,7 @@
                 <a class="nav-link" href="{{ url_for('lubes_cash_up_reports') }}">
                   <span data-feather="plus-circle"></span>
                   <span style="color: lightseagreen;">
-                  Lubricants Cash Up Reports
+                  Lubricants Cash Up
                   </span>
                 </a>
               </li>
@@ -75,14 +83,7 @@
                   </span>
                 </a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('tanks') }}">
-                  <span data-feather="file-text"></span>
-                  <span style="color: lightseagreen;">
-                  Tank Variance Report
-                  </span>
-                </a>
-              </li>
+              
           </ul>
         </nav>
   

@@ -9,6 +9,7 @@ from sqlalchemy import and_ , or_,create_engine,MetaData,Table,inspect
 from sqlalchemy.orm import Session
 from helpers import *
 from datetime import timedelta,datetime
+from alembic_multischema import perSchema,getNonSystemSchemas
 
 
   
@@ -18,14 +19,13 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
 def main():
-    
-    with db.session.connection(execution_options={"schema_translate_map":{"tenant":"test10"}}):
-        x = Pump.query.get(3)
-        x.name = "Ab2"
+    with db.session.connection(execution_options={"schema_translate_map":{"tenant":'test10'}}):
+        s = Supplier(name="kuda",contact_person="kuda",phone_number="1234")
+        db.session.add(s)
         db.session.commit()
 
-if __name__=="__main__":
-    with app.app_context():
+        
+with app.app_context():
         main()
 
 

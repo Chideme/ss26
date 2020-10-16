@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" href="../../../../favicon.ico">
+    
 
     <title>Enter Company Code</title>
 
@@ -34,8 +34,8 @@
       <input type="text" id="inputCompany" name="tenant_id" class="form-control" placeholder="Company Code" required autofocus>
       </div>
       <button class="btn btn-lg btn-primary btn-block" type="submit">Enter</button>
-      <small class="text-muted">Forgot Login Details?</small>
       
+      <small class="text-muted"> <a href="{{ url_for('forgot_password') }}">Forgot Password?</a></small>
     </form>
     <p class="mt-5 mb-3 text-muted">&copy; 2020</p>
     </main>

@@ -66,7 +66,7 @@
                         <td style="background-color: limegreen;"></td>
                         {% endfor %}
                         <td>{{ total_litres[date] }}</td>
-                        <td>{{ total_profit[date] }}</td>
+                        <td>{{ total_profit[date] | round(2) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

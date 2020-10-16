@@ -1189,17 +1189,20 @@ def customer(customer_id):
 def add_customer():
         """Add Customer"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                customer = Customer(name=request.form.get("name").capitalize(),account_type=request.form.get("type"),phone_number=request.form.get("phone"),contact_person=request.form.get("contact_person").capitalize())
-                customer_exists = bool(Customer.query.filter_by(name=request.form.get("name")).first())
+                name = request.form.get("name").stip().capitalize()
+                customer = Customer(name=name,account_type=request.form.get("type"),phone_number=request.form.get("phone"),contact_person=request.form.get("contact_person").capitalize())
+                customer_exists = bool(Customer.query.filter_by(name=name).first())
                 if customer_exists:
-                        flash("User already exists, Try using another username!!")
+                        flash("User already exists, Try using another  account name!!")
                         return redirect(url_for('customers'))
                 else:
-                        account_type = request.form.get("type").capitalize()
-                        account_name = request.form.get("name").capitalize()
+                        account_type = request.form.get("type").strip().capitalize()
+                        account_name = request.form.get("name").strip().capitalize()
                         if account_type == "Non-Cash":
                                 try:
                                         db.session.add(customer)
+                                        account = Account(account_name=account_name,account_category="Receivables")
+                                        db.session.add(account)
                                         db.session.commit()
                                 except:
                                         db.session.rollback()
@@ -1232,7 +1235,8 @@ def add_customer():
 def edit_customer():
         """Edit Customer Information"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                db.session.query(Customer).filter(Customer.name == request.form.get("name")).update({Customer.phone_number: request.form.get("phone")}, synchronize_session = False)
+                name = request.form.get("name").capitalize()
+                db.session.query(Customer).filter(Customer.name == name).update({Customer.phone_number: request.form.get("phone")}, synchronize_session = False)
                 db.session.query(Customer).filter(Customer.name == request.form.get("name")).update({Customer.contact_person: request.form.get("contact_person")}, synchronize_session = False)
                 db.session.commit()
                 flash('Customer Successfully Updated')
@@ -1261,6 +1265,96 @@ def delete_customer():
                         
                         flash('Customer Successfully Removed!!')
                         return redirect(url_for('customers'))
+
+#########
+
+@app.route("/suppliers",methods=["GET","POST"])
+@login_required
+@check_schema
+def suppliers():
+        """Managing Suppliers"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                accounts= db.session.query(Supplier,Account).filter(Supplier.name ==Account.account_name).all()
+                suppliers = Supplier.query.all()
+                # calculate balances
+                balances = {}
+                for account in accounts:
+                        #deliveries = Fuel_Delivery.query.filter_by(supplier=account[0].id).all()
+                        payments = PayOut.query.filter_by(pay_out_account=account[1].id).all()
+                        #net = sum([i.amount for i in payments]) - sum([i.cost_price*i.qty for i in delveries])
+                        net = sum([i.amount for i in payments]) # use above line on database reset, the pains of development !!
+                        balances[account[0].name]=net
+                return render_template("suppliers.html",suppliers=suppliers,balances=balances)
+
+@app.route("/suppliers/add_supplier",methods=["POST"])
+@login_required
+@admin_required
+@check_schema
+def add_supplier():
+        """Add Supplier"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                name = request.form.get("name").strip().capitalize()
+                phone_number=request.form.get("phone").strip().capitalize()
+                contact_person=request.form.get("contact_person").capitalize()
+                supplier = Supplier(name=name,phone_number=phone_number,contact_person=contact_person)
+                supplier_exists = bool(Supplier.query.filter_by(name=name).first())
+                if supplier_exists:
+                        flash("Supplier already exists, Try using another  account name !!")
+                        return redirect(url_for('suppliers'))
+                else:
+                        try:
+                                db.session.add(supplier)
+                                account = Account(account_name=name,account_category="Payables")
+                                db.session.add(account)
+                                db.session.commit()
+                        except:
+                                db.session.rollback()
+                                flash('There was an error')
+                                return redirect(url_for('suppliers'))
+                        else:
+                                
+                                flash('Supplier Successfully Added')
+                                return redirect(url_for('suppliers'))
+                       
+
+@app.route("/suppliers/edit_supplier",methods=["POST"])
+@login_required
+@admin_required
+@check_schema
+def edit_supplier():
+        """Edit Supplier Information"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                supplier = Supplier.query.get(request.form.get("id"))
+                supplier.name = request.form.get("name").strip().capitalize()
+                supplier.phone_number=  request.form.get("phone")
+                supplier.contact_person= request.form.get("contact_person")
+                db.session.commit()
+                flash('Supplier Successfully Updated')
+                return redirect(url_for('suppliers'))
+
+@app.route("/suppliers/delete_suppliers",methods=["POST"])
+@login_required
+@admin_required
+@check_schema
+def delete_supplier():
+        """Deletes Supplier"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                supplier = db.session.query(Supplier).get(int(request.form.get("suppliers")))
+                
+                try:
+                        db.session.delete(supplier)   
+                        db.session.commit()
+                        
+                except:
+                        db.session.rollback()
+                        flash("Can not delete record")
+                        return redirect(url_for('suppliers'))
+                else:
+                        
+                        flash('Supplier Successfully Removed!!')
+                        return redirect(url_for('suppliers'))
+
+
 
 
 @app.route("/suppliers/expenses/",methods=["GET","POST"])
@@ -1300,7 +1394,8 @@ def delete_account():
 def add_account():
         """Add Account"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                account = Account(account_name=request.form.get("name").capitalize(),account_category=request.form.get("category"))
+                name=request.form.get("name").strip().capitalize()
+                account = Account(account_name=name,account_category=request.form.get("category"))
                 account_exists = bool(Account.query.filter_by(account_name=request.form.get("name")).first())
                 if account_exists:
                         flash("Account already exists, Try using another username!!")
@@ -1399,9 +1494,46 @@ def profit_statement():
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
                         report = fuel_product_profit_statement(start_date,end_date)
+                        total_profit = fuel_daily_profit_report(start_date,end_date)
+                        total_litres = fuel_daily_sales(start_date,end_date)
 
-                        return render_template("profit_statement.html",reports=report,start_date=start_date,end_date=end_date,dates=dates,products=products)
+                        return render_template("profit_statement.html",reports=report,start_date=start_date,end_date=end_date,products=products,total_profit=total_profit,total_litres=total_litres)
                 
+@app.route("/reports/sales_analysis",methods=["GET","POST"])
+@login_required
+@admin_required
+@check_schema
+def sales_analysis():
+        """ Sales Analyis as per shift"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                
+                if request.method =="GET":
+
+                        end_date = date.today()
+                        start_date = end_date - timedelta(days=900)
+                        report = daily_sales_analysis(start_date,end_date)
+
+                        return render_template("sales_analysis.html",reports=report,start_date=start_date,end_date=end_date)
+                        
+                else:
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        report = daily_sales_analysis(start_date,end_date)
+
+
+                        return render_template("sales_analysis.html",reports=report,start_date=start_date,end_date=end_date)
+                
+
+@app.route("/reports/sales_breakdown/<date>/",methods=["GET","POST"])
+@login_required
+@admin_required
+@check_schema
+def sales_breakdown(date):
+        """Expenses Report"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.date==date)).all()
+                sales_per_customer = total_customer_sales(customer_sales)
+                return render_template("sales_breakdown.html",date=date,sales_per_customer=sales_per_customer)
 
 
 
@@ -1476,26 +1608,45 @@ def sales_summary():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 
                 if request.method =="GET":
-                        shift_underway = Shift_Underway.query.all()
-                        current_shift = shift_underway[0].current_shift
-                        current_shift = Shift.query.get(current_shift)
-                        end_date = current_shift.date if current_shift else "1994-05-04"
-                        start_date = end_date - timedelta(days=30) if current_shift else "1994-05-04"
-                        tanks = Tank.query.all()
+                       
                         products = Product.query.all()
-                        sales_summary= daily_sales_summary(tanks,start_date,end_date)
-
-                        return render_template("sales_summary.html",report=sales_summary,products=products)
+                        
+                        return render_template("sales_summary_filter.html",products=products)
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
-                        start_date = check_first_date(start_date)
-                        tanks = Tank.query.all()
+                        
+                        product = request.form.get("product")
                         products = Product.query.all()
+                        if product =="All":
+                                tanks = Tank.query.all()
+                        else:
+                                tanks = Tank.query.filter_by(product_id=product).all()
+                        
                         sales_summary= daily_sales_summary(tanks,start_date,end_date)
 
-                        return render_template("sales_summary.html",report=sales_summary,products=products)
-                        
+                        return render_template("sales_summary.html",report=sales_summary,products=products,start_date=start_date,end_date=end_date)
+
+@app.route("/reports/pump_meter_readings",methods=["GET","POST"])
+@login_required
+@admin_required
+@check_schema
+def pump_meter_readings():
+        """Pump Meter Readings"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                
+                if request.method =="GET":
+                       pumps = Pump.query.all()
+                       return render_template("pump_readings_filter.html",pumps=pumps)
+                else:
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        pump_id = request.form.get("pump")
+                        pump = Pump.query.get(pump_id)
+                        pump_readings = pump_meter_reading(pump_id,start_date,end_date)
+
+                        return render_template("pump_readings.html",report=pump_readings,start_date=start_date,end_date=end_date,pump=pump)
+
 
 @app.route("/reports/driveway",methods=["GET","POST"])
 @login_required
@@ -1792,9 +1943,12 @@ def update_fuel_deliveries():
                 shift_daytime = current_shift.daytime
                 shift_id = current_shift.id
                 tank= Tank.query.filter_by(name=request.form.get("tank")).first()
-                tank_id = tank.id
-                delivery = request.form.get("delivery")
-                db.session.query(Fuel_Delivery).filter(and_(Fuel_Delivery.tank_id == tank_id,Fuel_Delivery.shift_id ==shift_id)).update({Fuel_Delivery.qty: delivery}, synchronize_session = False)
+                document = request.form.get("document")
+                qty = request.form.get("delivery")
+                delivery = Fuel_Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number='0000')
+                db.session.add(delivery)
+                
+                #db.session.query(Fuel_Delivery).filter(and_(Fuel_Delivery.tank_id == tank_id,Fuel_Delivery.shift_id ==shift_id)).update({Fuel_Delivery.qty: qty}, synchronize_session = False)
                 db.session.commit()
                 return redirect('ss26')
 
@@ -2281,4 +2435,26 @@ def internal_app_error(error):
 @app.errorhandler(404)
 def missing_page_error(error):
         
-        return render_template('error.html'),404
+        return render_template('404.html'),404
+
+
+
+@app.route("/forgot_password",methods=['GET','POST'])
+def forgot_password():
+        """ Reset Password for Admin"""
+        if request.method == "GET":
+                return render_template("forgot_password.html")
+        else:
+                email = request.form.get("email")
+                code = request.form.get("tenant_code")
+                tenant = Tenant.query.filter_by(code=code).first()
+                if tenant:
+                        password = get_random_string()
+                        msg = Message(password,
+                        subject="Password Reset-Edriveway",
+                                sender="kudakwashechideme@gmail.com",
+                                recipients=[email])
+                        mail.send(msg)
+                        flash("Check you email inbox")
+                        return redirect(url_for('index'))
+                        
