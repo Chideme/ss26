@@ -433,9 +433,10 @@ def start_shift_update():
                         return render_template("start_shift_update.html")
 
 @app.route("/end_shift_update",methods=["POST"])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def end_shift_update():
         "End Update of Shift Figures"
         # first check if cash up on lubes has been done
@@ -463,8 +464,9 @@ def end_shift_update():
         
 
 @app.route("/driveway/edit",methods=["GET","POST"])
-@login_required
+@view_only
 @check_schema
+@login_required
 def readings_entry():
         """Edit previous driveways"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -497,9 +499,10 @@ def price_change():
                 return redirect(url_for('readings_entry'))
 
 @app.route("/driveway/edit/pump_readings_entry",methods=["GET","POST"])
-@login_required
+@view_only
 @admin_required
 @check_schema
+@login_required
 def pump_readings_entry():
         """Edit readings for pumps """
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -518,9 +521,10 @@ def pump_readings_entry():
 
 
 @app.route("/driveway/edit/tank_dips_entry",methods=["POST"])
-@login_required
+@view_only
 @admin_required
 @check_schema
+@login_required
 def tank_dips_entry():
         """Edit Dips for Tanks """
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -537,9 +541,10 @@ def tank_dips_entry():
 
 
 @app.route("/driveway/edit/fuel_delivery",methods=["POST"])
-@login_required
+@view_only
 @admin_required
 @check_schema
+@login_required
 def fuel_delivery():
         """Edit  Fuel Deliveries"""  
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}): 
@@ -552,9 +557,10 @@ def fuel_delivery():
                 return redirect(url_for('readings_entry'))
 
 @app.route("/driveway/edit/update_customer_sales",methods=["POST"])
-@login_required
+@view_only
 @admin_required
 @check_schema
+@login_required
 def update_customer_sales():
         """Sales Invoices"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -577,9 +583,10 @@ def update_customer_sales():
                 return redirect(url_for('readings_entry'))
 
 @app.route("/driveway/edit/update_sales_receipts",methods=["POST"])
-@login_required
+@view_only
 @admin_required
 @check_schema
+@login_required
 def update_sales_receipts():
         """Invoices for cash sales"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -606,9 +613,9 @@ def update_sales_receipts():
                 return redirect(url_for('readings_entry'))
 
 @app.route("/company_information/company_details",methods=["GET","POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def company_details():
         """Managing Company Details"""
         
@@ -619,9 +626,10 @@ def company_details():
                 return render_template("company_details.html",tenant=tenant)
 
 @app.route("/company_information/edit_details",methods=["POST"])
-@login_required
+@view_only
 @admin_required
 @check_schema
+@login_required
 def edit_company_details():
         """Edit Company Details"""
         
@@ -639,9 +647,9 @@ def edit_company_details():
 
 
 @app.route("/company_information/users",methods=["GET","POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def manage_users():
         """Managing Users"""
         if request.method == "GET":
@@ -654,9 +662,10 @@ def manage_users():
 
 
 @app.route("/company_information/users/add_user",methods=["POST"])
-@login_required
+@view_only
 @admin_required
 @check_schema
+@login_required
 def add_user():
         """Add User"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -682,9 +691,10 @@ def add_user():
                                 return redirect(url_for('manage_users'))
 
 @app.route("/company_information/users/edit_user",methods=["POST"])
-@login_required
+@view_only
 @admin_required
 @check_schema
+@login_required
 def edit_user():
         """Edit User Information"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -696,10 +706,11 @@ def edit_user():
                 flash('User Successfully Updated')
                 return redirect(url_for('manage_users'))
 
-@app.route("/company_information/users//delete_user",methods=["POST"])
-@login_required
+@app.route("/company_information/users/delete_user",methods=["POST"])
+@view_only
 @admin_required
 @check_schema
+@login_required
 def delete_user():
         """Deletes Users"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -719,9 +730,8 @@ def delete_user():
 
 
 @app.route("/inventory/pumps/",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def pumps():
         """Pump List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -732,9 +742,10 @@ def pumps():
         
 
 @app.route("/inventory/pumps/add_pump",methods=["POST"])
-@login_required
+@view_only
 @admin_required
 @check_schema
+@login_required
 def add_pump():
 
         """Add Pump"""
@@ -778,9 +789,9 @@ def add_pump():
 
                        
 @app.route("/inventory/pumps/delete_pump",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def delete_pump():
         """Delete Pump"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -798,9 +809,9 @@ def delete_pump():
                         return redirect(url_for('pumps'))
 
 @app.route("/inventory/pumps/edit_pump",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def edit_pump():
         """Modify Pump Settings"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -814,9 +825,9 @@ def edit_pump():
                 return redirect(url_for('pump'))
 
 @app.route("/inventory/tanks/add_tank",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def add_tank():
         """Add Tank"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -849,9 +860,9 @@ def add_tank():
 
 
 @app.route("/inventory/tanks/delete_tank",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def delete_tank():
         """Delete Tank"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -870,9 +881,9 @@ def delete_tank():
                         return redirect(url_for('tanks'))
 
 @app.route("/inventory/tanks/edit_tank",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def edit_tank():
         """Modify Tank Settings"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -888,9 +899,8 @@ def edit_tank():
 
 
 @app.route("/inventory/tanks/",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def tanks():
         """Tank List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -900,9 +910,9 @@ def tanks():
                 return render_template("tanks.html",tanks=tanks,products=products,tank_product=tank_product)
 
 @app.route("/inventory/fuel_products/",methods=["GET","POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def products():
         """Product List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -910,9 +920,9 @@ def products():
                 return render_template("products.html",products=products)
 
 @app.route("/inventory/fuel_products/add_product",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def add_product():
         """Add Product"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -936,9 +946,9 @@ def add_product():
 
 
 @app.route("/inventory/fuel_products/delete_product",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def delete_product():
         """Delete Product"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -959,9 +969,8 @@ def delete_product():
 
 
 @app.route("/inventory/lubes/",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def lube_products():
         """Lubes Product List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -970,9 +979,9 @@ def lube_products():
                 return render_template("lube_products.html",products=products,shift=shift)
 
 @app.route("/inventory/lubes/add_lube_product/",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def add_lube_product():
         """Add Product"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1009,9 +1018,9 @@ def add_lube_product():
 
 
 @app.route("/inventory/lubes/delete_lube_product/",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def delete_lube_product():
         """Delete Product"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1029,9 +1038,8 @@ def delete_lube_product():
 
 
 @app.route("/inventory/coupons/",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def coupons():
         """Coupon List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1039,9 +1047,9 @@ def coupons():
                 return render_template("coupons.html",coupons=coupons)
 
 @app.route("/inventory/coupons/add_coupon",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def add_coupon():
         """Add Coupons"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1059,9 +1067,9 @@ def add_coupon():
 
 
 @app.route("/inventory/coupons/delete_coupon",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def delete_coupon():
         """Delete Coupon"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1095,9 +1103,9 @@ def customers():
                 return render_template("customers.html",customers=customers,balances=balances)
 
 @app.route("/customers/customer_payment",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def customer_payment():
         """Managing Customers"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1119,8 +1127,8 @@ def customer_payment():
                         return redirect(url_for('customers'))
 
 @app.route("/customers/<int:customer_id>",methods=["GET","POST"])
-@login_required
 @check_schema
+@login_required
 def customer(customer_id):
         """Report for single customer"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1189,9 +1197,9 @@ def customer(customer_id):
                         return render_template("customer.html",records=records,inv_ids=inv_ids,dates=dates,customer=customer,net=net,start=start_date,end=end_date)
 
 @app.route("/customers/add_customer",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def add_customer():
         """Add Customer"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1235,9 +1243,9 @@ def add_customer():
 
 
 @app.route("/customers/edit_customer",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def edit_customer():
         """Edit Customer Information"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1249,9 +1257,9 @@ def edit_customer():
                 return redirect(url_for('customers'))
 
 @app.route("/customers/delete_customer",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def delete_customer():
         """Deletes Customers"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1275,8 +1283,8 @@ def delete_customer():
 #########
 
 @app.route("/suppliers",methods=["GET","POST"])
-@login_required
 @check_schema
+@login_required
 def suppliers():
         """Managing Suppliers"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1293,9 +1301,9 @@ def suppliers():
                 return render_template("suppliers.html",suppliers=suppliers,balances=balances)
 
 @app.route("/suppliers/add_supplier",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def add_supplier():
         """Add Supplier"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1324,9 +1332,9 @@ def add_supplier():
                        
 
 @app.route("/suppliers/edit_supplier",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def edit_supplier():
         """Edit Supplier Information"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1339,9 +1347,9 @@ def edit_supplier():
                 return redirect(url_for('suppliers'))
 
 @app.route("/suppliers/delete_suppliers",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def delete_supplier():
         """Deletes Supplier"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1364,9 +1372,8 @@ def delete_supplier():
 
 
 @app.route("/suppliers/expenses/",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def accounts():
         """Managing Expense Accounts"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1374,9 +1381,9 @@ def accounts():
                 return render_template("accounts.html",accounts=accounts)
 
 @app.route("/suppliers/expenses/delete_account",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def delete_account():
         """Deletes Account"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1394,9 +1401,9 @@ def delete_account():
                         return redirect(url_for('accounts'))
 
 @app.route("/suppliers/expenses/add_accounts",methods=["POST"])
-@login_required
 @admin_required
 @check_schema
+@login_required
 def add_account():
         """Add Account"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1420,9 +1427,8 @@ def add_account():
                                 return redirect(url_for('accounts'))
 
 @app.route("/reports/cash_accounts",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def cash_accounts():
         """Cash Account Report"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1439,9 +1445,8 @@ def cash_accounts():
 
 
 @app.route("/reports/cash_accounts/<int:account_id>",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def cash_account(account_id):
         """Cash Account """
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1465,9 +1470,8 @@ def cash_account(account_id):
 
 
 @app.route("/reports/payouts/<date>/<cashaccount_id>",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def daily_payouts(date,cashaccount_id):
         """Expenses Report"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1506,9 +1510,8 @@ def profit_statement():
                         return render_template("profit_statement.html",reports=report,start_date=start_date,end_date=end_date,products=products,total_profit=total_profit,total_litres=total_litres)
                 
 @app.route("/reports/sales_analysis",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def sales_analysis():
         """ Sales Analyis as per shift"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1531,9 +1534,8 @@ def sales_analysis():
                 
 
 @app.route("/reports/sales_breakdown/<date>/",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def sales_breakdown(date):
         """Expenses Report"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1544,9 +1546,8 @@ def sales_breakdown(date):
 
 
 @app.route("/reports/cashup",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def cash_up_reports():
         """Managing Cash Accounts"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1562,9 +1563,8 @@ def cash_up_reports():
                         return render_template("cash_up_report.html",cash=cash,start_date=start_date,end_date=end_date)
 
 @app.route("/reports/lubes_cashup",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def lubes_cash_up_reports():
         """Managing Cash Accounts"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1580,9 +1580,8 @@ def lubes_cash_up_reports():
                         return render_template("lubes_cash_up_report.html",cash=cash,start_date=start_date,end_date=end_date)
 
 @app.route("/reports/tank_variances/<int:tank_id>",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def tank_variances(tank_id):
         """Tank Variances Report"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1606,9 +1605,8 @@ def tank_variances(tank_id):
                         return render_template("tank_variances.html",tank_dips=tank_dips,tank=tank)
                 
 @app.route("/reports/sales_summary",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def sales_summary():
         """Sales Summary Report"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1634,9 +1632,8 @@ def sales_summary():
                         return render_template("sales_summary.html",report=sales_summary,products=products,start_date=start_date,end_date=end_date)
 
 @app.route("/reports/pump_meter_readings",methods=["GET","POST"])
-@login_required
-@admin_required
 @check_schema
+@login_required
 def pump_meter_readings():
         """Pump Meter Readings"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1655,8 +1652,8 @@ def pump_meter_readings():
 
 
 @app.route("/reports/driveway",methods=["GET","POST"])
-@login_required
 @check_schema
+@login_required
 def get_driveway():
 
         """Query Shift Driveways for a particular day """
@@ -1811,9 +1808,9 @@ def get_driveway():
 
 
 @app.route("/ss26",methods=["GET"])
-@login_required
 @start_shift_first
 @check_schema
+@login_required
 def ss26():
 
         """UPDATE DRIVEWAY DATA """
@@ -1862,9 +1859,10 @@ def ss26():
 
 
 @app.route("/update_pump_litre_readings",methods=['POST'])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def update_pump_litre_readings():
 
 
@@ -1888,9 +1886,10 @@ def update_pump_litre_readings():
                 return redirect('ss26')
 
 @app.route("/update_pump_money_readings",methods=['POST'])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def update_pump_money_readings():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1914,9 +1913,10 @@ def update_pump_money_readings():
 
 
 @app.route("/update_tank_dips",methods=['POST'])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def update_tank_dips():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1936,9 +1936,10 @@ def update_tank_dips():
                 return redirect('ss26')
 
 @app.route("/update_fuel_deliveries",methods=['POST'])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def update_fuel_deliveries():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1959,9 +1960,10 @@ def update_fuel_deliveries():
                 return redirect('ss26')
 
 @app.route("/update_cost_prices",methods=['POST'])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def update_cost_prices():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1978,9 +1980,10 @@ def update_cost_prices():
                 return redirect('ss26')
 
 @app.route("/update_selling_prices",methods=['POST'])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def update_selling_prices():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -1997,9 +2000,10 @@ def update_selling_prices():
                 return redirect('ss26')
 
 @app.route("/update_shift_date",methods=['POST'])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def update_shift_date():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -2014,9 +2018,10 @@ def update_shift_date():
                 return redirect('ss26')
 
 @app.route("/update_shift_daytime",methods=['POST'])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def update_shift_daytime():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -2031,9 +2036,10 @@ def update_shift_daytime():
                 return redirect('ss26')
 
 @app.route("/customer_sales",methods=["POST"])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def customer_sales():
         """Sales Invoices"""
 
@@ -2057,9 +2063,10 @@ def customer_sales():
                 return redirect(url_for('ss26'))
 
 @app.route("/sales_receipts",methods=["POST"])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def sales_receipts():
         """Invoices for cash sales"""
         
@@ -2085,9 +2092,10 @@ def sales_receipts():
 
 
 @app.route("/coupon_sales",methods=["POST"])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def coupon_sales():
         """Invoices for coupon sales"""
         
@@ -2115,9 +2123,10 @@ def coupon_sales():
 
 
 @app.route("/cash_up",methods=["POST"])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def cash_up():
         """cash up"""
 
@@ -2151,9 +2160,10 @@ def cash_up():
                         return redirect(url_for('ss26'))
 
 @app.route("/payouts",methods=["POST"])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
+@login_required
 def pay_outs():
         """payouts"""
         #current_shift = Shift.query.order_by(Shift.id.desc()).first()
@@ -2207,10 +2217,10 @@ def restart_shift():
                 return redirect(url_for('ss26'))
 
 @app.route("/shift_lube_sales",methods=["POST","GET"])
-@login_required
+@view_only
 @start_shift_first
 @check_schema
-#####lubes cash up
+@login_required
 def shift_lube_sales():
         """LUBE SALES PER SHIFT"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -2234,8 +2244,9 @@ def shift_lube_sales():
 
 
 @app.route("/update_lube_qty",methods=['POST'])
-@login_required
+@view_only
 @check_schema
+@login_required
 def update_lube_qty():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -2296,8 +2307,9 @@ def update_lube_qty():
                                
 
 @app.route("/update_lubes_deliveries",methods=['POST'])
-@login_required
+@view_only
 @check_schema
+@login_required
 def update_lubes_deliveries():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -2342,8 +2354,9 @@ def update_lubes_deliveries():
 
 
 @app.route("/update_lubes_cost_prices",methods=['POST'])
-@login_required
+@view_only
 @check_schema
+@login_required
 def update_lubes_cost_prices():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -2370,8 +2383,9 @@ def update_lubes_cost_prices():
                         return redirect('shift_lube_sales')
 
 @app.route("/update_lubes_selling_prices",methods=['POST'])
-@login_required
+@view_only
 @check_schema
+@login_required
 def update_lubes_selling_prices():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -2399,10 +2413,9 @@ def update_lubes_selling_prices():
                 
 
 @app.route("/lubes_cash_up",methods=["POST"])
-@login_required
 @start_shift_first
-#@lubes_cash_up
 @check_schema
+@login_required
 def lubes_cash_up():
         """lubes cash up"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):

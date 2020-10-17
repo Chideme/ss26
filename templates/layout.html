@@ -35,29 +35,30 @@
       <div class="collapse navbar-collapse justify-content-md-center" id="navbarsExample04">
         <ul class="navbar-nav px3">
           <li class="nav-item text-nowrap">
-            <a class="nav-link" href="{{ url_for('dashboard',heading='Sales') }}">Dashboard</a>
+            <a class="nav-link" href="{{ url_for('dashboard',heading='Sales') }}"><span data-feather="bar-chart"></span> Dashboard</a>
           </li>
           <li class="nav-item text-nowrap">
-            <a class="nav-link" href="{{ url_for('sales_summary') }}">Reports</a>
+            <a class="nav-link" href="{{ url_for('sales_summary') }}"><span data-feather="file"></span> Reports</a>
           </li>
           <li class="nav-item text-nowrap">
-            <a class="nav-link" href="{{ url_for('ss26') }}">Driveway</a>
+            <a class="nav-link" href="{{ url_for('ss26') }}"><span data-feather="grid"></span> Driveway</a>
           </li>
          
           <li class="nav-item text-nowrap">
-            <a class="nav-link" href="{{ url_for('pumps') }}">Inventory</a>
+            <a class="nav-link" href="{{ url_for('pumps') }}"><span data-feather="settings"></span> Configurations</a>
           </li>
           <li class="nav-item text-nowrap">
-            <a class="nav-link" href="{{ url_for('customers') }}"><span class="glyphicon glyphicon-user"></span>Customers & Suppliers</a>
+            <a class="nav-link" href="{{ url_for('customers') }}"><span data-feather="users"></span> Customers & Suppliers</a>
           </li>
           <li class="nav-item text-nowrap">
-            <a class="nav-link" href="{{ url_for('manage_users') }}"><span class="glyphicon glyphicon-user"></span>Company Information</a>
+            <a class="nav-link" href="{{ url_for('manage_users') }}"><span data-feather="database"></span> Company Information</a>
           </li>
         </ul>
         
       </div>
       <div class="navbar-right">
-        <a class="nav-link" href="{{ url_for('logout') }}">Log out</a>
+        
+        <a class="nav-link" href="{{ url_for('logout') }}"><span data-feather="power"></span> Log out</a>
       </div>
     </nav>
     {% else %}

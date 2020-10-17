@@ -14,7 +14,7 @@ from datetime import timedelta
 
 
 ##########
-#DATABASE_URL ="postgres://localhost/ss26"
+
 DATABASE_URL=os.getenv("DATABASE_URL")
 
 ####################
@@ -69,18 +69,6 @@ def check_schema(f):
 
 
 
-def set_user_schema(f):
-
-    """ calls maintain_schema with current_user'schema"""
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-
-        with maintain_schema(session["schema"], db.session):
-            return f(*args, **kwargs)
-
-    return decorated_function
-
     
         
 
@@ -99,6 +87,28 @@ def admin_required(f):
 
         if session.get("role_id") != 1:
             flash("Access not allowed,Log in as the Admin !!")
+            return redirect(url_for('login'))
+
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+def view_only(f):
+
+    """
+
+    Decorate routes to require Admin login.
+    http://flask.pocoo.org/docs/0.12/patterns/viewdecorators/
+
+    """
+
+    @wraps(f)
+
+    def decorated_function(*args, **kwargs):
+
+        if session.get("role_id") == 3:
+            flash("You can only view data !!")
             return redirect(url_for('login'))
 
         return f(*args, **kwargs)
