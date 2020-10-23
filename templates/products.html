@@ -31,7 +31,7 @@
                     <tr>
                         <td>{{ product.name }}</td>
                         <td>{{ product.selling_price }}</td>
-                        <td>{{ product.qty }}</td>
+                        <td>{{ qty[product.name] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -57,7 +57,6 @@
                                     <div class="form-group">
                                         <select class="form-control" name="product_type">
                                             <option value="Fuels" selected>Fuels</option>
-                                            <option  value="Lubes">Lubes</option>
                                         </select>
                                     </div>
                                     <div class="form-group " >
@@ -96,7 +95,7 @@
                                     <form action="{{ url_for('delete_product') }}" method="post" > 
                                         <div class="form-group">
                                             <select class="form-control" name="products">
-                                                <option selected>Product</option>
+                                                <option selected></option>
                                                 {% for  product in products %}
                                                 <option  value="{{ product.id }}">{{ product.name }}</option>
                                                 {% endfor %}

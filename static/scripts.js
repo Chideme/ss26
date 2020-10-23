@@ -1,3 +1,5 @@
+
+
 $(document).ready(function(){
         $('a[data-toggle="tab"]').on('shown.bs.tab', function(e){
             localStorage.setItem('activeTab', $(e.target).attr('href'));
@@ -29,9 +31,9 @@ $(document).ready(function(){
             newWIn.print();
             newWIn.close();
         };
-        $('#print').on('click',function(){
+        $('#p').on('click',function(){
             printTable();
-            window.location = 'driveway';
+            window.location = 'reports/driveway';
         });
 
         //Http request to display driveway data to do.
@@ -56,5 +58,24 @@ $(document).ready(function(){
                 'pdfHtml5'
             ]
         } );
-        
+
+   
+
+// html2pdf
+$('#print').on('click',function(){
+            var element = document.getElementById('printTable');
+            var opt = {
+            margin:       [0.1,0.1,0.1,0.1],
+            filename:     'driveway.pdf',
+            html2canvas:  { scale: 5 },
+            jsPDF:        { unit: 'in', format: 'tabloid', orientation: 'landscape' },
+            pagebreak: { mode: 'css', after: '.driveway-table' }
+            };
+
+          
+            // Old monolithic-style usage:
+                html2pdf(element, opt);
+            })
+
+
     });

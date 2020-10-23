@@ -722,6 +722,52 @@ def get_tank_dips(shift_id,prev_shift_id):
             tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
     return tank_dips
 
+
+def get_driveway_data(shift_id,prev_shift_id):
+    current_shift = Shift.query.get(shift_id)
+    data = {}
+    data['pump_readings'] = get_pump_readings(shift_id,prev_shift_id)
+    data['pumps'] = Pump.query.order_by(Pump.id.asc()).all()
+    data['tank_dips'] = get_tank_dips(shift_id,prev_shift_id)
+    data['tanks'] = Tank.query.order_by(Tank.id.asc()).all()
+    product_sales_ltr = product_sales_litres(shift_id,prev_shift_id)
+    data['product_sales_ltr'] = product_sales_ltr
+    data['cash_account'] = Customer.query.filter_by(name="Cash").first()
+    customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
+    sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
+    data['total_sales_ltr']= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
+    data['total_sales_amt']= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
+    sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
+    data['sales_breakdown'] = sales_breakdown
+    expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.shift_id==shift_id)).all()
+    data['expenses'] = expenses
+    data['total_cash_expenses'] = sum([i[0].amount for i in expenses])
+    data['cash_up'] = CashUp.query.filter_by(shift_id=shift_id).first()
+    data['products'] = Product.query.order_by(Product.id.asc()).all()
+    data['coupons'] = Coupon.query.all()
+    data['customers'] = Customer.query.all()
+    data['cash_customers'] = Customer.query.filter_by(account_type="Cash")
+    data['expense_accounts'] = Account.query.filter_by(account_category="Expense").all()
+    data['cash_accounts'] = Account.query.filter_by(account_category="Cash").all()
+    ######## query report data
+    data['accounts'] = Account.query.all()
+    data['end_date'] = current_shift.date
+    end_date= current_shift.date
+    data['avg_sales'] = fuel_sales_avg(get_month_day1(end_date),end_date)
+    daily_sales = fuel_daily_sales(get_month_day1(end_date),end_date) 
+    data['mnth_sales'] = sum([daily_sales[i] for i in daily_sales])
+    lubes_daily_sale = lubes_daily_sales(get_month_day1(end_date),end_date)
+    data['lubes_daily_sale']= lubes_daily_sale
+    lubes_mnth_sales = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
+    data['lubes_mnth_sales'] = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
+    data['lube_avg'] = lubes_sales_avg(get_month_day1(end_date),end_date)
+    total_lubes_shift_sales = lube_sales(shift_id,prev_shift_id)
+    data['total_lubes_shift_sales']=sum([total_lubes_shift_sales[i][5]*total_lubes_shift_sales[i][2] for i in total_lubes_shift_sales])/1000
+
+
+    return data
+    
+
 def create_tenant_tables(schema):
     engine= create_engine(DATABASE_URL)
     meta = MetaData()

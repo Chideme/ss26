@@ -131,7 +131,7 @@ def login():
        #log in company id
 
         if request.method == "POST":
-                tenant_id = request.form.get("tenant_id")
+                tenant_id = int(request.form.get("tenant_id"))
                 company = Tenant.query.get(tenant_id)
                 try:
                         active =  company.active
@@ -917,7 +917,14 @@ def products():
         """Product List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 products = Product.query.all()
-                return render_template("products.html",products=products)
+                tank_product = db.session.query(Tank,Product).filter(Product.id == Tank.product_id).all()
+                qty = {}
+                for i in tank_product:
+                        if i[1].name not in qty:
+                                qty[i[1].name]=i[0].dip
+                        else:
+                                qty[i[1].name]+=i[0].dip
+                return render_template("products.html",products=products,qty=qty)
 
 @app.route("/inventory/fuel_products/add_product",methods=["POST"])
 @admin_required
@@ -1066,7 +1073,7 @@ def add_coupon():
                         return redirect(url_for('coupons'))
 
 
-@app.route("/inventory/coupons/delete_coupon",methods=["POST"])
+@app.route("/coupons/delete_coupon",methods=["POST"])
 @admin_required
 @check_schema
 @login_required
@@ -1371,7 +1378,7 @@ def delete_supplier():
 
 
 
-@app.route("/suppliers/expenses/",methods=["GET","POST"])
+@app.route("/expenses",methods=["GET","POST"])
 @check_schema
 @login_required
 def accounts():
@@ -1426,7 +1433,7 @@ def add_account():
                                 flash('Account Successfully Added')
                                 return redirect(url_for('accounts'))
 
-@app.route("/reports/cash_accounts",methods=["GET","POST"])
+@app.route("/cash_accounts",methods=["GET","POST"])
 @check_schema
 @login_required
 def cash_accounts():
@@ -1444,7 +1451,7 @@ def cash_accounts():
 
 
 
-@app.route("/reports/cash_accounts/<int:account_id>",methods=["GET","POST"])
+@app.route("/cash_accounts/<int:account_id>",methods=["GET","POST"])
 @check_schema
 @login_required
 def cash_account(account_id):
@@ -1469,7 +1476,7 @@ def cash_account(account_id):
                 return render_template("cash_account.html",account=account,report=report,account_id=account_id,balances=balances)
 
 
-@app.route("/reports/payouts/<date>/<cashaccount_id>",methods=["GET","POST"])
+@app.route("/payouts/<date>/<cashaccount_id>",methods=["GET","POST"])
 @check_schema
 @login_required
 def daily_payouts(date,cashaccount_id):
@@ -1480,7 +1487,7 @@ def daily_payouts(date,cashaccount_id):
                 return render_template("daily_payouts.html",payouts=payouts,cashaccount_id=cashaccount_id,total=total,date=date)
 
 
-@app.route("/reports/profit_statement",methods=["GET","POST"])
+@app.route("/profit_statement",methods=["GET","POST"])
 @login_required
 @admin_required
 @check_schema
@@ -1509,7 +1516,7 @@ def profit_statement():
 
                         return render_template("profit_statement.html",reports=report,start_date=start_date,end_date=end_date,products=products,total_profit=total_profit,total_litres=total_litres)
                 
-@app.route("/reports/sales_analysis",methods=["GET","POST"])
+@app.route("/sales_analysis",methods=["GET","POST"])
 @check_schema
 @login_required
 def sales_analysis():
@@ -1533,7 +1540,7 @@ def sales_analysis():
                         return render_template("sales_analysis.html",reports=report,start_date=start_date,end_date=end_date)
                 
 
-@app.route("/reports/sales_breakdown/<date>/",methods=["GET","POST"])
+@app.route("/sales_breakdown/<date>/",methods=["GET","POST"])
 @check_schema
 @login_required
 def sales_breakdown(date):
@@ -1545,7 +1552,7 @@ def sales_breakdown(date):
 
 
 
-@app.route("/reports/cashup",methods=["GET","POST"])
+@app.route("/cashup",methods=["GET","POST"])
 @check_schema
 @login_required
 def cash_up_reports():
@@ -1651,7 +1658,7 @@ def pump_meter_readings():
                         return render_template("pump_readings.html",report=pump_readings,start_date=start_date,end_date=end_date,pump=pump)
 
 
-@app.route("/reports/driveway",methods=["GET","POST"])
+@app.route("/driveway",methods=["GET","POST"])
 @check_schema
 @login_required
 def get_driveway():
@@ -1673,37 +1680,14 @@ def get_driveway():
                                 prev = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
                                 prev_shift_id=prev.id if  prev else shift_id
                                 ######
-                                pump_readings = get_pump_readings(shift_id,prev_shift_id)
-                                tank_dips = get_tank_dips(shift_id,prev_shift_id)
-                                product_sales_ltr = product_sales_litres(shift_id,prev_shift_id)
-                                cash_account = Customer.query.filter_by(name="Cash").first()
-                                customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
-                                sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
-                                total_sales_ltr= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
-                                total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
-                                sales_breakdown["Cash"] = total_sales_amt- sum([sales_breakdown[i] for i in sales_breakdown])
-                                expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.shift_id==shift_id)).all()
-                                total_cash_expenses = sum([i[0].amount for i in expenses])
-                                cash_up = CashUp.query.filter_by(shift_id=shift_id).first()
-                                products = Product.query.all()
-                                customers = Customer.query.all()
-                                cash_customers = Customer.query.filter_by(account_type="Cash")
-                                accounts = Account.query.all()
-                                end_date = current_shift.date
-                                avg_sales = fuel_sales_avg(get_month_day1(end_date),end_date)
-                                daily_sales = fuel_daily_sales(get_month_day1(end_date),end_date) 
-                                mnth_sales = sum([daily_sales[i] for i in daily_sales])
-                                lubes_daily_sale = lubes_daily_sales(get_month_day1(end_date),end_date)
-                                lubes_mnth_sales = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
-                                lube_avg = lubes_sales_avg(get_month_day1(end_date),end_date)
-                                total_lubes_shift_sales = lube_sales(shift_id,prev_shift_id)
-                                total_lubes_shift_sales=sum([total_lubes_shift_sales[i][5]*total_lubes_shift_sales[i][2] for i in total_lubes_shift_sales])/1000
-                                return render_template("get_driveway.html",avg_sales=avg_sales,mnth_sales=mnth_sales,lubes_daily_sale=lubes_daily_sale,
-                                lubes_mnth_sales=lubes_mnth_sales,lube_avg=lube_avg,total_lubes_shift_sales=total_lubes_shift_sales,
-                                products=products,accounts=accounts,cash_customers=cash_customers,customers=customers,
-                                cash_up=cash_up,total_cash_expenses=total_cash_expenses,expenses=expenses,sales_breakdown=sales_breakdown,
-                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=tank_dips,pump_readings=pump_readings,
-                                pumps=pumps,tanks=tanks,product_sales_ltr=product_sales_ltr,total_sales_ltr=total_sales_ltr,total_sales_amt=total_sales_amt)
+                                data = get_driveway_data(shift_id,prev_shift_id)
+                                
+                                return render_template("get_driveway.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
+                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
+                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],
+                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
                         else:
                                 #Driveway for the day
                                 current_shift= Shift.query.filter_by(date=date).order_by(Shift.id.desc()).first()
@@ -1718,42 +1702,15 @@ def get_driveway():
                                 else:
                                         prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
                                         prev_shift_id = prev_shift.id if prev_shift else shift_id
-                                pump_readings = get_pump_readings(shift_id,prev_shift_id)
-                                pumps = Pump.query.all()
-                                tank_dips = get_tank_dips(shift_id,prev_shift_id)
-                                tanks = Tank.query.all()
-                                product_sales_ltr = product_sales_litres(shift_id,prev_shift_id)
-                                cash_account = Customer.query.filter_by(name="Cash").first()
-                                customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
-                                sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
-                                total_sales_ltr= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
-                                total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
-                                sales_breakdown["Cash"] = total_sales_amt- sum([sales_breakdown[i] for i in sales_breakdown])
-                                expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.date==date)).all()
-                                total_cash_expenses = sum([i[0].amount for i in expenses])
-                                cash_up = CashUp.query.filter_by(date=date).first()
-                                products = Product.query.all()
-                                customers = Customer.query.all()
-                                cash_customers = Customer.query.filter_by(account_type="Cash")
-                                accounts = Account.query.all()
-                                suppliers = []#Supplier.query.all()
-                                for i in suppliers:
-                                        accounts.append(i)
-                                end_date = current_shift.date
-                                avg_sales = fuel_sales_avg(get_month_day1(end_date),end_date)
-                                daily_sales = fuel_daily_sales(get_month_day1(end_date),end_date) 
-                                mnth_sales = sum([daily_sales[i] for i in daily_sales])
-                                lubes_daily_sale = lubes_daily_sales(get_month_day1(end_date),end_date)
-                                lubes_mnth_sales = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
-                                lube_avg = lubes_sales_avg(get_month_day1(end_date),end_date)
-                                total_lubes_shift_sales = lube_sales(shift_id,prev_shift_id)
-                                total_lubes_shift_sales=sum([total_lubes_shift_sales[i][5]*total_lubes_shift_sales[i][2] for i in total_lubes_shift_sales])/1000
-                                return render_template("get_driveway.html",avg_sales=avg_sales,mnth_sales=mnth_sales,lubes_daily_sale=lubes_daily_sale,
-                                lubes_mnth_sales=lubes_mnth_sales,lube_avg=lube_avg,total_lubes_shift_sales=total_lubes_shift_sales,
-                                products=products,accounts=accounts,cash_customers=cash_customers,customers=customers,
-                                cash_up=cash_up,total_cash_expenses=total_cash_expenses,expenses=expenses,sales_breakdown=sales_breakdown,
-                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=tank_dips,pump_readings=pump_readings,
-                                pumps=pumps,tanks=tanks,total_sales_amt=total_sales_amt,total_sales_ltr=total_sales_ltr,product_sales_ltr=product_sales_ltr)        
+                                
+                                data = get_driveway_data(shift_id,prev_shift_id)
+                                
+                                return render_template("get_driveway.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
+                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
+                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],
+                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])        
                         
                 else:
 
@@ -1767,39 +1724,15 @@ def get_driveway():
                                 shift_id = current_shift.id
                                 date = current_shift.date
                                 prev_shift_id = prev_shift.id
-                                pump_readings = get_pump_readings(shift_id,prev_shift_id)
-                                pumps = Pump.query.all()
-                                tank_dips = get_tank_dips(shift_id,prev_shift_id)
-                                tanks = Tank.query.all()
-                                product_sales_ltr = product_sales_litres(shift_id,prev_shift_id)
-                                cash_account = Customer.query.filter_by(name="Cash").first()
-                                customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name !="Cash"))
-                                sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
-                                total_sales_ltr= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
-                                total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
-                                sales_breakdown["Cash"] = total_sales_amt- sum([sales_breakdown[i] for i in sales_breakdown])
-                                expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.shift_id==shift_id)).all()
-                                total_cash_expenses = sum([i[0].amount for i in expenses ])
-                                cash_up = CashUp.query.filter_by(shift_id=shift_id).first()
-                                products = Product.query.all()
-                                customers = Customer.query.all()
-                                cash_customers = Customer.query.filter_by(account_type="Cash")
-                                accounts = Account.query.all()
-                                end_date = current_shift.date
-                                avg_sales = fuel_sales_avg(get_month_day1(end_date),end_date)
-                                daily_sales = fuel_daily_sales(get_month_day1(end_date),end_date) 
-                                mnth_sales = sum([daily_sales[i] for i in daily_sales])
-                                lubes_daily_sale = lubes_daily_sales(get_month_day1(end_date),end_date)
-                                lubes_mnth_sales = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
-                                lube_avg = lubes_sales_avg(get_month_day1(end_date),end_date)
-                                total_lubes_shift_sales = lube_sales(shift_id,prev_shift_id)
-                                total_lubes_shift_sales=sum([total_lubes_shift_sales[i][5]*total_lubes_shift_sales[i][2] for i in total_lubes_shift_sales])/1000
-                                return render_template("get_driveway.html",avg_sales=avg_sales,mnth_sales=mnth_sales,lubes_daily_sale=lubes_daily_sale,
-                                lubes_mnth_sales=lubes_mnth_sales,lube_avg=lube_avg,total_lubes_shift_sales=total_lubes_shift_sales,
-                                products=products,accounts=accounts,cash_customers=cash_customers,customers=customers,
-                                cash_up=cash_up,total_cash_expenses=total_cash_expenses,expenses=expenses,sales_breakdown=sales_breakdown,
-                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=tank_dips,pump_readings=pump_readings,
-                                pumps=pumps,tanks=tanks,product_sales_ltr=product_sales_ltr,total_sales_amt=total_sales_amt,total_sales_ltr=total_sales_ltr)
+                                data = get_driveway_data(shift_id,prev_shift_id)
+                                
+                                return render_template("get_driveway.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
+                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
+                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],
+                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
+                                
                         else:
                                 flash("No shift updated yet")
                                 return redirect(url_for('start_shift_update'))
@@ -1820,39 +1753,21 @@ def ss26():
                 #######
                 shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
                 if shifts:
+                        pumps = Pump.query.order_by(Pump.id.asc()).all()
                         current_shift = shifts[0]
                         prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
                         shift_daytime = current_shift.daytime
                         shift_id = current_shift.id
                         date = current_shift.date
                         prev_shift_id = prev_shift.id
-                        pump_readings = get_pump_readings(shift_id,prev_shift_id)
-                        pumps = Pump.query.all()
-                        tank_dips = get_tank_dips(shift_id,prev_shift_id)
-                        tanks = Tank.query.all()
-                        product_sales_ltr = product_sales_litres(shift_id,prev_shift_id)
-                        cash_account = Customer.query.filter_by(name="Cash").first()
-                        customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
-                        sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
-                        total_sales_ltr= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
-                        total_sales_amt= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
-                        sales_breakdown["Cash"] = total_sales_amt- sum([sales_breakdown[i] for i in sales_breakdown])
-                        expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.shift_id==shift_id)).all()
-                        total_cash_expenses = sum([i[0].amount for i in expenses])
-                        cash_up = CashUp.query.filter_by(shift_id=shift_id).first()
-                        products = Product.query.all()
-                        coupons = Coupon.query.all()
-                        customers = Customer.query.all()
-                        cash_customers = Customer.query.filter_by(account_type="Cash")
-                        expense_accounts = Account.query.filter_by(account_category="Expense").all()
-                        cash_accounts = Account.query.filter_by(account_category="Cash").all()
+                        data = get_driveway_data(shift_id,prev_shift_id)
                         
-                        return render_template("ss26.html",
-                        products=products,expense_accounts=expense_accounts,cash_accounts=cash_accounts,
-                        cash_customers=cash_customers,customers=customers,coupons=coupons,
-                        cash_up=cash_up,total_cash_expenses=total_cash_expenses,expenses=expenses,sales_breakdown=sales_breakdown,
-                        shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=tank_dips,pump_readings=pump_readings,
-                        pumps=pumps,tanks=tanks,product_sales_ltr=product_sales_ltr,total_sales_amt=total_sales_amt,total_sales_ltr=total_sales_ltr)
+                        return render_template("ss26.html",products=data['products'],expense_accounts=data['expense_accounts'],
+                        cash_accounts=data['cash_accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
+                        coupons=data['coupons'],cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],
+                        expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],shift=current_shift,date=date,
+                        shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                        pumps=data['pumps'],tanks=data['tanks'],product_sales_ltr=data['product_sales_ltr'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'])
                 else:
                         flash("NO SHIFT STARTED YET")
                         return redirect ('start_shift_update')
@@ -1871,9 +1786,7 @@ def update_pump_litre_readings():
                 shift_underway = Shift_Underway.query.all()
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
-                
                 shift_id = current_shift.id
-               
                 pump = Pump.query.filter_by(name=request.form.get("pump")).first()
                 pump_id = pump.id
                 litre_reading = request.form.get("litre_reading")
