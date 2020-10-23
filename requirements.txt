@@ -23,4 +23,4 @@ SQLAlchemy==1.3.6
 toml==0.10.1
 Werkzeug==0.15.5
 wrapt==1.12.1
-git+https://github.com:Chideme/alembic-multischema.git
+
