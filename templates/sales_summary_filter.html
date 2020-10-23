@@ -1,0 +1,30 @@
+{% extends "report_layout.html" %}
+{% block main %}
+
+<div class="text-center">
+
+    <h4>Sales Summary</h4>
+
+    <form style="display: inline-block;" action="{{ url_for('sales_summary') }}"  method="post">
+        <div class="form-group">
+            <label for="StartDate">Start Date: </label>
+        <input id="StartDate" type = "date"  name="start_date" autocomplete="off"autofocus class="form-control" required>
+        </div>
+        <label for="EndDate">End Date :</label>
+        <div class="form-group">
+        <input id="EndDate" type = "date"  name="end_date" autocomplete="off"autofocus class="form-control" required>
+        </div>
+        <label for="EndDate">Product :</label>
+        <div class="form-group">
+            <select class="form-control" name="product">
+                <option selected>All</option>
+                {% for product in products %}
+                <option  value="{{ product.id }}">{{ product.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-block btn-primary">Select</button>
+    
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "report_layout.html" %}
+{% block main %}
+
+<div class="text-center">
+
+    <h4>Pump  Meter Readings</h4>
+
+    <form style="display: inline-block;" action="{{ url_for('pump_meter_readings') }}"  method="post">
+        <div class="form-group">
+            <label for="StartDate">Start Date: </label>
+        <input id="StartDate" type = "date"  name="start_date" autocomplete="off"autofocus class="form-control" required>
+        </div>
+        <label for="EndDate">End Date :</label>
+        <div class="form-group">
+        <input id="EndDate" type = "date"  name="end_date" autocomplete="off"autofocus class="form-control" required>
+        </div>
+        <label for="EndDate">Pump:</label>
+        <div class="form-group">
+            <select class="form-control" name="pump">
+                <option selected value="{{ pumps[0].id }}" >{{ pumps[0].name }}</option>
+                {% for pump in pumps[1:] %}
+                <option  value="{{ pump.id }}">{{ pump.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-block btn-primary">Filter</button>
+    
+    </form>
+</div>
+{% endblock %} 

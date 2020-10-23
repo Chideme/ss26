@@ -1,0 +1,52 @@
+{% extends "report_layout.html" %}
+
+
+
+{% block main %}
+
+
+
+<div class="text-center">
+<h4>Sales Analysis</h4>
+
+
+    <form style="display: inline-block;" action="{{ url_for('sales_analysis') }}"  method="post">
+        <div class="form-group">
+            <label for="StartDate">Start Date: </label>
+        <input id="StartDate" type = "date"  name="start_date" autocomplete="off"autofocus class="form-control" required>
+        </div>
+        <label for="EndDate">End Date :</label>
+        <div class="form-group">
+        <input id="EndDate" type = "date"  name="end_date" autocomplete="off"autofocus class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-block btn-primary">Filter</button>
+    
+    </form>
+</div>
+<div class="p-3 text-center">
+    <h6>Period: {{ start_date }}  to   {{ end_date }}</h6>
+</div>
+<div class="p-3"></div>
+            <table class="table table-hover">
+                <thead>
+                    <th>Date</th>
+                    <th> Total Sales (L)</th>
+                    <th> Expected Sales Amount</th>
+                    <th>Actual Sales Amount</th>
+                </thead>
+                <tbody>
+                    {% for date in reports %}
+                    <tr>
+                        
+                        <td>{{ date }}</td>
+                        <td>{{ reports[date][0] }}</td>
+                        <td>{{ reports[date][1] }}</td> 
+                        <td><a href="{{ url_for('sales_breakdown',date=date ) }}">{{ reports[date][2] }}</a></td>   
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+</div>
+{% endblock %} 
+
+    
