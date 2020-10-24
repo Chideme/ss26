@@ -2367,7 +2367,7 @@ def forgot_password():
         else:
                 email = request.form.get("email")
                 code = request.form.get("tenant_code")
-                tenant = Tenant.quer.get(code)
+                tenant = Tenant.query.get(code)
                 if tenant:
                         password = get_random_string()
                         msg = Message(password,
