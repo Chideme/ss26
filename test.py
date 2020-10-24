@@ -30,11 +30,9 @@ app.config.update(dict(
 mail = Mail(app)
 def main():
    
-    msg = Message("Hello",
-                        sender='kudaysystems@gmail.com',
-                        recipients=["kudakwashechideme@gmail.com"])
-    mail.send(msg)
-    print("Done!!")   
+    with db.session.connection(execution_options={"schema_translate_map":{"tenant":'demo_'}}):
+        user = User.query.filter_by(username='Admin').first() 
+        print(user.password)  
 with app.app_context():
         main()
 

@@ -2366,20 +2366,26 @@ def forgot_password():
                 return render_template("forgot_password.html")
         else:
                 email = request.form.get("email")
+                username=request.form.get("name")
                 code = request.form.get("code")
                 tenant = Tenant.query.get(code)
                 if tenant:
-                        password = get_random_string()
-                        msg = Message(
-                        subject="Password Reset-Edriveway",
-                        body=password,
-                        sender="kudasystems@gmail.com",
-                        recipients=[email])
-                        mail.send(msg)
-                        flash("Check you email inbox")
-                        return redirect(url_for('login'))
+                        with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant.id}}):
+                                user = User.query.filter_by(username=username).first()
+                                password = get_random_string()
+                                hash_password = generate_password_hash(password)
+                                user.password = hash_password
+                                msg = Message(
+                                subject="Password Reset-Edriveway",
+                                html=password,
+                                sender="kudasystems@gmail.com",
+                                recipients=[email])
+                                mail.send(msg)
+                                db.session.commit()
+                                flash("Check you email inbox")
+                                return redirect(url_for('login'))
                 else:
-                        flash("Failed")
+                        flash("Check your details and try again")
                         return redirect(url_for('login'))
 
 @app.errorhandler(500)
