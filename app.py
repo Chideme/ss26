@@ -2393,12 +2393,15 @@ def send_password(tenant,username):
                         password = get_random_string()
                         hash_password = generate_password_hash(password)
                         user.password = hash_password
+
+                        
                         msg = Message(
                         subject="Password Reset-Edriveway",
                         html=password,
                         sender="kudasystems@gmail.com",
                         recipients=[email])
                         mail.send(msg)
+                        db.session.add()
                         db.session.commit()
                         flash("Check you email inbox")
                         return redirect(url_for('login'))
