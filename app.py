@@ -26,8 +26,8 @@ app.config.update(dict(
     MAIL_PORT = 587,
     MAIL_USE_TLS = True,
     MAIL_USE_SSL = False,
-    MAIL_USERNAME = 'kudakwashechideme@gmail.com',
-    MAIL_PASSWORD = '@cee%kay',
+    MAIL_USERNAME = 'kudasystems@gmail.com',
+    MAIL_PASSWORD = 'kuda2020',
 ))
 mail = Mail(app)
 
@@ -106,7 +106,7 @@ def activate(tenant_schema):
                         session["role_id"] = user.role_id
                         session["shift_underway"]=False
                         msg = Message(subject="Welcome Admin!",
-                                sender="kudakwashechideme@gmail.com",
+                                sender="kudasystems@gmail.com",
                                 recipients=[tenant.company_email],
                                 html=msg_body)
                         try:
@@ -2370,15 +2370,16 @@ def forgot_password():
                 tenant = Tenant.query.get(code)
                 if tenant:
                         password = get_random_string()
-                        msg = Message(body=password,
+                        msg = Message(
                         subject="Password Reset-Edriveway",
-                        sender="kudakwashechideme@gmail.com",
+                        body=password,
+                        sender="kudasystems@gmail.com",
                         recipients=[email])
                         mail.send(msg)
                         flash("Check you email inbox")
                         return redirect(url_for('login'))
                 else:
-                        flash("Check you email inbox")
+                        flash("Failed")
                         return redirect(url_for('login'))
 
 @app.errorhandler(500)
