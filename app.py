@@ -2366,7 +2366,7 @@ def forgot_password():
                 return render_template("forgot_password.html")
         else:
                 email = request.form.get("email")
-                code = request.form.get("tenant_code")
+                code = request.form.get("code")
                 tenant = Tenant.query.get(code)
                 if tenant:
                         password = get_random_string()
