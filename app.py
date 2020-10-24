@@ -2393,7 +2393,6 @@ def send_password(tenant,username):
                         password = get_random_string()
                         hash_password = generate_password_hash(password)
                         user.password = hash_password
-
                         
                         msg = Message(
                         subject="Password Reset-Edriveway",
