@@ -2367,7 +2367,7 @@ def forgot_password():
         else:
                 email = request.form.get("email")
                 code = request.form.get("tenant_code")
-                tenant = Tenant.query.filter_by(code=code).first()
+                tenant = Tenant.query.filter_by(id=code).first()
                 if tenant:
                         password = get_random_string()
                         msg = Message(password,
@@ -2376,7 +2376,7 @@ def forgot_password():
                                 recipients=[email])
                         mail.send(msg)
                         flash("Check you email inbox")
-                        return redirect(url_for('index'))
+                        return redirect(url_for('login'))
 
 
 @app.errorhandler(500)
