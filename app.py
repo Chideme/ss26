@@ -2370,7 +2370,7 @@ def forgot_password():
                 code = request.form.get("code")
                 tenant = Tenant.query.get(code)
                 if tenant:
-                        with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant.id}}):
+                        with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant.schema}}):
                                 user = User.query.filter_by(username=username).first()
                                 password = get_random_string()
                                 hash_password = generate_password_hash(password)
