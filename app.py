@@ -2377,7 +2377,9 @@ def forgot_password():
                         mail.send(msg)
                         flash("Check you email inbox")
                         return redirect(url_for('login'))
-
+                else:
+                        flash("Check you email inbox")
+                        return redirect(url_for('login'))
 
 @app.errorhandler(500)
 def internal_app_error(error):
