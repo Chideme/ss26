@@ -2400,7 +2400,7 @@ def send_password(tenant,username):
                         sender="kudasystems@gmail.com",
                         recipients=[email])
                         mail.send(msg)
-                        db.session.add()
+                        
                         db.session.commit()
                         flash("Check you email inbox")
                         return redirect(url_for('login'))
