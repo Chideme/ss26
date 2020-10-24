@@ -2364,7 +2364,7 @@ def forgot_password():
         """ Reset Password for Admin"""
         session.clear()
         if request.method == "GET":
-                return render_template("forgot_password_code.html")
+                return render_template("forgot_password.html")
         else:
                 
                 username=request.form.get("name")
