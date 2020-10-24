@@ -2362,30 +2362,45 @@ def lubes_cash_up():
 @app.route("/forgot_password",methods=['GET','POST'])
 def forgot_password():
         """ Reset Password for Admin"""
+        session.clear()
         if request.method == "GET":
-                return render_template("forgot_password.html")
+                return render_template("forgot_password_code.html")
         else:
-                email = request.form.get("email")
+                
                 username=request.form.get("name")
-                code = request.form.get("code")
+                code = int(request.form.get("code"))
                 tenant = Tenant.query.get(code)
+                session["schema"]= tenant.schema
+                session["username"] =username
+
                 if tenant:
-                        with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant.schema}}):
-                                user = User.query.filter_by(username=username).first()
-                                password = get_random_string()
-                                hash_password = generate_password_hash(password)
-                                user.password = hash_password
-                                msg = Message(
-                                subject="Password Reset-Edriveway",
-                                html=password,
-                                sender="kudasystems@gmail.com",
-                                recipients=[email])
-                                mail.send(msg)
-                                db.session.commit()
-                                flash("Check you email inbox")
-                                return redirect(url_for('login'))
+                        
+                        return redirect(url_for('send_password',tenant=tenant.schema,username=username))
                 else:
                         flash("Check your details and try again")
+                        return redirect(url_for('login'))
+
+
+@app.route("/send_password/<tenant>/<username>",methods=['GET','POST'])
+def send_password(tenant,username):
+        """ Send Password for Admin"""
+        if request.method == "GET":
+                return render_template("send_password.html")
+        else:  
+                with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
+                        email = request.form.get("email")
+                        user = User.query.filter_by(username=username).first()
+                        password = get_random_string()
+                        hash_password = generate_password_hash(password)
+                        user.password = hash_password
+                        msg = Message(
+                        subject="Password Reset-Edriveway",
+                        html=password,
+                        sender="kudasystems@gmail.com",
+                        recipients=[email])
+                        mail.send(msg)
+                        db.session.commit()
+                        flash("Check you email inbox")
                         return redirect(url_for('login'))
 
 @app.errorhandler(500)
