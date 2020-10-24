@@ -18,7 +18,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] =os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}  
 app.config["FLASK_ENV"] = os.getenv("FLASK_ENV")
-app.secret_key = os.urandom(24)
+app.secret_key = "KUDAKWASHECHIDEME"
 db.init_app(app)
 app.config.update(dict(
     DEBUG = True,

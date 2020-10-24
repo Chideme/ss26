@@ -65,11 +65,11 @@ $(document).ready(function(){
 $('#print').on('click',function(){
             var element = document.getElementById('printTable');
             var opt = {
-            margin:       [0.1,0.1,0.1,0.1],
+            margin:       [30,0,30,0],
             filename:     'driveway.pdf',
-            html2canvas:  { scale: 5 },
-            jsPDF:        { unit: 'in', format: 'tabloid', orientation: 'landscape' },
-            pagebreak: { mode: 'css', after: '.driveway-table' }
+            html2canvas:  { scale: 2, bottom: 0 },
+            jsPDF:        { unit: 'mm', format: 'tabloid', orientation: 'landscape' },
+            pagebreak: { avoid:'tr' }
             };
 
           
