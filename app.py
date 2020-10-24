@@ -2370,10 +2370,10 @@ def forgot_password():
                 tenant = Tenant.query.get(code)
                 if tenant:
                         password = get_random_string()
-                        msg = Message(password,
+                        msg = Message(body=password,
                         subject="Password Reset-Edriveway",
-                                sender="kudakwashechideme@gmail.com",
-                                recipients=[email])
+                        sender="kudakwashechideme@gmail.com",
+                        recipients=[email])
                         mail.send(msg)
                         flash("Check you email inbox")
                         return redirect(url_for('login'))
