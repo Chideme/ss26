@@ -26,8 +26,8 @@ app.config.update(dict(
     MAIL_PORT = 587,
     MAIL_USE_TLS = True,
     MAIL_USE_SSL = False,
-    MAIL_USERNAME = 'kudasystems@gmail.com',
-    MAIL_PASSWORD = 'kuda2020',
+    MAIL_USERNAME = os.getenv("SENDER_MAIL"),
+    MAIL_PASSWORD = os.getenv("EMAIL_PASSWORD"),
 ))
 mail = Mail(app)
 
