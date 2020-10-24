@@ -31,9 +31,9 @@ $(document).ready(function(){
             newWIn.print();
             newWIn.close();
         };
-        $('#p').on('click',function(){
+        $('#print').on('click',function(){
             printTable();
-            window.location = 'reports/driveway';
+            
         });
 
         //Http request to display driveway data to do.
@@ -62,7 +62,7 @@ $(document).ready(function(){
    
 
 // html2pdf
-$('#print').on('click',function(){
+$('#download').on('click',function(){
             var element = document.getElementById('printTable');
             var opt = {
             margin:       [30,0,30,0],
