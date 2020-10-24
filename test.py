@@ -24,14 +24,14 @@ app.config.update(dict(
     MAIL_PORT = 587,
     MAIL_USE_TLS = True,
     MAIL_USE_SSL = False,
-    MAIL_USERNAME = 'kudakwashechideme@gmail.com',
-    MAIL_PASSWORD = '@cee%kay',
+    MAIL_USERNAME = 'kudaysystems@gmail.com',
+    MAIL_PASSWORD = 'kuda2020',
 ))
 mail = Mail(app)
 def main():
    
     msg = Message("Hello",
-                        sender="kudakwashechideme@gmail.com",
+                        sender='kudaysystems@gmail.com',
                         recipients=["kudakwashechideme@gmail.com"])
     mail.send(msg)
     print("Done!!")   

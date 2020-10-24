@@ -174,12 +174,12 @@ def user_login():
                         
                         username = str(request.form.get("username"))
                         password = request.form.get("password")
-                        user = User.query.filter_by(username=request.form.get("username")).first()
+                        user = User.query.filter_by(username=username).first()
                         org = Tenant.query.get(session["tenant"])
                         shift_underway = Shift_Underway.query.all()
-                        u = user.username
+                       
                         
-                        if username != u or not check_password_hash(user.password,password) or session['tenant'] != user.tenant_id:
+                        if  not check_password_hash(user.password,password) or session['tenant'] != user.tenant_id:
                                 if org.active == False and User.query.filter_by(session["tenant"]).all() == None:
 
                                         flash("Please finish setting up your account")
