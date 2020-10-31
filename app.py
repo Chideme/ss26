@@ -403,7 +403,8 @@ def start_shift_update():
                                 for tank in tanks:
                                         product = db.session.query(Tank,Product).filter(and_(Tank.product_id == Product.id,Tank.id == tank.id)).first()
                                         product_id = product[1].id
-                                        fuel_delivery = Fuel_Delivery(date=date,shift_id=shift_id,tank_id=tank.id,qty=0,product_id=product_id,document_number='0000')
+                                        supplier = Supplier.query.get(1)
+                                        fuel_delivery = Fuel_Delivery(date=date,shift_id=shift_id,tank_id=tank.id,qty=0,cost_price=product[1].cost_price,supplier=supplier.id,product_id=product_id,document_number='0000')
                                         db.session.add(fuel_delivery)
                                         db.session.flush()
                              
@@ -1210,7 +1211,7 @@ def customer(customer_id):
 def add_customer():
         """Add Customer"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                name = request.form.get("name").stip().capitalize()
+                name = request.form.get("name").strip().capitalize()
                 customer = Customer(name=name,account_type=request.form.get("type"),phone_number=request.form.get("phone"),contact_person=request.form.get("contact_person").capitalize())
                 customer_exists = bool(Customer.query.filter_by(name=name).first())
                 if customer_exists:
@@ -1668,8 +1669,10 @@ def get_driveway():
                 if request.method == "POST":
                         shift_daytime = request.form.get("shift")
                         date = request.form.get("date")
-                        pumps = Pump.query.all()
-                        tanks = Tank.query.all()
+                        pumps = Pump.query.order_by(Pump.id.asc()).all()
+                        tanks = Tank.query.order_by(Tank.id.asc()).all()
+                        B = pumps[len(pumps)//2:]
+                        A = pumps[:len(pumps)//2]
                         if shift_daytime != "Total":
                                 current_shift= Shift.query.filter(and_(Shift.date == date,Shift.daytime == shift_daytime)).first()
                                 if not current_shift:
@@ -1682,7 +1685,7 @@ def get_driveway():
                                 ######
                                 data = get_driveway_data(shift_id,prev_shift_id)
                                 
-                                return render_template("get_driveway.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                                return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
                                 lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
                                 products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
                                 cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],
@@ -1705,7 +1708,7 @@ def get_driveway():
                                 
                                 data = get_driveway_data(shift_id,prev_shift_id)
                                 
-                                return render_template("get_driveway.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                                return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
                                 lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
                                 products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
                                 cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],
@@ -1722,11 +1725,15 @@ def get_driveway():
                                 prev_shift = shifts[1] if len(shifts)>1 else shifts[0]
                                 shift_daytime = current_shift.daytime
                                 shift_id = current_shift.id
+                                pumps = Pump.query.order_by(Pump.id.asc()).all()
+                                tanks = Tank.query.all()
+                                B = pumps[len(pumps)//2:]
+                                A = pumps[:len(pumps)//2]
                                 date = current_shift.date
                                 prev_shift_id = prev_shift.id
                                 data = get_driveway_data(shift_id,prev_shift_id)
                                 
-                                return render_template("get_driveway.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                                return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
                                 lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
                                 products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
                                 cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],
@@ -1865,7 +1872,9 @@ def update_fuel_deliveries():
                 tank= Tank.query.filter_by(name=request.form.get("tank")).first()
                 document = request.form.get("document")
                 qty = request.form.get("delivery")
-                delivery = Fuel_Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number='0000')
+                supplier = request.form.get("supplier")
+                cost_price = request.form.get("cost_price")
+                delivery = Fuel_Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier,cost_price=cost_price)
                 db.session.add(delivery)
                 
                 #db.session.query(Fuel_Delivery).filter(and_(Fuel_Delivery.tank_id == tank_id,Fuel_Delivery.shift_id ==shift_id)).update({Fuel_Delivery.qty: qty}, synchronize_session = False)
@@ -2388,15 +2397,16 @@ def send_password(tenant,username):
                 return render_template("send_password.html")
         else:  
                 with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
-                        email = request.form.get("email")
+                        org = Tenant.query.filter_by(schema=tenant).first()
+                        email = org.company_email
                         user = User.query.filter_by(username=username).first()
                         password = get_random_string()
                         hash_password = generate_password_hash(password)
                         user.password = hash_password
-                        
+                        msg_body = "<h3>Please find your login details :</h3><body><p>Company Code: {}</p><p>User Name: {}</p><p>Password: {}</p><small>Make sure to change your password once logged in</small></body>".format(org.id,user.username,password)
                         msg = Message(
                         subject="Password Reset-Edriveway",
-                        html=password,
+                        html=msg_body,
                         sender="kudasystems@gmail.com",
                         recipients=[email])
                         mail.send(msg)

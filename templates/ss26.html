@@ -12,18 +12,18 @@
         <div class="btn-toolbar mb-2 mb-md-0">
         
           <div class="btn-group mr-2">
-            <button  type="button" id="print" class="btn btn-block btn-outline-secondary">Print Pdf</button>
-            <button  type="button" id="download" class="btn btn-block btn-outline-secondary">Download Pdf</button>
+            <button  type="button" id="download" class="btn  btn-outline-secondary"><a href="{{ url_for('get_driveway') }}" >View Report</a></button>
           </div>
         </div>
       </div>
 
     
       
-      <h2>Driveway</h2>
+      
       <div class="table-responsive driveway" id="printTable">
-        <h2 style="color: navy;">{{ session["org_name"] }}</h2>
-        <h6 style="color: navy;">Prepared by: {{ shift.prepared_by }}</h6>
+        <h2 class="text-center">{{ session["org_name"] }}</h2>
+        <p><h4>Inventory Control Sheet</h4><br>Prepared by: {{ shift.prepared_by }}<br>Date : {{ date }}<br>Shift: {{ shift_daytime }}
+        <br>Shift ID: {{ shift.id }}</p>
     
         <table class="driveway-table">
           <thead class="driveway-table">
@@ -74,7 +74,9 @@
                 <td class="numbers driveway-table">{{ pump_readings[pump.name][1][1]-pump_readings[pump.name][0][1] }}</td>
               </tr>
               {% endfor %}
+              
               </tbody>
+            </table>
               <table class="driveway-table">
               <thead class="driveway-table">
                 <th class="driveway-table">Product</th>
@@ -308,9 +310,17 @@
                         </div>
                         <label for="Quantity">Quantity</label>
                           <div class="form-group">
-                              <input type ="number" step="any" value="{{ tank_dips[tank.name][3] }}" placeholder="Quantity" name="delivery" autocomplete="off"autofocus class="form-control" required>
+                              <input id="Quantity" type ="number" step="any" value="{{ tank_dips[tank.name][3] }}" placeholder="Quantity" name="delivery" autocomplete="off"autofocus class="form-control" required>
                           </div>
-   
+                          <label for="CostPrice">Cost Price</label>
+                          <div class="form-group">
+                              <input type ="number" id="CostPrice" step="any"   name="delivery" autocomplete="off"autofocus class="form-control" required>
+                          </div>
+                          <label for="Supplier">Supplier</label>
+                          <div class="form-group">
+                              <input type ="text" id="Supplier" name="delivery" autocomplete="off"autofocus class="form-control" required>
+                          </div>
+                          
                           <button class="btn btn-primary btn-block" type="submit">Enter Delivery</button>
                   
                        </form>
@@ -700,7 +710,7 @@
                         </div>
                         <div class="form-group" >
                             <label for="Variance">Variance</label>
-                            <input id="Variance" type = "number" step="any"  name="variance" autocomplete="off" placeholder="Variance" autofocus class="form-control">
+                            <input id="Variance" type = "number" step="any"  name="variance" autocomplete="off" placeholder="Variance" autofocus class="form-control" readonly>
                         </div>
                     <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
                 </form>
@@ -712,7 +722,14 @@
     </div>
   </div>
   <!--Cash Up Modal-->
-
+  <script>
+      // calculate variance
+      document.getElementById('ActualAmount').addEventListener("input", function () {
+        var actual_amt = document.getElementById("ActualAmount").value;
+        var expected_amt = document.getElementById("ExpectedAmount").value; 
+        document.getElementById("Variance").value = actual_amt- expected_amt  ;
+   });
+  </script>
 
 {% endblock %}
- <!--JPDF-->
+

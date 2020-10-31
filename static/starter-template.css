@@ -5,3 +5,13 @@
   padding: 3rem 1.5rem;
   text-align: center;
 }
+a,
+a:focus,
+a:hover {
+  color: #fff;
+}
+ .nav-link:hover,
+.nav-link:focus {
+  border-bottom-color: rgba(255, 255, 255, .25);
+}
+

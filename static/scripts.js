@@ -21,7 +21,7 @@ $(document).ready(function(){
 
         //Prints Driveway
         function printTable (){
-            var toprint = document.getElementById("printTable");
+            var toprint = document.getElementById('printTable');
             newWIn = window.open("");
             newWIn.document.write('<html><body>');
             newWIn.document.write('<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css"/>');
@@ -36,7 +36,7 @@ $(document).ready(function(){
             
         });
 
-        //Http request to display driveway data to do.
+        
 
         // return to page position after reload ( for driveway updates)
         
@@ -69,7 +69,7 @@ $('#download').on('click',function(){
             filename:     'driveway.pdf',
             html2canvas:  { scale: 2, bottom: 0 },
             jsPDF:        { unit: 'mm', format: 'tabloid', orientation: 'landscape' },
-            pagebreak: { avoid:'tr' }
+            pagebreak: { avoid:'div' }
             };
 
           

@@ -1,0 +1,230 @@
+{% extends "report_layout.html" %}
+
+
+{% block main %}
+
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#ShiftSelection">
+          Select Shift
+        </button>
+        <div class="btn-group mr-2">
+          <button  type="button" id="print" class="btn btn-block btn-outline-secondary">Print Pdf</button>
+          <button  type="button" id="download" class="btn btn-block btn-outline-secondary">Download Pdf</button>
+        </div>
+        </div>
+     
+
+    
+      
+      <h2>Driveway</h2>
+  
+      <div class="table-responsive driveway" id="printTable">
+  
+      
+        <table>
+            <tr>
+                <th style="color: lightblue">Prepared by</th>
+                <td>Kuda</td>
+            </tr>
+            <tr>
+                <th>Prepared by</th>
+                <td>Kuda</td>
+            </tr>
+            <tr>
+                <th>Shift Number</th>
+                <td>1</td>
+            </tr>
+            <tr>
+                <th>Shift</th>
+                <td>Day</td>
+            </tr>
+            <tr>
+                <th>Date</th>
+                <td>02/02/02</td>
+            </tr>
+        </table>
+        
+        <table class="driveway-table">
+            <thead>
+                <th class="driveway-table" colspan="2">Pump Name</th>
+              
+                <th class="driveway-table">Opening Readings</th>
+                <th class="driveway-table">Closing Readings</th>
+                <th class="driveway-table">Sales</th>
+
+            </thead>
+            <tbody>
+             
+              <tr class="driveway-table">
+                <td class="driveway-table" rowspan="2"></td>
+                <td class="driveway-table">Litre Reading:</td>
+                <td class="numbers driveway-table"></td>
+                <td class="numbers driveway-table"></td>
+                <td class="numbers driveway-table"></td>
+              </tr>
+              <tr class="driveway-table">
+                <td class="driveway-table">Money Reading (in $):</td>
+                <td class="numbers driveway-table"></td>
+                <td class="numbers driveway-table"></td>
+                <td class="numbers driveway-table"></td>
+              </tr>
+              
+              <thead class="driveway-table">
+                <th class="driveway-table">Product</th>
+                <th class="driveway-table">Cost Price</th>
+                <th class="driveway-table">Selling Price</th>
+                <th class="driveway-table">Litres</th>
+                <th class="driveway-table">Amount</th>
+              </thead>
+              <tbody>
+                
+                <tr class="driveway-table">
+                  <td class="driveway-table">00000000</td>
+                  <td class="driveway-table">00000000000</td>
+                  <td class="driveway-table">00000000000000</td>
+                  <td class="driveway-table">00000000</td>
+                  <td class="numbers driveway-table">00000000000</td>
+                </tr>
+                
+                <tr class="driveway-table">
+                  <th class="driveway-table" colspan="3">Total</th>
+                  <td class="driveway-table">00000</td>
+                  <td class="numbers driveway-table">0000000</td>
+                </tr>
+              </tbody>
+            <thead>
+              <th class="driveway-table">Tank Name</th>
+              <th class="driveway-table">Opening Dip</th>
+              <th class="driveway-table">Delivery</th>
+              <th class="driveway-table">Closing Dip </th>
+              <th class="driveway-table"> Tank Sales</th>
+              <th class="driveway-table">Pump Sales</th>
+              <th class="driveway-table">Variance</th>
+            </thead>
+            <tbody>
+              
+              <tr class="driveway-table">
+                <td>1</td>
+                <td class="numbers driveway-table">000000</td>
+                <td class="numbers driveway-table">0000000 </td>
+                <td class="numbers driveway-table">0000000</td>
+                <td class="numbers driveway-table">000000000</td>
+                <td class="numbers driveway-table"> ltrs</td>
+                <td class="numbers driveway-table">00000000</td>
+              </tr>
+              
+            </tbody>
+            
+        </table>
+        
+        
+        
+        <h4>Sales Breakdown</h4>
+        <table class="table table-sm">
+              <thead>
+                <th>Account</th>
+                <th>Amount</th>
+              </thead>
+              <tbody>
+               
+                <tr>
+                  <td>lll</td>
+                  <td class="numbers">00000</td>
+                </tr>
+              
+               <tr>
+                 <th>Total:</th>
+                 <td></td>
+               </tr>
+              </tbody>
+        </table>
+        <h4 class="p-2">Cash Payouts</h4>
+        <table class="table table-sm">
+          <tr>
+            <th scope="row">Total Cash Sales:</th>
+            <td class="numbers">00000000</td>
+          </tr>
+          <th  colspan="2">Expenses:</th>
+        
+          <tr>
+            <td>0000</td>
+            <td>0000</td>
+          </tr>
+        
+          <tr>
+              <th  scope="row">Expected Cash</th>
+        
+              <td class="numbers"> 20000</td>
+
+          </tr>
+          <tr>
+            <th  scope="row"> Actual Cash Banked</th>
+            
+            <td class="numbers">200000</td>
+           
+
+          </tr>
+        </table>
+        <h4 class="p-2">Key Metrics</h4>
+        <table class="table table-sm">
+          <thead>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Fuels</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>000000</td>
+            </tr>
+          </tbody>
+        </table>
+        
+      
+      </div>
+    
+     <!--Shift Slection Modal-->
+   <div class="modal fade" id="ShiftSelection" tabindex="-1" role="dialog" aria-labelledby="ShiftSelectionFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ShiftSelectionFormLabel">Select Shift</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form  action="{{ url_for('get_driveway') }}" method="post" > 
+                    <div class="form-group">
+                        <input type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                      <select class="form-control" name="shift">
+                        <option selected>Total</option>
+                        <option>Day</option>
+                        <option>Night</option>
+                    </select>
+                  </div>
+
+                    <button class="btn btn-primary btn-block" type="submit">Enter</button>
+            
+                 </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+  

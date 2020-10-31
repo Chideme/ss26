@@ -29,12 +29,10 @@ app.config.update(dict(
 ))
 mail = Mail(app)
 def main():
-    tenant=Tenant.query.get(1)
-    db.session.commit()
-    print(tenant.schema)
-    with db.session.connection(execution_options={"schema_translate_map":{"tenant":str(tenant.schema)}}):
-        user = User.query.filter_by(username='Admin').first() 
-        print(user.password)  
+    
+    
+    with db.session.connection(execution_options={"schema_translate_map":{"tenant":'test1'}}):
+       
 with app.app_context():
         main()
 
