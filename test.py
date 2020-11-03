@@ -29,9 +29,9 @@ app.config.update(dict(
 ))
 mail = Mail(app)
 def main():
-    
-    
-    with db.session.connection(execution_options={"schema_translate_map":{"tenant":'test1'}}):
+    t = date.today()
+    a = t + timedelta(days=5)
+    print(a)
        
 with app.app_context():
         main()

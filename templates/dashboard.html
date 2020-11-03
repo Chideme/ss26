@@ -5,34 +5,35 @@
 {% block main %}
       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2" id="heading" value="{{ h }}">{{ h }}</h1>
+        <div class="card">
+        <div class="card-header" style="background-color: lightseagreen;">Filter</div>
+        <div class="card-body">
         <form style="display: inline-block;" action="{{ url_for('dashboard_reports') }}" id="form" method="post">
-          <div class="form-row">
-          <div class="col-2">
+          <div class="form-group">
               <select class="form-control"  id="product">
                 <option selected >Fuel</option>
                 <option>Lubricants</option>
               </select>
           </div>
-          <div class="col-2">
+          <div class="form-group">
               <select class="form-control"  id="frequency">
                 <option selected >Day-to-day</option>
                 <option>Month-to-month</option>
               </select>
           </div>
-          <div class="col-2">
+          <div class="form-group">
               <input type = "date"  value="{{ start_date }}" id="start_date" autocomplete="off" autofocus class="form-control" required>
           </div>
-          <div class="col-3">
+          <div class="form-group">
               <input type = "date"  value="{{ end_date }}" id="end_date" autocomplete="off"  class="form-control" required>
           </div>
-          <div class="col-3">
+          <div class="form-group">
               <button type="submit"  id="clickbutton" class="btn btn-block btn-outline-secondary">Enter</button>
           </div>
-          </div>
           </form>
-        
+          </div>
+          </div>
       </div>
-     
 
       <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
       

@@ -49,7 +49,7 @@ def signup():
                 contact_person = request.form.get("contact_person").capitalize()
                 phone_number = request.form.get("phone")
                 schema = create_schema_name(company.lower())
-                tenant = Tenant(name =company.capitalize(),address=address,company_email=email,database_url=DATABASE_URL,tenant_code=schema,phone_number=phone_number,contact_person=contact_person,schema=schema,active=False)
+                tenant = Tenant(name =company.capitalize(),address=address,company_email=email,database_url=DATABASE_URL,tenant_code=schema,phone_number=phone_number,contact_person=contact_person,schema=schema,active=date.today())
                 try:
                         db.session.add(tenant)
                         db.session.flush
@@ -90,6 +90,7 @@ def activate(tenant_schema):
                         #db.create_all()
                         #tenant = Tenant.query.filter_by(schema=tenant_schema).first()
                         super_user = "Admin"
+                        today = date.today()
                         password= get_random_string()
                         hash_password = generate_password_hash(password)
                         tenant_id = session['tenant']
@@ -100,7 +101,9 @@ def activate(tenant_schema):
                         db.session.add(shift_underway)  
                         db.session.add(user)
                         db.session.flush()
-                        tenant.active = True
+                        expiration= today + timedelta(days=7)
+                        tenant.active = expiration
+                        sub = Subscriptions(tenant_id=tenant_id,expiration=expiration)
                         session["user_id"] = user.id
                         session["user_tenant"]= user.tenant_id
                         session["role_id"] = user.role_id
@@ -111,13 +114,14 @@ def activate(tenant_schema):
                                 html=msg_body)
                         try:
                                 mail.send(msg)
+                                db.session.add(sub)
                                 db.session.commit()
                                 flash('Account Successfully activated. Please use details sent to your email to login.')
                                 return redirect(url_for('login'))
                                 
                         except:  
-                                db.session.commit()
-                                flash('Account Successfully activated. Please use details sent to your email to login.')
+                               
+                                flash('Activation Failed.')
                                 return redirect(url_for('login'))
 
 
@@ -141,17 +145,25 @@ def login():
                         return render_template("login.html")
 
                 if company:
-                        if active:
+                        today = date.today()
+                        if active >= today:
                                 session['tenant'] = company.id
                                 session["schema"] = company.schema
                                 return redirect(url_for('user_login'))
 
                         else:
-                                session["schema"] = company.schema
-                                session['tenant'] = company.id
-                                flash('Company is not yet active. Please activate your company profile')
-                                return redirect(url_for('activate',tenant_schema=session['schema']))
-                        
+                                sub = Subscriptions.query.filter_by(tenant_id=tenant_id)
+                                if sub:
+                                        session["schema"] = company.schema
+                                        session['tenant'] = company.id
+                                        flash('Subscription has Expired, contact support +263776393449')
+                                        return redirect(url_for('login'))
+                                else:
+                                        session["schema"] = company.schema
+                                        session['tenant'] = company.id
+                                        flash('Company is not active. Please activate your company profile')
+                                        return redirect(url_for('activate',tenant_schema=session['schema']))
+                                        
 
                 else:
                         flash('Company does not exist, check your code and try again or contact support')
@@ -445,9 +457,10 @@ def end_shift_update():
                 shift_underway = Shift_Underway.query.all()
                 shift_id = shift_underway[0].current_shift
                 lubes = LubeProduct.query.all()
-                check_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
+                check_cash_up = CashUp.query.filter_by(shift_id=shift_id).first()
+                check_lube_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
                 if lubes:
-                        if check_cash_up:
+                        if check__lube_cash_up and check_cash_up:
                                 shift_underway[0].state = False
                                 db.session.commit()
                                 flash('Shift Ended')
@@ -456,11 +469,15 @@ def end_shift_update():
                                 flash('Do cash up on lubes')
                                 return redirect(url_for('shift_lube_sales'))
                 else:
-                        shift_underway[0].state = False
-                        db.session.commit()
-                        session["shift_underway"]=False
-                        flash('Shift Ended')
-                        return redirect(url_for('get_driveway'))
+                        if check_cash_up:
+                                shift_underway[0].state = False
+                                db.session.commit()
+                                session["shift_underway"]=False
+                                flash('Shift Ended')
+                                return redirect(url_for('get_driveway'))
+                        else:
+                                flash('Do cash up !')
+                                return redirect(url_for('ss26')) 
 
         
 
@@ -637,10 +654,10 @@ def edit_company_details():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
 
                 tenant = Tenant.query.get(session["tenant"])
-                tenant.name = request.form.get("name").capitalize()
-                tenant.address = request.form.get("address").capitalize()
+                tenant.name = request.form.get("name")
+                tenant.address = request.form.get("address")
                 tenant.email = request.form.get("email")
-                tenant.contact_person= request.form.get("contact_person").capitalize()
+                tenant.contact_person= request.form.get("contact_person")
                 tenant.phone_number = request.form.get("phone")
                 db.session.commit()
                
@@ -832,12 +849,10 @@ def edit_pump():
 def add_tank():
         """Add Tank"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                shift_underway = Shift_Underway.query.all()
                 name =request.form.get("tank_name").capitalize()
                 name = name.strip()
                 product_id=request.form.get("product")
                 dip = request.form.get("dip")
-                date= request.form.get("date")
                 s = Shift.query.order_by(Shift.id.desc()).all()
 
                 tank = Tank(name=name,product_id=product_id,dip=dip)
@@ -1152,6 +1167,7 @@ def customer(customer_id):
                         invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).all()
                         payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).all()
                         records = {}
+                        inv_ids = {}
                         for i in invoices:
                                 records[i[0].date] = {"inv":{},"pmnt":0,"bal":0}
                         for i in payments:
@@ -1168,8 +1184,11 @@ def customer(customer_id):
                                 records[payment.date]["pmnt"]= records[payment.date]["pmnt"]+payment.amount
                                 balance = sum([i.amount for i in total_payments if i.date <= payment.date])-sum([i.price*i.qty for i in total_invoices if i.date <= payment.date])
                                 records[payment.date]["bal"]= balance
-                        dates = list(records)
-                        return render_template("customer.html",records=records,dates=dates,customer=customer,net=net,start=start_date,end=end_date)
+                        dates = sorted_dates(list(records))
+                        for i in inv_ids:
+                                inv_ids[i]=sorted(inv_ids[i])
+
+                        return render_template("customer.html",records=records,inv_ids=inv_ids,dates=dates,customer=customer,net=net,start=start_date,end=end_date)
                 else:
                         end_date = date.today()
                         start_date = end_date - timedelta(days=900)
@@ -2005,7 +2024,7 @@ def sales_receipts():
                 amount= float(request.form.get("amount"))
                 receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
                 db.session.add(receipt)
-                cash_invoices = cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
+                cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
                 
                 db.session.commit()
                         
@@ -2072,7 +2091,7 @@ def cash_up():
                         db.session.add(cash_up)
                         db.session.add(receipt)
                         
-                        cash_invoices = cash_sales(amount,account.id,shift_id,date)# add invoices to cash customer account
+                        cash_sales(amount,account.id,shift_id,date)# add invoices to cash customer account
                         
                         db.session.commit()
                         return redirect(url_for('ss26'))
@@ -2146,8 +2165,7 @@ def restart_shift():
 def shift_lube_sales():
         """LUBE SALES PER SHIFT"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                shift_underway = Shift_Underway.query.all()
-                ########
+
                 shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
                 current_shift = shifts[0]
                 prev_shift = shifts[1]
@@ -2177,7 +2195,6 @@ def update_lube_qty():
                 product = LubeProduct.query.filter_by(name=request.form.get("product")).first() 
                 if req:
                         current_shift = Shift.query.get(req)
-                        shift_daytime = current_shift.daytime
                         shift_id = current_shift.id
                         date = current_shift.date
                         product_qty = LubeQty.query.filter(and_(LubeQty.shift_id==current_shift.id,LubeQty.product_id==product.id)).first()
@@ -2210,7 +2227,6 @@ def update_lube_qty():
                         shift_underway = Shift_Underway.query.all()
                         current_shift = shift_underway[0].current_shift
                         current_shift = Shift.query.get(current_shift)
-                        shift_daytime = current_shift.daytime
                         shift_id = current_shift.id
                         date = current_shift.date
                         try:
@@ -2424,3 +2440,38 @@ def internal_app_error(error):
 def page_not_found(error):
         
         return render_template('404.html'),404
+
+@app.route("/admin",methods=['GET','POST'])
+@system_admin_required
+def developer():
+        """ Developer  Adminstration"""
+        if request.method == "GET":
+                tenants = Tenant.query.all()
+                packages = Package.query.all()
+                return render_template("admin.html",tenants=tenants,packages=packages)
+        else:
+                package_id = request.form.get("package")
+                package = Package.query.get(package_id)
+                tenant_id = request.form.get("tenant")
+                tenant = Tenant.query.get(tenant_id)
+                tenant.active = date.today() + timedelta(days=package.number_of_days)
+                db.session.commit()
+                return render_template("admin.html",tenants=tenants,packages=packages)
+
+@app.route("/developer_login",methods=['GET','POST'])
+def developer_login():
+        """Developer Login"""
+        if request.method == "GET":
+                
+                return render_template("admin_login.html")
+        else:
+                name = request.form.get("name")
+                password = request.form.get("password")
+                user = SystemAdmin.query.filter_by(name=name).first()
+
+                if  not check_password_hash(user.password,password):
+
+                        return redirect(url_for('index'))
+                else:
+                        session["system_admin"]= user.id
+                        return redirect(url_for('developer'))

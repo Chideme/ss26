@@ -37,12 +37,32 @@ def login_required(f):
 
         if session.get("user_id") is None:
 
-            return redirect("/login")
+            return redirect(url_for('login'))
 
         return f(*args, **kwargs)
 
     return decorated_function
 
+def system_admin_required(f):
+
+    """
+
+    Decorate routes to require login.
+    http://flask.pocoo.org/docs/0.12/patterns/viewdecorators/
+
+    """
+
+    @wraps(f)
+
+    def decorated_function(*args, **kwargs):
+
+        if session.get("system_admin") is None:
+
+            return redirect(url_for('index'))
+
+        return f(*args, **kwargs)
+
+    return decorated_function
 
 def check_schema(f):
 
@@ -167,7 +187,7 @@ def sales_before_receipts(shift_id,product_id):
     invoices = Invoice.query.filter(and_(Invoice.shift_id == shift_id,Invoice.product_id == product_id)).all()
     total__invoices = sum([invoice.qty for invoice in invoices])
     price = Price.query.filter(and_(Price.shift_id == shift_id, Price.product_id == product_id)).first()
-    price = products.price
+    price = products.selling_price
     
     amount = total__invoices * price
     return amount
@@ -190,7 +210,7 @@ def product_sales(shift_id,product_id):
         sale = current_shift_reading - prev_shift_reading 
         sales += sale
     price = Price.query.filter(and_(Price.shift_id == shift_id, Price.product_id == product_id)).first()
-    price = product.price
+    price = product.selling_price
     amount = sales * price
     return amount
 
@@ -198,7 +218,7 @@ def receipt_product_qty(amount,shift_id,product_id):
     product_id = product_id
     product = Product.query.get(product_id)
     #price = Price.query.filter(and_(Price.shift_id == shift_id, Price.product_id == product_id)).first()
-    price = product.price
+    price = product.selling_price
     product_available = product_sales(shift_id,product_id)-sales_before_receipts(shift_id,product_id) #amount
 
     if product_available != 0 and product_available > 0:
@@ -223,7 +243,7 @@ def get_product_price(shift_id,product_id):
     product = Product.query.filter_by(id=product_id).first()
     product_id = product.id
     price = Price.query.filter(and_(Price.shift_id == shift_id, Price.product_id == product_id)).first()
-    price = product.price
+    price = product.selling_price
     return price
 
 def total_customer_sales(results):

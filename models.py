@@ -18,11 +18,42 @@ class Tenant(db.Model):
     contact_person = db.Column(db.String,nullable=True)
     phone_number = db.Column(db.String,nullable=True)
     schema = db.Column(db.String,nullable=True,unique=True)
-    active= db.Column(db.Boolean,nullable=True)
-    #users= db.relationship("User",backref="users",lazy=True)
+    active= db.Column(db.Date,nullable=False) # package expiration date
+    
 
     __table_args__={'schema':'public'}
- 
+
+class SystemAdmin(db.Model):
+    __tablename__="system_admin" 
+   
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name = db.Column(db.String,nullable=False,unique=True)
+    password = db.Column(db.String,nullable=False)
+    
+    __table_args__={'schema':'public'}
+
+class Subscriptions(db.Model):
+    __tablename__="subscriptions" 
+   
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date = db.Column(db.Date,nullable=False)
+    tenant_id = db.Column(db.Integer,db.ForeignKey("public.tenants.id"),nullable=False)
+    package = db.Column(db.Integer,db.ForeignKey("public.packages.id"),nullable=False)
+    amount = db.Column(db.Float,nullable=True) 
+    expiration_date = db.Column(db.Date,nullable=False) 
+    
+    __table_args__={'schema':'public'}
+
+class Package(db.Model):
+    __tablename__="packages" 
+   
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name = db.Column(db.String,nullable=False,unique=True) #free, monthly,yearly
+    number_of_days = db.Column(db.Integer,nullable=False) 
+    
+    __table_args__={'schema':'public'}
+
+
 class Role(db.Model):
     __tablename__="roles"
     
