@@ -103,26 +103,28 @@ def activate(tenant_schema):
                         db.session.flush()
                         expiration= today + timedelta(days=7)
                         tenant.active = expiration
-                        sub = Subscriptions(tenant_id=tenant_id,expiration=expiration)
+                        package = Package.query.filter_by(name="Free").first()
+                        sub = Subscriptions(date=today,package=package.id,tenant_id=tenant_id,amount=0.00,expiration_date=expiration)
                         session["user_id"] = user.id
                         session["user_tenant"]= user.tenant_id
                         session["role_id"] = user.role_id
                         session["shift_underway"]=False
-                        msg = Message(subject="Welcome Admin!",
-                                sender="kudasystems@gmail.com",
-                                recipients=[tenant.company_email],
-                                html=msg_body)
                         try:
+                                msg = Message(subject="Welcome Admin!",
+                                        sender="kudasystems@gmail.com",
+                                        recipients=[tenant.company_email],
+                                        html=msg_body)
                                 mail.send(msg)
                                 db.session.add(sub)
                                 db.session.commit()
                                 flash('Account Successfully activated. Please use details sent to your email to login.')
-                                return redirect(url_for('login'))
-                                
-                        except:  
-                               
-                                flash('Activation Failed.')
-                                return redirect(url_for('login'))
+                                return render_template("login.html")
+                                        
+                        except:
+           
+                             
+                                flash("Activation Failed")
+                                return render_template("login.html")
 
 
 
@@ -146,18 +148,18 @@ def login():
 
                 if company:
                         today = date.today()
-                        if active >= today:
+                        if active > today:
                                 session['tenant'] = company.id
                                 session["schema"] = company.schema
                                 return redirect(url_for('user_login'))
 
                         else:
-                                sub = Subscriptions.query.filter_by(tenant_id=tenant_id)
+                                sub = Subscriptions.query.filter_by(tenant_id=tenant_id).first()
                                 if sub:
                                         session["schema"] = company.schema
                                         session['tenant'] = company.id
                                         flash('Subscription has Expired, contact support +263776393449')
-                                        return redirect(url_for('login'))
+                                        return render_template("login.html")
                                 else:
                                         session["schema"] = company.schema
                                         session['tenant'] = company.id
@@ -190,25 +192,28 @@ def user_login():
                         org = Tenant.query.get(session["tenant"])
                         shift_underway = Shift_Underway.query.all()
                        
-                        
-                        if  not check_password_hash(user.password,password) or session['tenant'] != user.tenant_id:
-                                if org.active == False and User.query.filter_by(session["tenant"]).all() == None:
+                        if user:
+                                if  not check_password_hash(user.password,password) or session['tenant'] != user.tenant_id:
+                                        if org.active <= date.today() and User.query.filter_by(session["tenant"]).all() == None:
 
-                                        flash("Please finish setting up your account")
-                                        return redirect(url_for('activate',tenant_schema= org.schema))
-                                else:     
-                                        flash("Login details not correct,check your details and try again !!")
-                                        return redirect(url_for('user_login'))
+                                                flash("Please finish setting up your account")
+                                                return redirect(url_for('activate',tenant_schema= org.schema))
+                                        else:     
+                                                flash("Login details not correct,check your details and try again !!")
+                                                return render_template("login2.html")
+                                else:
+                                        session["user_id"] = user.id
+                                        session["user"] = user.username
+                                        session["user_tenant"]= user.tenant_id
+                                        session["role_id"] = user.role_id
+                                        session["shift_underway"] = shift_underway[0].state
+                                        session["org_name"]= org.name
+                                        
+                                        flash("Welcome")
+                                        return redirect(url_for('dashboard',heading='Sales'))
                         else:
-                                session["user_id"] = user.id
-                                session["user"] = user.username
-                                session["user_tenant"]= user.tenant_id
-                                session["role_id"] = user.role_id
-                                session["shift_underway"] = shift_underway[0].state
-                                session["org_name"]= org.name
-                                
-                                
-                                return redirect(url_for('dashboard',heading='Sales'))
+                                flash("Login details not correct,check your details and try again !!")
+                                return render_template("login2.html")
                 else:
                         return render_template("login2.html")
 
@@ -228,7 +233,7 @@ def dashboard(heading):
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
         end_date = date.today()
 
-        start_date =  end_date- timedelta(days=360)
+        start_date =  end_date- timedelta(days=30)
         h = heading
         if h == "Sales" or h =="Profit":
                 return render_template("dashboard.html",h=heading,start_date=start_date,end_date=end_date)
@@ -318,11 +323,14 @@ def dashboard_reports():
 def dashboard_tank_variance():
         """ Returns JSON Dashboard Reports"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                end_date = date.today()
-                start_date =  end_date- timedelta(days=360)
                 tanks = Tank.query.all()
-                return render_template("dashboard_tank_variances.html",tanks=tanks,start_date=start_date,end_date=end_date)
-
+                if tanks:
+                        end_date = date.today()
+                        start_date =  end_date- timedelta(days=30)
+                        return render_template("dashboard_tank_variances.html",tanks=tanks,start_date=start_date,end_date=end_date)
+                else:
+                        flash("Finish Configurations first")
+                        return redirect(url_for('tanks'))
 
 @app.route("/dashboard/variance",methods=["POST"])
 @login_required
@@ -416,10 +424,13 @@ def start_shift_update():
                                         product = db.session.query(Tank,Product).filter(and_(Tank.product_id == Product.id,Tank.id == tank.id)).first()
                                         product_id = product[1].id
                                         supplier = Supplier.query.get(1)
-                                        fuel_delivery = Fuel_Delivery(date=date,shift_id=shift_id,tank_id=tank.id,qty=0,cost_price=product[1].cost_price,supplier=supplier.id,product_id=product_id,document_number='0000')
-                                        db.session.add(fuel_delivery)
-                                        db.session.flush()
-                             
+                                        if supplier:
+                                                fuel_delivery = Fuel_Delivery(date=date,shift_id=shift_id,tank_id=tank.id,qty=0,cost_price=product[1].cost_price,supplier=supplier.id,product_id=product_id,document_number='0000')
+                                                db.session.add(fuel_delivery)
+                                                db.session.flush()
+                                        else:
+                                                flash("Set Up a supplier to run a shift update")
+                                                return redirect(url_for('suppliers'))
                                
                                 for i in fuels_dict:
                                         fuels_dict[i] = Price(date=date,shift_id=shift_id,product_id=fuels_dict[i].id,cost_price=fuels_dict[i].cost_price,selling_price=fuels_dict[i].selling_price)
@@ -512,7 +523,8 @@ def price_change():
                 price = Price.query.filter(and_(Price.shift_id==shift_id,Price.product_id==product.id)).first()
                 price.cost_price = cost_price
                 price.selling_price= selling_price
-                product.price = selling_price
+                product.sellling_price = selling_price
+                product.cost_price = cost_price
                 db.session.commit()
                 return redirect(url_for('readings_entry'))
 
@@ -569,8 +581,11 @@ def fuel_delivery():
                 shift_id = int(request.form.get("shift"))
                 tank_id= request.form.get("tank_name")
                 delivery =request.form.get("litres_delivered")
-                fuel_delivery = Fuel_Delivery.query.filter(and_(Fuel_Delivery.tank_id==tank_id,Fuel_Delivery.shift_id==shift_id)).first()
-                #db.session.query(Fuel_Delivery).filter(and_(Fuel_Delivery.tank_id == tank_id,Fuel_Delivery.shift_id ==shift_id)).update({Fuel_Delivery.qty: delivery}, synchronize_session = False)
+                supplier = request.form.get("supplier")
+                cost_price = request.form.get("cost_price")
+                delivery = Fuel_Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier,cost_price=cost_price)
+                db.session.add(delivery)
+                
                 db.session.commit()
                 return redirect(url_for('readings_entry'))
 
@@ -690,8 +705,8 @@ def add_user():
                 username=request.form.get("username").capitalize()
                 password=generate_password_hash(request.form.get("password"))
                 role_id = request.form.get("role")
-                tenant_id = request.form.get("tenant")
-                user = User(username=username,password=password,role_id=role_id,tenant_id=tenant_id)
+                tenant = Tenant.query.filter_by(schema=session['schema']).first()
+                user = User(username=username,password=password,role_id=role_id,tenant_id=tenant.id,schema=session['schema'])
                 user_exists = bool(User.query.filter_by(username=username).first())
                 if user_exists:
                         flash("User already exists, Try using another username!!")
@@ -703,6 +718,7 @@ def add_user():
                         except:
                                 db.session.rollback()
                                 flash("There was an error")
+                                return redirect(url_for('manage_users'))
                         else:
                         
                                 flash('User Successfully Added')
@@ -717,12 +733,18 @@ def edit_user():
         """Edit User Information"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 username = request.form.get("username")
-                user = User.query.filter_by(username=username).first()
-                user.password =request.form.get("password")
-                user.role_id=  request.form.get("role")
-                db.session.commit()
-                flash('User Successfully Updated')
-                return redirect(url_for('manage_users'))
+                password  = request.form.get("password")
+                password1  = request.form.get("password1")
+                if password == password1:
+                        user = User.query.filter_by(username=username).first()
+                        user.password = generate_password_hash(password)
+                        user.role_id =  request.form.get("role")
+                        db.session.commit()
+                        flash('User Successfully Updated')
+                        return redirect(url_for('manage_users'))
+                else:
+                        flash('Passwords Must be the same')
+                        return redirect(url_for('manage_users')) 
 
 @app.route("/company_information/users/delete_user",methods=["POST"])
 @view_only
@@ -754,7 +776,7 @@ def pumps():
         """Pump List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 pump_tank = db.session.query(Tank,Pump).filter(Tank.id == Pump.tank_id).all()
-                pumps =  Pump.query.all()
+                pumps =  Pump.query.order_by(Pump.id.asc()).all()
                 tanks = Tank.query.all()
                 return render_template("pumps.html",pumps=pumps,pump_tank=pump_tank,tanks=tanks)
         
@@ -803,8 +825,6 @@ def add_pump():
                         return redirect(url_for('pumps'))
 
                                         
-                                        
-
                        
 @app.route("/inventory/pumps/delete_pump",methods=["POST"])
 @admin_required
@@ -836,11 +856,17 @@ def edit_pump():
                 pump_id = request.form.get("pump_id")
                 name = request.form.get("name")
                 pump = Pump.query.get(pump_id)
-                pump.tank_id =request.form.get("tank")
-                pump.name=  name
-                db.session.commit()
-                flash('Pump Successfully Updated')
-                return redirect(url_for('pump'))
+                tank_id = request.form.get("tank")
+                if tank_id != "Choose...":
+                        pump.tank_id = tank_id
+                        pump.name=  name
+                        db.session.commit()
+                        flash('Pump Successfully Updated')
+                        return redirect(url_for('pumps'))
+                else:
+                        flash('Please select tank')
+                        return redirect(url_for('pumps'))
+
 
 @app.route("/inventory/tanks/add_tank",methods=["POST"])
 @admin_required
@@ -896,6 +922,7 @@ def delete_tank():
                         flash('Tank Successfully Removed!!')
                         return redirect(url_for('tanks'))
 
+
 @app.route("/inventory/tanks/edit_tank",methods=["POST"])
 @admin_required
 @check_schema
@@ -921,7 +948,7 @@ def tanks():
         """Tank List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 tank_product = db.session.query(Tank,Product).filter(Product.id == Tank.product_id).all()
-                tanks = Tank.query.all()
+                tanks = Tank.query.order_by(Tank.id.asc()).all()
                 products = Product.query.all()
                 return render_template("tanks.html",tanks=tanks,products=products,tank_product=tank_product)
 
@@ -976,7 +1003,7 @@ def delete_product():
         """Delete Product"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 product = db.session.query(Product).get(int(request.form.get("products")))
-                reading_entry = PumpReading.query.filter_by(product_id=int(request.form.get("products"))).all()
+                
                 try:
                         db.session.delete(product)   
                         db.session.commit()
@@ -1291,8 +1318,7 @@ def delete_customer():
         """Deletes Customers"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 customer = db.session.query(Customer).get(int(request.form.get("customers")))
-                invoices = Invoice.query.filter_by(customer_id=customer.id).all()
-                payments = CustomerPayments.query.filter_by(customer_id=customer.id).all()
+
                 try:
                         db.session.delete(customer)   
                         db.session.commit()
@@ -1320,10 +1346,10 @@ def suppliers():
                 # calculate balances
                 balances = {}
                 for account in accounts:
-                        #deliveries = Fuel_Delivery.query.filter_by(supplier=account[0].id).all()
+                        deliveries = Fuel_Delivery.query.filter_by(supplier=account[0].id).all()
                         payments = PayOut.query.filter_by(pay_out_account=account[1].id).all()
-                        #net = sum([i.amount for i in payments]) - sum([i.cost_price*i.qty for i in delveries])
-                        net = sum([i.amount for i in payments]) # use above line on database reset, the pains of development !!
+                        net = sum([i.amount for i in payments]) - sum([i.cost_price*i.qty for i in deliveries])
+                        #SSnet = sum([i.amount for i in payments]) # use above line on database reset, the pains of development !!
                         balances[account[0].name]=net
                 return render_template("suppliers.html",suppliers=suppliers,balances=balances)
 
@@ -1625,7 +1651,7 @@ def tank_variances(tank_id):
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
-                        start_date = check_first_date(start_date)
+                        
 
                         tank_dips = get_tank_variance(start_date,end_date,tank_id)
 
@@ -1755,7 +1781,7 @@ def get_driveway():
                                 return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
                                 lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
                                 products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
-                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],
+                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
                                 shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
                                 pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
                                 
@@ -1779,7 +1805,7 @@ def ss26():
                 #######
                 shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
                 if shifts:
-                        pumps = Pump.query.order_by(Pump.id.asc()).all()
+                        
                         current_shift = shifts[0]
                         prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
                         shift_daytime = current_shift.daytime
@@ -1787,12 +1813,16 @@ def ss26():
                         date = current_shift.date
                         prev_shift_id = prev_shift.id
                         data = get_driveway_data(shift_id,prev_shift_id)
+                        ###### Cash breakdown
+                        customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
+                        sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer)
+                        sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
                         
                         return render_template("ss26.html",products=data['products'],expense_accounts=data['expense_accounts'],
                         cash_accounts=data['cash_accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
                         coupons=data['coupons'],cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],
-                        expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],shift=current_shift,date=date,
-                        shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                        expenses=data['expenses'],sales_breakdown=sales_breakdown,shift=current_shift,date=date,
+                        shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],suppliers=data['suppliers'],
                         pumps=data['pumps'],tanks=data['tanks'],product_sales_ltr=data['product_sales_ltr'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'])
                 else:
                         flash("NO SHIFT STARTED YET")
@@ -1886,7 +1916,7 @@ def update_fuel_deliveries():
                 shift_underway = Shift_Underway.query.all()
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
-                shift_daytime = current_shift.daytime
+             
                 shift_id = current_shift.id
                 tank= Tank.query.filter_by(name=request.form.get("tank")).first()
                 document = request.form.get("document")
@@ -1917,6 +1947,7 @@ def update_cost_prices():
                 product= Product.query.filter_by(name=request.form.get("product")).first()
                 cost_price = float(request.form.get("cost_price"))
                 db.session.query(Price).filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).update({Price.cost_price: cost_price}, synchronize_session = False)
+                product.cost_price = cost_price
                 db.session.commit()
                 return redirect('ss26')
 
@@ -1935,7 +1966,7 @@ def update_selling_prices():
                 shift_id = current_shift.id
                 product= Product.query.filter_by(name=request.form.get("product")).first()
                 selling_price = float(request.form.get("selling_price"))
-                product.price = selling_price
+                product.selling_price = selling_price
                 db.session.query(Price).filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).update({Price.selling_price: selling_price}, synchronize_session = False)
                 db.session.commit()
                 return redirect('ss26')
@@ -2072,7 +2103,7 @@ def cash_up():
         """cash up"""
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                #current_shift = Shift.query.order_by(Shift.id.desc()).first()
+                shifts = Shift.query.all()
                 shift_underway = Shift_Underway.query.all()
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
@@ -2084,21 +2115,29 @@ def cash_up():
                 actual_amount= float(request.form.get("actual_amount"))
                 variance= float(request.form.get("variance"))
                 cash_account = Account.query.filter_by(account_name="Cash").first()
-                amount= cash_sales_amount
-                try:
-                        cash_up = CashUp(date=date,shift_id=shift_id,sales_amount=cash_sales_amount,expected_amount=expected_amount,actual_amount=actual_amount,variance=variance)
-                        receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
-                        db.session.add(cash_up)
-                        db.session.add(receipt)
+                if cash_account :
+                        amount= cash_sales_amount
+                        try:
+                                cash_up = CashUp(date=date,shift_id=shift_id,sales_amount=cash_sales_amount,expected_amount=expected_amount,actual_amount=actual_amount,variance=variance)
+                                receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
+                                db.session.add(cash_up)
+                                db.session.add(receipt)
+                                if len(shifts) > 1:
+                                        cash_sales(amount,account.id,shift_id,date)# add invoices to cash customer account
+                                        db.session.commit()
+                                        return redirect(url_for('ss26'))
+                                else:
+                                        db.session.commit()
+                                        flash("Cash up done")
+                                        return redirect(url_for('ss26'))
+                        except Exception as e:
+                                db.session.rollback()
+                                flash(str(e))
+                                return redirect(url_for('ss26'))
+                else:
                         
-                        cash_sales(amount,account.id,shift_id,date)# add invoices to cash customer account
-                        
-                        db.session.commit()
-                        return redirect(url_for('ss26'))
-                except Exception as e:
-                        db.session.rollback()
-                        flash(str(e))
-                        return redirect(url_for('ss26'))
+                        flash("Configure Cash Account")
+                        return redirect(url_for('customers'))
 
 @app.route("/payouts",methods=["POST"])
 @view_only
@@ -2123,7 +2162,7 @@ def pay_outs():
                 db.session.commit()
         return redirect(url_for('ss26'))
 
-@app.route("/admin/restart_shift",methods=["POST"])
+@app.route("/restart_shift",methods=["POST"])
 @login_required
 @admin_required
 @check_schema
@@ -2456,7 +2495,7 @@ def developer():
                 tenant = Tenant.query.get(tenant_id)
                 tenant.active = date.today() + timedelta(days=package.number_of_days)
                 db.session.commit()
-                return render_template("admin.html",tenants=tenants,packages=packages)
+                return redirect(url_for('developer'))
 
 @app.route("/developer_login",methods=['GET','POST'])
 def developer_login():
@@ -2475,3 +2514,12 @@ def developer_login():
                 else:
                         session["system_admin"]= user.id
                         return redirect(url_for('developer'))
+
+@app.route("/developer_logout",methods=['GET'])
+@system_admin_required
+def developer_logout():
+        """Developer Logout"""
+
+        session.clear()
+
+        return redirect(url_for('index'))

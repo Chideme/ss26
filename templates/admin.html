@@ -21,7 +21,7 @@
       <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Dashboard</a>
       <ul class="navbar-nav px-3">
         <li class="nav-item text-nowrap">
-          <a class="nav-link" href="#">Sign out</a>
+          <a class="nav-link" href="{{ url_for('developer_logout') }}">Sign out</a>
         </li>
       </ul>
     </nav>
@@ -82,13 +82,14 @@
                         <div class="form-group  " >
                           <input type = "text"  value="{{ tenant.name }}" name="name" autocomplete="off" placeholder="Username" autofocus class="form-control" readonly>
                       </div>
+                      <div class="form-group  " >
                       <select class="form-control" name="package">
                         <option selected></option>
                         {% for package in packages %}
                         <option  value="{{ package.id }}">{{ package.name }}</option>
                         {% endfor %}
                     </select>
- 
+                    </div>
                         <button class="btn btn-primary btn-block" type="submit">Update Client</button>
                 
                      </form>

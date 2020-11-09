@@ -44,14 +44,14 @@
             <tr>
               <td>Fuels</td>
               <td>{{ total_sales_ltr }}</td>
-              <td>{{ avg_sales }}</td>
-              <td>{{ mnth_sales }}</td>
+              <td>{{ avg_sales | round(2) }}</td>
+              <td>{{ mnth_sales | round(2) }}</td>
             </tr>
             <tr>
               <td>Lubricants</td>
               <td>{{ total_lubes_shift_sales }}</td>
-              <td>{{ lube_avg }}</td>
-              <td>{{ lubes_mnth_sales }}</td>
+              <td>{{ lube_avg | round(2) }}</td>
+              <td>{{ lubes_mnth_sales | round(2) }}</td>
             </tr>
           </tbody>
         </table>
@@ -144,13 +144,13 @@
                   <td class="driveway-table">{{ product_sales_ltr[product][1][1].cost_price }}</td>
                   <td class="driveway-table">{{ product_sales_ltr[product][1][1].selling_price }}</td>
                   <td class="driveway-table">{{ product_sales_ltr[product][0] }}</td>
-                  <td class="numbers driveway-table">{{ product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price | round(2) }}</td>
+                  <td class="numbers driveway-table">{{ (product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price) | round(2) }}</td>
                 </tr>
                 {% endfor %}
                 <tr class="driveway-table">
                   <th class="driveway-table" colspan="3">Total</th>
                   <td class="driveway-table">{{ total_sales_ltr }}</td>
-                  <td class="numbers driveway-table">{{ total_sales_amt }}</td>
+                  <td class="numbers driveway-table">{{ total_sales_amt | round(2) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -170,15 +170,15 @@
               <th class="driveway-table">Variance</th>
             </thead>
             <tbody>
-              {% for tank in tank_dips %}
+              {% for tank in tanks %}
               <tr class="driveway-table">
-                <td>{{ tank }}</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank][0] }}</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank][3] }} </td>
-                <td class="numbers driveway-table">{{ tank_dips[tank][1] }}</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank][0]+ tank_dips[tank][3]-tank_dips[tank][1] }}</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank][2] }} ltrs</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank][2]-(tank_dips[tank][0]+tank_dips[tank][3]-tank_dips[tank][1]) }}</td>
+                <td>{{ tank.name }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank.name][0] }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank.name][3] }} </td>
+                <td class="numbers driveway-table">{{ tank_dips[tank.name][1] }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank.name][0]+ tank_dips[tank.name][3]-tank_dips[tank.name][1] }}</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank.name][2] }} ltrs</td>
+                <td class="numbers driveway-table">{{ tank_dips[tank.name][2]-(tank_dips[tank.name][0]+tank_dips[tank.name][3]-tank_dips[tank.name][1]) }}</td>
               </tr>
               {% endfor %}
             </tbody>  
@@ -205,7 +205,7 @@
                {% endfor %}
                <tr>
                  <th>Total:</th>
-                 <td></td>
+                 <td>{{  sales_breakdown_amt }}</td>
                </tr>
               </tbody>
         </table>

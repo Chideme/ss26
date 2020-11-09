@@ -26,20 +26,24 @@
     </header>
   {% endif %}
     <form class="form-signin" action="{{ url_for('user_login') }}" method="post">
-      
-      <h1 class="h3 mb-3 font-weight-normal">Please enter your log in details</h1>
-      
+      <div class="card" style="font-family: cursive;">
+
+      <div class="card-header" style="background-color:black; color: white;">Please enter your log in details</div>
+      <div class="card-body" >
       <div class="form-group">
-        <label for="inputUsername" >User Name</label>
+        <label for="inputUsername" >User Name:</label>
         <input type="text" id="inputUsername" name="username" class="form-control" placeholder="User Name" required autofocus>
         </div>
       <div class="form-group">
-      <label for="inputPassword">Password</label>
+      <label for="inputPassword">Password:</label>
       <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
       </div>
+      </div>
+      <div class="card-footer">
       <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
       <small class="text-muted"> <a href="{{ url_for('forgot_password') }}">Forgot Password?</a></small>
-      
+      </div>
+      </div>
     </form>
     <p class="mt-5 mb-3 text-muted">&copy; 2020</p>
     </main>

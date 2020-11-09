@@ -17,6 +17,8 @@
     <li class="nav-item"><a class="nav-link" id="customersales-tab" role="tab" aria-controls="CustomerSales" href="#CustomerSales" data-toggle="tab" aria-selected="false">Customer Sales</a></li>
     <li class="nav-item"><a class="nav-link" id="cashsales-tab" role="tab" aria-controls="CashSales" href="#CashSales" data-toggle="tab" aria-selected="false">Cash Sales</a></li>
     <li class="nav-item"><a class="nav-link" id="lubesqty-tab" role="tab" aria-controls="CashSales" href="#LubeQty" data-toggle="tab" aria-selected="false">Adjust Qty for Lubes</a></li>
+    <li class="nav-item"><a class="nav-link" id="restartshift-tab" role="tab" aria-controls="RestartShift" href="#RestartShift" data-toggle="tab" aria-selected="false">Restart Shift</a></li>
+    
 </ul>
 <div class="tab-content">
     <div class="tab-pane active" id="PriceChange" role="tabpanel" aria-labelledby="pricechange-tab">
@@ -216,5 +218,19 @@
     </div>
 
     </div>
+    <div class="tab-pane" id="RestartShift" role="tabpanel" aria-labelledby="restartshift-tab">
+        <div class="text-center p-5">
+            <form role="form" style="display: inline-block;"  action="{{ url_for('restart_shift') }}" method="post" >
+                <div class="form-group" >
+                    <input type="number" name="shift_id"  placeholder="Shift" autofocus class="form-control">
+                </div> 
+                
+                
+                
+            <button  class="btn btn-warning btn-block " type="submit">Update</button>      
+        </form>
+        </div>
+    
+        </div>
 </div> 
 {% endblock %}

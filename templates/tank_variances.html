@@ -28,11 +28,12 @@
             <th>Closing Dip</th>
             <th>Deliveries</th>
             <th>Tank Sales</th>
+            <th>Cumulative Tank Sales</th>
             <th>Pump Sales</th>
-            <th>Variance</th>
-            <th>Shrinkage %</th>
-            <th style="color: rgb(172, 33, 33);">Cumulative Shrinkage</th>
-            <th style="color: rgb(138, 34, 34);">Cumulative Shrinkage %</th>
+            <th>Daily Variance</th>
+            <th>Cumulative Shrinkage</th>
+            <th style="color: rgb(172, 33, 33);">Cumulative Shrinkage %</th>
+            
         </thead>
         <tbody>
             {% for shift in tank_dips %}
@@ -46,9 +47,9 @@
                 <td>{{ tank_dips[shift][5] }}</td>
                 <td>{{ tank_dips[shift][6] }}</td>
                 <td>{{ tank_dips[shift][7] }}</td>
-                <td style="color: lightcoral;">{{ tank_dips[shift][8] }}</td>
-                <td style="color: lightcoral;">{{ tank_dips[shift][9] }}</td>
-
+                <td>{{ tank_dips[shift][8] }}</td>
+                <td style="color: lightcoral;">{{ tank_dips[shift][9] | round(3) }}</td>
+                
             </tr>
             {% endfor %}
         </tbody>

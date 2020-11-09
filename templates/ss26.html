@@ -100,7 +100,7 @@
                     </button>
                   </td>
                   <td class="driveway-table">{{ product_sales_ltr[product.name][0] }}</td>
-                  <td class="numbers driveway-table">{{ product_sales_ltr[product.name][0]*product_sales_ltr[product.name][1][1].selling_price |round(2) }}</td>
+                  <td class="numbers driveway-table">{{ (product_sales_ltr[product.name][0]*product_sales_ltr[product.name][1][1].selling_price) |round(2) }}</td>
                 </tr>
                 {% endfor %}
                 <tr class="driveway-table">
@@ -168,7 +168,7 @@
                 {% for i in sales_breakdown %}
                 <tr>
                   <td>{{ i }}</td>
-                  <td>{{ sales_breakdown[i] }}</td>
+                  <td>{{ sales_breakdown[i] | round(2) }}</td>
                 </tr>
                {% endfor %}
               </tbody>
@@ -186,7 +186,7 @@
     
             <tr>
               <th scope="row">Total Cash Sales:</th>
-              <td class="numbers">{{ sales_breakdown["Cash"] }}</td>
+              <td class="numbers">{{ sales_breakdown["Cash"] | round(2) }}</td>
             </tr>
             <th  colspan="2">Expenses:</th>
             {% if expenses %}
@@ -205,7 +205,7 @@
             <tr>
                 <th  scope="row">Expected Cash</th>
           
-                <td class="numbers">{{ sales_breakdown["Cash"]-total_cash_expenses }}</td>
+                <td class="numbers">{{ (sales_breakdown["Cash"]-total_cash_expenses) | round(2) }}</td>
   
             </tr>
             <tr>
@@ -308,18 +308,24 @@
                           <div class="form-group">
                             <input  id="DNOTE" type ="text" name="document" placeholder="Delivery Note Number" autocomplete="off"autofocus class="form-control">
                         </div>
+                       
                         <label for="Quantity">Quantity</label>
                           <div class="form-group">
                               <input id="Quantity" type ="number" step="any" value="{{ tank_dips[tank.name][3] }}" placeholder="Quantity" name="delivery" autocomplete="off"autofocus class="form-control" required>
                           </div>
-                          <label for="CostPrice">Cost Price</label>
+                          <label for="CostPrice">Cost Price:</label>
                           <div class="form-group">
-                              <input type ="number" id="CostPrice" step="any"   name="delivery" autocomplete="off"autofocus class="form-control" required>
+                              <input type ="number" id="CostPrice" step="any" name="cost_price" autocomplete="off"autofocus class="form-control" required>
                           </div>
+
                           <label for="Supplier">Supplier</label>
                           <div class="form-group">
-                              <input type ="text" id="Supplier" name="delivery" autocomplete="off"autofocus class="form-control" required>
-                          </div>
+                          <select  id="Supplier" class="form-control" name="supplier">
+                              {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                        </div>
                           
                           <button class="btn btn-primary btn-block" type="submit">Enter Delivery</button>
                   

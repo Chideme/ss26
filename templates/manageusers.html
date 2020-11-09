@@ -18,10 +18,8 @@
 
 
   
-    <div class="row">
-        <div class="col-md-6">
-            
-            <table class="table table-hover table-sm">
+    
+            <table class="display" id="export">
                 <thead>
                     <tr>
                         <th>User Name</th>
@@ -44,7 +42,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-             </div>           
+                 
                             <!--Edit User Modal -->
                             {% for user in users_roles %}
                             <div class="modal fade" id="EditUser{{ user[0] }}" tabindex="-1" role="dialog" aria-labelledby="EditUserFormModalLabel" aria-hidden="true">
@@ -64,10 +62,10 @@
                                                 <div class="form-group  ">
                                                     <input type = "password" name="password" autocomplete="off" placeholder="Password" autofocus class="form-control" required>
                                                 </div>
-                                                <div class="form-group  ">
+                                                <div class="form-group">
                                                     <input type = "password" name="password1" autocomplete="off" placeholder="Re-enter Password" autofocus class="form-control" required>
                                                 </div>
-                                                <div>
+                                                <div class="form-group">
                                                     <select class="form-control" name="role">
                                                         <option  selected>Choose Role</option>
                                                         {% for role in roles %}
@@ -105,13 +103,13 @@
                                     <div class="form-group  " >
                                         <input type = "text"  name="username" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
                                     </div>
-                                    <div class="form-group  ">
-                                        <input type = "password"  name="password" autocomplete="off" placeholder="Password" autofocus class="form-control" required>
+                                    <div class="form-group">
+                                        <input id="pass" type = "password"  name="password" autocomplete="off" placeholder="Password" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group  ">
-                                        <input type = "password"  name="password1" autocomplete="off" placeholder="Re-enter Password" autofocus class="form-control" required>
+                                        <input id="pass1" type = "password"  name="password1" autocomplete="off" placeholder="Re-enter Password" autofocus class="form-control" required>
                                     </div>
-                                    <div>
+                                    <div class="form-group">
                                         <select class="form-control" name="role">
                                             <option selected>Choose..</option>
                                             {% for  role in roles %}
@@ -125,7 +123,7 @@
                                  </form>
                             </div>
                             <div class="modal-footer">  
-                                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                                <button id="edit" type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
@@ -162,10 +160,22 @@
                             </div>
                         </div>
                     </div><!--Deletes User-->
-        </div>
-    </div>
+       
 
-    
+<script>
+    document.getElementById('edit').addEventListener("submit", function () {
+        var pass1 = document.getElementById("pass1").value;
+        var pass = document.getElementById("pass").value
+        if( pass != pass1){
+            event.preventDefault();
+            alert("validation failed false");
+            returnToPreviousPage()
+            return false;
+        }
+        else{
+            return true;
+        }
+</script>  
 
     
 {% endblock %}

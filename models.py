@@ -121,7 +121,7 @@ class Tank(db.Model):
     __tablename__="tanks"
    
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name = db.Column(db.String,nullable=False)
+    name = db.Column(db.String,nullable=False,unique=True)
     product_id = db.Column(db.Integer,db.ForeignKey("products.id"),nullable=False)
     dip =db.Column(db.Float,nullable=False)
 
@@ -137,7 +137,7 @@ class Pump(db.Model):
     __tablename__="pumps"
     
     id = db.Column(db.Integer,primary_key =True,nullable=False)
-    name= db.Column(db.String,nullable=False)
+    name= db.Column(db.String,nullable=False,unique=True)
     tank_id = db.Column(db.Integer,db.ForeignKey("tanks.id"),nullable=False)
     litre_reading = db.Column(db.Float,nullable=False)
     money_reading = db.Column(db.Float,nullable=False)

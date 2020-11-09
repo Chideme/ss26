@@ -26,19 +26,22 @@
     </header>
   {% endif %}
     <form class="form-signin" action="{{ url_for('developer_login') }}" method="post">
-      
-      <h1 class="h3 mb-3 font-weight-normal">Log In King!!</h1>
-      
+      <div class="card">
+      <div class="card-header" style="background-color:black; color: white; font-family: cursive;">Adminstration Login</div>
+      <div class="card-body" style="font-family: cursive;">
       <div class="form-group">
-        <label for="inputUsername" >Name</label>
+        <label for="inputUsername" >Name:</label>
         <input type="text" id="inputUsername" name="name" class="form-control" placeholder="Name" required autofocus>
         </div>
       <div class="form-group">
-      <label for="inputPassword">Password</label>
+      <label for="inputPassword">Password:</label>
       <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
       </div>
-      <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-     
+      </div>
+      <div class="card-footer">
+      <button class="btn btn-block btn-success " type="submit">Sign in</button>
+     </div>
+     </div>
       
     </form>
     <p class="mt-5 mb-3 text-muted">&copy; 2020</p>

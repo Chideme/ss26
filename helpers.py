@@ -106,8 +106,8 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
 
         if session.get("role_id") != 1:
-            flash("Access not allowed,Log in as the Admin !!")
-            return redirect(url_for('login'))
+            flash("Access not allowed, Log in as the Admin !!")
+            return redirect(url_for('dashboard',heading='Sales'))
 
         return f(*args, **kwargs)
 
@@ -129,7 +129,7 @@ def view_only(f):
 
         if session.get("role_id") == 3:
             flash("You can only view data !!")
-            return redirect(url_for('login'))
+            return redirect(url_for('dashboard',heading='Sales'))
 
         return f(*args, **kwargs)
 
@@ -252,10 +252,8 @@ def total_customer_sales(results):
         if customer[0] in d:
             d[customer[0]]= d[customer[0]] + (customer[1].price*customer[1].qty)
         else:
-            if customer[0]=="Cash":
-                pass
-            else:
-                d[customer[0]]= customer[1].price*customer[1].qty
+            
+            d[customer[0]]= customer[1].price*customer[1].qty
     return d
 
 
@@ -416,6 +414,8 @@ def get_tank_variance(start_date,end_date,tank_id):
     tank_dips={}
     cumulative = 0
     cumulativeP = 0
+    cumulative_tank_sales = 0
+    cumulative_pump_sales = 0
     for shift in shifts:
         prev = Shift.query.filter(Shift.id < shift.id).order_by(Shift.id.desc()).first()
         if prev:
@@ -432,15 +432,16 @@ def get_tank_variance(start_date,end_date,tank_id):
                 current_shift_dip = current_shift_dip.dip
                 delivery = Fuel_Delivery.query.filter(and_(Fuel_Delivery.shift_id==shift.id,Fuel_Delivery.tank_id==tank_id)).all()
                 deliveries = sum([i.qty for i in delivery])
-                tank_sales = prev_shift_dip+deliveries-current_shift_dip
-                shrinkage2sales = (pump_sales-tank_sales)
-                try:
-                    shrinkage2salesP = shrinkage2sales/pump_sales *100 
-                except ZeroDivisionError:
-                    shrinkage2salesP = -100
+                tank_sales = float(prev_shift_dip+deliveries-current_shift_dip)
+                shrinkage2sales = float(pump_sales-tank_sales)
                 cumulative = cumulative + shrinkage2sales
-                cumulativeP = cumulativeP + shrinkage2salesP
-                tank_dips[shift.id]=[shift.date,prev_shift_dip,current_shift_dip,deliveries,tank_sales,pump_sales,shrinkage2sales,shrinkage2salesP,cumulative,cumulativeP]
+                cumulative_tank_sales = cumulative_tank_sales + tank_sales
+                cumulative_pump_sales =cumulative_pump_sales+ pump_sales
+                try:
+                    cumulativeP = cumulative/cumulative_tank_sales *100
+                except ZeroDivisionError:
+                    cumulativeP = 0
+                tank_dips[shift.id]=[shift.date,prev_shift_dip,current_shift_dip,deliveries,tank_sales,cumulative_tank_sales,pump_sales,shrinkage2sales,cumulative,cumulativeP,cumulative_pump_sales]
 
     return tank_dips
 
@@ -457,8 +458,8 @@ def daily_sales_summary(tanks,start_date,end_date):
                 for i in range(n):
                     sales_summary[tank_dips[shift][0]][i]+=tank_dips[shift][i+1]
             else:
-                sales_summary[tank_dips[shift][0]]= [0.0]*8     
-                for i in range(8):
+                sales_summary[tank_dips[shift][0]]= [0.0]*10    
+                for i in range(10):
                     
                     sales_summary[tank_dips[shift][0]][i] = tank_dips[shift][i+1]
         
@@ -472,16 +473,10 @@ def tank_variance_daily_report(start_date,end_date,tank_id):
     v = get_tank_variance(start_date,end_date,tank_id)
     for shift in v:
         if v[shift][0] in report:
-            report[v[shift][0]][0] += v[shift][5]
-            report[v[shift][0]][1] += v[shift][6]
+            report[v[shift][0]][0] += v[shift][9]
         else:
-            report[v[shift][0]] = [v[shift][5],v[shift][6]]
-    
-    for day in report:
-        try:
-            report[day] = report[day][1]/report[day][0] *100
-        except ZeroDivisionError:
-            report[day] =0
+            report[v[shift][0]] =v[shift][9]
+   
     return report
 
 
@@ -493,7 +488,7 @@ def cash_sales(amount,customer_id,shift_id,date):
     for product in products:
         product_qty = receipt_product_qty(amount,shift_id,product.id)
         if product_qty >1:
-            products_qty[product.name]=int(product_qty)
+            products_qty[product.name]=float(product_qty)
         else:
             pass
     
@@ -506,17 +501,15 @@ def cash_sales(amount,customer_id,shift_id,date):
                 invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price)
                 db.session.add(invoice)
                 db.session.flush()
-                inv_amt = int(products_qty[prod] * sales_price)
-                amount = int(amount-inv_amt)
+                inv_amt = float(products_qty[prod] * sales_price)
+                amount = float(amount-inv_amt)
                 products_qty[prod] = int(products_qty[prod]-qty)
-            
             elif products_qty[prod]*sales_price > amount or products_qty[prod]*sales_price == amount :
-                qty = amount/sales_price
+                qty = float(amount/sales_price)
                 invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price)
                 db.session.add(invoice)
-                inv_amt = int(qty * sales_price)
-                amount = int(amount-inv_amt)
-                
+                inv_amt = float(qty * sales_price)
+                amount = float(amount-inv_amt)
                 products_qty[prod] = int(products_qty[prod]-qty)
                 
         
@@ -750,15 +743,20 @@ def get_driveway_data(shift_id,prev_shift_id):
     data['pumps'] = Pump.query.order_by(Pump.id.asc()).all()
     data['tank_dips'] = get_tank_dips(shift_id,prev_shift_id)
     data['tanks'] = Tank.query.order_by(Tank.id.asc()).all()
+    data['suppliers'] = Supplier.query.all()
     product_sales_ltr = product_sales_litres(shift_id,prev_shift_id)
     data['product_sales_ltr'] = product_sales_ltr
     data['cash_account'] = Customer.query.filter_by(name="Cash").first()
     customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
-    sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer excl cash (refer to helpers)
+    sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer)
     data['total_sales_ltr']= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
     data['total_sales_amt']= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
-    sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
+    cash_sales = customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name == "Cash")).all()
+    cash_breakdown = total_customer_sales(cash_sales)
+    #sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
+    sales_breakdown["Cash"] = sum([cash_breakdown[i] for i in cash_breakdown])
     data['sales_breakdown'] = sales_breakdown
+    data['sales_breakdom_amt'] =  sum([sales_breakdown[i] for i in sales_breakdown])
     expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.shift_id==shift_id)).all()
     data['expenses'] = expenses
     data['total_cash_expenses'] = sum([i[0].amount for i in expenses])

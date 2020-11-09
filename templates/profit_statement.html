@@ -62,7 +62,7 @@
                         <td>{{ reports[date][product][0] }}</td>
                         <td >{{ reports[date][product][1] | round(2) }}</td>
                         <td>{{ reports[date][product][2] | round(2) }}</td>
-                        <td>{{ reports[date][product][0]*reports[date][product][3] | round(2) }}</td>
+                        <td>{{ (reports[date][product][0]*reports[date][product][3]) | round(2) }}</td>
                         <td style="background-color: limegreen;"></td>
                         {% endfor %}
                         <td>{{ total_litres[date] }}</td>

@@ -20,7 +20,7 @@
                     <tr>
                         <th>Date</th>
                         <th>Daily Pump Sales</th>
-                        <th> Cumulative Pump Sales</th>
+                        <th>Cumulative Pump Sales</th>
                         <th> Opening Dip</th>
                         <th>Qty Purchased</th>
                         <th> Closing Dip</th>
@@ -35,14 +35,14 @@
                     {% for date in report %}
                     <tr> 
                         <td>{{ date }}</td>
-                        <td>{{ report[date][4] }}</td>
-                        <td>{{ report[date][4] }}</td>
+                        <td>{{ report[date][5] }}</td>
+                        <td>{{ report[date][9] }}</td>
                         <td>{{ report[date][0] }}</td>
                         <td>{{ report[date][2] }}</td>
                         <td>{{ report[date][1] }}</td>
                         <td>{{ report[date][3] }}</td>
-                        <td>{{ report[date][3] }}</td>
-                        <td>{{ report[date][5] }}</td>
+                        <td>{{ report[date][4] }}</td>
+                        <td>{{ report[date][6] }}</td>
                         <td>{{ report[date][7] }}</td>
                         <td>{{ report[date][8] }}</td>       
                     </tr>

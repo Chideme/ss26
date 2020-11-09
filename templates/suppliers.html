@@ -13,10 +13,10 @@
     </div>
   </div>
 
-  <h4>Customer Table</h4>
-    <div class="row">
-        <div class="col-md-6">
-            <table class="table table-hover">
+  <h4>Suppliers List</h4>
+    
+        
+            <table class="display" id="export">
                 <thead>
                     <tr>
                         <th>Supplier</th>
@@ -32,7 +32,7 @@
                         <td>{{ supplier.name }}</td>
                         <td>{{ supplier.contact_person }}</td>
                         <td>{{ supplier.phone_number }}</td>
-                        <td>{{ balances[supplier] }}</td>
+                        <td>{{ balances[supplier.name] }}</td>
                         <td>
                             <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditSupplier{{ supplier.id }}">
                                 Edit Supplier
@@ -43,7 +43,8 @@
                     {% endfor %}
                 </tbody>
             </table>
-             </div>           
+            
+
                             <!--Edit Supplier Modal -->
                             {% for supplier in suppliers %}
                             <div class="modal fade" id="EditSupplier{{ supplier.id }}" tabindex="-1" role="dialog" aria-labelledby="EditSupplierFormModalLabel" aria-hidden="true">
@@ -69,9 +70,9 @@
                                                 <div class="form-group  ">
                                                     <input type ="text" value="{{ supplier.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
                                                 </div>
-                                                <div class="p-2"> 
+                                                
                                                 <button class="btn btn-primary btn-block" type="submit">Update Supplier</button>
-                                                </div>
+                                            
                                              </form>
                                         </div>
                                         <div class="modal-footer">  
@@ -129,7 +130,7 @@
                                 </div>
                                 <div class="modal-body">
                                     <form action="{{ url_for('delete_supplier') }}" method="post" > 
-                                        <div>
+                                        <div class="form-group">
                                             <select class="form-control" name="suppliers">
                                                 <option selected>Choose..</option>
                                                 {% for  supplier in suppliers %}
@@ -137,7 +138,7 @@
                                                 {% endfor %}
                                             </select>
                                         </div> 
-                                        <div class="p-2">
+                                        
                                         <button class="btn btn-primary btn-block btn-group" type="submit">Remove Supplier</button>
                                         </div>
                                      </form>
@@ -148,8 +149,8 @@
                             </div>
                         </div>
                     </div><!--Deletes Supplier Account-->
-        </div>
-    </div>
+        
+    
 
     
 
