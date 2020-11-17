@@ -28,71 +28,23 @@
     <table class="display" id="export">
         <thead>
             <th>Date</th>
-            <th class="text-center"colspan="6">Details</th>
-            <th>Sales Amount</th>
-            <th>Payments</th>
+            <th>Details</th>
+            <th>Dr</th>
+            <th>Cr</th>
             <th>Balance</th>
+            <th>Closing Balance</th>
+
         </thead>
         <tbody>
-            
-            {% for date in dates %}
-            {% if records[date]["pmnt"]  and records[date]["inv"] %}
+            {% for i in report %}
             <tr>
-                <td>{{ date }}</td>
+                <td>{{ i }}</td>
+                <td>{{ report[i]["details"] }}</td>
+                <td>{{ report[i]['dr'] | round(2) }}</td>
+                <td>{{ report[i]['cr'] | round(2) }}</td>
+                <td>{{ report[i]['balance'] | round(2) }}</td>
                 <td></td>
-                <td></td>
-                <td></td> 
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td>{{ records[date]["pmnt"] }}</td>
-                <td>{{ records[date]["bal"] }}</td> 
             </tr>
-            {% for i in inv_ids[date] %}
-            <tr>
-                <td>{{ date }}</td>
-                <td>{{ records[date]["inv"][i][0] }}</td>
-                <td>{{ records[date]["inv"][i][1] }}</td>
-                <td>{{ records[date]["inv"][i][2] }}</td> 
-                <td>{{ records[date]["inv"][i][3] }}</td>
-                <td>{{ records[date]["inv"][i][4] | round(2) }}</td>
-                <td>{{ records[date]["inv"][i][5] }}</td>
-                <td>{{ records[date]["inv"][i][6] | round(2) }}</td>
-                <td></td>
-                <td>{{ records[date]["inv"][i][7] | round(2) }}</td> 
-            </tr>
-            {% endfor %}
-            
-            {% elif records[date]["inv"] %}
-            {% for i in inv_ids[date] %}
-            <tr>
-                <td>{{ date }}</td>
-                <td>{{ records[date]["inv"][i][0] }}</td>
-                <td>{{ records[date]["inv"][i][1] }}</td>
-                <td>{{ records[date]["inv"][i][2] }}</td> 
-                <td>{{ records[date]["inv"][i][3] }}</td>
-                <td>{{ records[date]["inv"][i][4] | round(2) }}</td>
-                <td>{{ records[date]["inv"][i][5] }}</td>
-                <td>{{ records[date]["inv"][i][6] | round(2) }}</td>
-                <td></td>
-                <td>{{ records[date]["inv"][i][7] | round(2) }}</td> 
-            </tr>
-            {% endfor %}
-            {% elif records[date]["pmnt"] %}
-            <tr>
-                <td>{{ date }}</td>
-                <td></td>
-                <td></td>
-                <td></td> 
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td>{{ records[date]["pmnt"] }}</td>
-                <td>{{ records[date]["bal"] }}</td> 
-            </tr>
-            {% endif %}
             {% endfor %}
         </tbody>
     </table>
@@ -114,7 +66,23 @@
             'excelHtml5',
             'csvHtml5',
             'pdfHtml5'
+        ],
+        "columnDefs": [
+            {
+                // The `data` parameter refers to the data for the cell (defined by the
+                // `data` option, which defaults to the column being worked with, in
+                // this case `data: 0`.
+                "render": function ( data, type, row ) {
+                    answ = row[4] + row[3] - row[2]
+                    return answ ;
+                },
+                "targets": 5
+            },
+            { "visible": false,  "targets": [ 5 ] }
+            
         ]
+
+        
     } );
 } );
 </script>

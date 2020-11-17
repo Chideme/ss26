@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import date
-from sqlalchemy import create_engine,MetaData
+from datetime import date,datetime
+from sqlalchemy import create_engine,MetaData,TIMESTAMP
 
 metadata = MetaData(schema='tenant')
 db = SQLAlchemy(metadata=metadata)
@@ -235,7 +235,8 @@ class CustomerPayments(db.Model):
     __tablename__="customer_payments"
     
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    date =db.Column(db.Date, nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    timestamp =db.Column(db.DateTime, nullable=False,default=datetime.utcnow)
     customer_id = db.Column(db.Integer,db.ForeignKey("customers.id"),nullable=False)
     amount= db.Column(db.Float,nullable=False)
     ref = db.Column(db.String,nullable=True)
@@ -273,6 +274,7 @@ class Invoice(db.Model):
     __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
+    timestamp =db.Column(db.DateTime, nullable=False,default=datetime.utcnow)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
     qty = db.Column(db.Float,nullable=False)

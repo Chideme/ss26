@@ -30,17 +30,15 @@ app.config.update(dict(
 mail = Mail(app)
 def main():
     tenant = "test1"
+    customer_id=36
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
-        accounts= db.session.query(Supplier,Account).filter(Supplier.name ==Account.account_name).all()
-        balances = {}
-        suppliers = Supplier.query.all()
-        for account in accounts:
-            deliveries = Fuel_Delivery.query.filter_by(supplier=account[0].id).all()
-            net = sum([i.cost_price*i.qty for i in deliveries])
-            balances[account[0].name]=net
-         
-        for i in suppliers:
-            print(balances[i.name])
+        
+        end_date = date.today()
+        start_date = end_date - timedelta(days=16)
+        customer_id=36
+        r = customer_statement(customer_id,start_date,end_date)
+        print(r)
+
 with app.app_context():
         main()
 

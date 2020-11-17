@@ -1186,69 +1186,20 @@ def customer(customer_id):
                 total_invoices = Invoice.query.filter_by(customer_id=customer_id).all()
                 total_payments = CustomerPayments.query.filter_by(customer_id=customer_id).all()
                 net = sum([i.amount for i in total_payments]) - sum([i.price*i.qty for i in total_invoices])
-                #total_invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product == str(Product.id),Invoice.customer_id==customer_id)).all()
+                
                 if request.method == "POST":
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
-                        #invoices = Invoice.query.filter(and_(Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).all()
-                        invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).all()
-                        payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).all()
-                        records = {}
-                        inv_ids = {}
-                        for i in invoices:
-                                records[i[0].date] = {"inv":{},"pmnt":0,"bal":0}
-                        for i in payments:
-                                if i.date in records:
-                                        pass
-                                else:
-                                        records[i.date] = {"inv":{},"pmnt":0,"bal":0}
-                        for invoice in invoices:
-                                records[invoice[0].date]["inv"][invoice[0].id] = [invoice[0].id,invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price,
-                                invoice[0].qty*invoice[0].price]
-                                balance = sum([i.amount for i in total_payments if i.date <= invoice[0].date])-sum([i.price*i.qty for i in total_invoices if i.date <= invoice[0].date])
-                                records[invoice[0].date]["bal"]= balance
-                        for payment in payments:
-                                records[payment.date]["pmnt"]= records[payment.date]["pmnt"]+payment.amount
-                                balance = sum([i.amount for i in total_payments if i.date <= payment.date])-sum([i.price*i.qty for i in total_invoices if i.date <= payment.date])
-                                records[payment.date]["bal"]= balance
-                        dates = sorted_dates(list(records))
-                        for i in inv_ids:
-                                inv_ids[i]=sorted(inv_ids[i])
+                        report = customer_statement(customer_id,start_date,end_date)
 
-                        return render_template("customer.html",records=records,inv_ids=inv_ids,dates=dates,customer=customer,net=net,start=start_date,end=end_date)
+                        return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
                 else:
                         end_date = date.today()
                         start_date = end_date - timedelta(days=900)
-                        #invoices = Invoice.query.filter(and_(Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).all()
-                        invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).all()
-                        payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).all()
-                        records = {}
-                        inv_ids = {}
-                        for i in invoices:
-                                records[i[0].date] = {"inv":{},"pmnt":0,"bal":0}
-                                inv_ids[i[0].date] = []
-                        for i in payments:
-                                if i.date in records:
-                                        pass
-                                else:
-                                        records[i.date] = {"inv":{},"pmnt":0,"bal":0}
-                
-                        for invoice in invoices:
-                                balance = sum([i.amount for i in total_payments if i.date <= invoice[0].date])-sum([i.price*i.qty for i in total_invoices if i.id <= invoice[0].id ])
-                                records[invoice[0].date]["inv"][invoice[0].id] = [invoice[0].id,invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price,
-                                invoice[0].qty*invoice[0].price,balance]
-                                inv_ids[invoice[0].date].append(invoice[0].id)
-                                
-                                
-                        for payment in payments:
-                                records[payment.date]["pmnt"]= records[payment.date]["pmnt"]+payment.amount
-                                balance = sum([i.amount for i in total_payments if i.date <= payment.date])-sum([i.price*i.qty for i in total_invoices if i.date < payment.date])
-                                records[payment.date]["bal"]= balance
-                        dates = sorted_dates(list(records))
-                        for i in inv_ids:
-                                inv_ids[i]=sorted(inv_ids[i])
-
-                        return render_template("customer.html",records=records,inv_ids=inv_ids,dates=dates,customer=customer,net=net,start=start_date,end=end_date)
+                        report = customer_statement(customer_id,start_date,end_date)
+                        return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
+                       
+                        
 
 @app.route("/customers/add_customer",methods=["POST"])
 @admin_required
@@ -1733,7 +1684,7 @@ def get_driveway():
                                 return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
                                 lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
                                 products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
-                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],
+                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
                                 shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
                                 pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
                         else:
@@ -1756,7 +1707,7 @@ def get_driveway():
                                 return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
                                 lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
                                 products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
-                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],
+                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
                                 shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
                                 pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])        
                         

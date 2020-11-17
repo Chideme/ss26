@@ -18,19 +18,19 @@
       
       
   
-      <div class="table-responsive driveway" id="printTable" style="margin:2%;">
+      <div class="card shadow-lg  mb-5 bg-white rounded" id="printTable">
   
       
       <h2 class="text-center">{{ session["org_name"] }}</h2>
       <div class="row">
         <div class="col-sm-6">
       
-        <div style="color:black;" ><p><h4>Inventory Control Sheet</h4><br>Prepared by: {{ shift.prepared_by }}<br>Date : {{ date }}<br>Shift: {{ shift_daytime }}
+        <div style="color:black; font-family:fantasy" ><p><h4>Inventory Control Sheet</h4><br>Prepared by: {{ shift.prepared_by }}<br>Date : {{ date }}<br>Shift: {{ shift_daytime }}
       <br>Shift ID: {{ shift.id }}</p></div>
       
       </div>
       <div class="col-sm-6">
-        <div class="card" style="width: fit-content;">
+        <div class="card shadow-sm  mb-5 bg-white rounded" style="width: fit-content;">
           <h5 class="card-header" style="color: white; background-color: blue;">Key Metrics</h5>
           <div class="card-body" style="background-color: lightblue;">
           <table class="table table-sm">
@@ -65,27 +65,27 @@
           <div class="card">
             <h5 class="card-header" style=" background-color: lightblue;" >Pumps</h5>
             <div class="card-body">
-            <table class="driveway-table">
+            <table class="table table-sm table-hover">
             <thead>
-                <th class="driveway-table" colspan="2">Pump Name</th>
-                <th class="driveway-table">Opening Readings</th>
-                <th class="driveway-table">Closing Readings</th>
-                <th class="driveway-table">Sales</th>
+                <th  colspan="2">Pump Name</th>
+                <th >Opening Readings</th>
+                <th>Closing Readings</th>
+                <th >Sales</th>
             </thead>
             <tbody>
               {%for pump in A %}
-              <tr class="driveway-table">
-                <td class="driveway-table" rowspan="2">{{ pump.name }}</td>
-                <td class="driveway-table">Litre Reading:</td>
-                <td class="numbers driveway-table">{{ pump_readings[pump.name][0][0] }}</td>
-                <td class="numbers driveway-table">{{ pump_readings[pump.name][1][0] }}</td>
-                <td class="numbers driveway-table">{{ pump_readings[pump.name][1][0]-pump_readings[pump.name][0][0] }}</td>
+              <tr>
+                <td  rowspan="2">{{ pump.name }}</td>
+                <td >Litre Reading:</td>
+                <td >{{ pump_readings[pump.name][0][0] }}</td>
+                <td >{{ pump_readings[pump.name][1][0] }}</td>
+                <td >{{ pump_readings[pump.name][1][0]-pump_readings[pump.name][0][0] }}</td>
               </tr>
-              <tr class="driveway-table">
-                <td class="driveway-table">Money Reading (in $):</td>
-                <td class="numbers driveway-table">{{ pump_readings[pump.name][0][1] }}</td>
-                <td class="numbers driveway-table">{{ pump_readings[pump.name][1][1] }}</td>
-                <td class="numbers driveway-table">{{ pump_readings[pump.name][1][1]-pump_readings[pump.name][0][1] }}</td>
+              <tr>
+                <td>Money Reading (in $):</td>
+                <td>{{ pump_readings[pump.name][0][1] }}</td>
+                <td>{{ pump_readings[pump.name][1][1] }}</td>
+                <td>{{ pump_readings[pump.name][1][1]-pump_readings[pump.name][0][1] }}</td>
               </tr>
               {% endfor %}
               </tbody>
@@ -97,27 +97,27 @@
             <div class="card">
               <h5 class="card-header" style=" background-color: lightblue;" >Pumps</h5>
               <div class="card-body">
-              <table class="driveway-table">
+              <table class="table table-sm table-hover">
               <thead>
-                  <th class="driveway-table" colspan="2">Pump Name</th>
-                  <th class="driveway-table">Opening Readings</th>
-                  <th class="driveway-table">Closing Readings</th>
-                  <th class="driveway-table">Sales</th>
+                  <th  colspan="2">Pump Name</th>
+                  <th >Opening Readings</th>
+                  <th >Closing Readings</th>
+                  <th >Sales</th>
               </thead>
               <tbody>
                 {%for pump in B %}
-                <tr class="driveway-table">
-                  <td class="driveway-table" rowspan="2">{{ pump.name }}</td>
-                  <td class="driveway-table">Litre Reading:</td>
-                  <td class="numbers driveway-table">{{ pump_readings[pump.name][0][0] }}</td>
-                  <td class="numbers driveway-table">{{ pump_readings[pump.name][1][0] }}</td>
-                  <td class="numbers driveway-table">{{ pump_readings[pump.name][1][0]-pump_readings[pump.name][0][0] }}</td>
+                <tr>
+                  <td  rowspan="2">{{ pump.name }}</td>
+                  <td >Litre Reading:</td>
+                  <td >{{ pump_readings[pump.name][0][0] }}</td>
+                  <td >{{ pump_readings[pump.name][1][0] }}</td>
+                  <td >{{ pump_readings[pump.name][1][0]-pump_readings[pump.name][0][0] }}</td>
                 </tr>
-                <tr class="driveway-table">
-                  <td class="driveway-table">Money Reading (in $):</td>
-                  <td class="numbers driveway-table">{{ pump_readings[pump.name][0][1] }}</td>
-                  <td class="numbers driveway-table">{{ pump_readings[pump.name][1][1] }}</td>
-                  <td class="numbers driveway-table">{{ pump_readings[pump.name][1][1]-pump_readings[pump.name][0][1] }}</td>
+                <tr>
+                  <td>Money Reading (in $):</td>
+                  <td>{{ pump_readings[pump.name][0][1] }}</td>
+                  <td>{{ pump_readings[pump.name][1][1] }}</td>
+                  <td>{{ pump_readings[pump.name][1][1]-pump_readings[pump.name][0][1] }}</td>
                 </tr>
                 {% endfor %}
                 </tbody>
@@ -126,7 +126,7 @@
           </div>
         </div>
         </div>
-        <div class="card" style="width: fit-content;">
+        <div class="card" style="width: fit-content;" id="dont">
             <h5 class="card-header" style=" background-color: lightblue;">Product Sales</h5>
             <div class="card-body">
               <table>
@@ -156,7 +156,7 @@
             </table>
             </div>
             </div>
-      <div class="card" style="width: fit-content;">
+      <div class="card dont" style="width: fit-content;">
       <h5 class="card-header" style=" background-color: lightblue;">Tank Analysis</h5>
       <div class="card-body">
         <table>
@@ -185,7 +185,7 @@
         </table>
         </div>
         </div>
-        <div class ="row p-3">
+        <div class ="row p-3 dont">
           <div class="col-sm-6">
           <div class="card" style="width: fit-content;">
           <h5 class="card-header" style=" background-color: lightblue;">Sales Breadown</h5>
@@ -205,7 +205,7 @@
                {% endfor %}
                <tr>
                  <th>Total:</th>
-                 <td>{{  sales_breakdown_amt }}</td>
+                 <td>{{  sales_breakdown_amt | round(2) }}</td>
                </tr>
               </tbody>
         </table>

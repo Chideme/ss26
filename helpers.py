@@ -817,3 +817,28 @@ def get_random_string():
     letters = string.ascii_lowercase
     result_str = ''.join(random.choice(letters) for i in range(8))
     return result_str
+
+def customer_statement(customer_id,start_date,end_date):
+    """Returns Customer statement"""
+    total_invoices = Invoice.query.filter_by(customer_id=customer_id).all()
+    total_payments = CustomerPayments.query.filter_by(customer_id=customer_id).all()
+    invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).all()
+    payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).all()
+    report = {}
+    for invoice in invoices:
+        details = "Driver: {}, Vehicle Reg: {}, Product: {}, Qty: {}, Price: {}".format(invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price)
+        amount = invoice[0].qty*invoice[0].price
+        balance = sum([i.amount for i in total_payments if i.timestamp < invoice[0].timestamp])-sum([i.price*i.qty for i in total_invoices if i.timestamp < invoice[0].timestamp])
+        balance = balance-amount
+        report[invoice[0].timestamp] = {"details":details,"dr":amount,"cr":0,"balance":balance}
+    for payment in payments:
+        amount = float(payment.amount)
+        details  = "Top up - {}".format(payment.ref)
+        balance = sum([i.amount for i in total_payments if i.timestamp < payment.timestamp])-sum([i.price*i.qty for i in total_invoices if i.timestamp < payment.timestamp])
+        balance = balance + amount
+        if payment.timestamp not in report:
+            report[payment.timestamp] = {"details":details,"dr":0,"cr":amount,"balance":balance}
+        else:
+            stamp = payment.timestamp + timedelta(microseconds=0.1)
+            report[stamp] = {"details":details,"dr":0,"cr":amount,"balance":balance}
+    return report
