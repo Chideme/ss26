@@ -107,8 +107,9 @@ class Product(db.Model):
     name = db.Column(db.String,nullable=False)
     product_type=db.Column(db.String,nullable=False)
     cost_price =  db.Column(db.Float,nullable=True)
+    avg_price =  db.Column(db.Float,nullable=True)
     selling_price = db.Column(db.Float,nullable=False)
-    qty = db.Column(db.Integer,nullable=False)
+    qty = db.Column(db.Float,nullable=False)
     account_id = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
     
     def __repr__(self):
@@ -219,6 +220,21 @@ class Customer(db.Model):
     
     __table_args__={'schema':'tenant'}
 
+class CustomerPayments(db.Model):
+    __tablename__="customer_payments"
+    
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    customer_id = db.Column(db.Integer,db.ForeignKey("customers.id"),nullable=False)
+    amount= db.Column(db.Float,nullable=False)
+    ref = db.Column(db.String,nullable=True)
+    
+
+    def __repr__(self):
+        return "{}".format(self.amount)
+
+    __table_args__={'schema':'tenant'}
+
 class Supplier(db.Model):
     __tablename__="supplier"
     
@@ -233,13 +249,12 @@ class Supplier(db.Model):
     
     __table_args__={'schema':'tenant'}
 
-class CustomerPayments(db.Model):
-    __tablename__="customer_payments"
+class SupplierPayments(db.Model):
+    __tablename__="supplier_payments"
     
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
-    timestamp =db.Column(db.DateTime, nullable=False,default=datetime.utcnow)
-    customer_id = db.Column(db.Integer,db.ForeignKey("customers.id"),nullable=False)
+    supplier_id = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
     amount= db.Column(db.Float,nullable=False)
     ref = db.Column(db.String,nullable=True)
     
@@ -275,8 +290,7 @@ class Invoice(db.Model):
     __tablename__="invoices"
     __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    date= db.Column(db.Date, nullable=False)
-    timestamp =db.Column(db.DateTime, nullable=False,default=datetime.utcnow)
+    date= db.Column(db.Date, nullable=False
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
     qty = db.Column(db.Float,nullable=False)
@@ -291,6 +305,7 @@ class Account(db.Model):
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     account_name= db.Column(db.String,nullable=False)
     account_category =db.Column(db.String,nullable=False)
+   
 
     def __repr__(self):
 
@@ -376,8 +391,7 @@ class Journal(db.Model):
     __table_args__={'schema':'tenant'}
 
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    date= db.Column(db.Date, nullable=False)
-    timestamp =db.Column(db.DateTime, nullable=False)
+    date= db.Column(db.DateTime, nullable=False)
     details = db.Column(db.String,nullable=True)
     dr = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
     cr = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)

@@ -862,7 +862,7 @@ def post_shift_journals(shift_id):
     tanks = get_tank_dips(shift_id,prev_shift.id)
     #tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
 
-    sales =0.00
+    sales = 0.00
     variance = 0.00
     for tank in tanks:
         i = db.session.query(Product,Tank).filter(Product.id ==Tank.product_id,Tank.id==tank.id).first()
@@ -880,3 +880,4 @@ def post_shift_journals(shift_id):
     db.session.add(cogs_journal)
     db.session.commit()
     return True
+

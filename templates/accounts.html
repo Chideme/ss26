@@ -1,4 +1,4 @@
-{% extends "customers_layout.html" %}
+{% extends "accounts_layout.html" %}
 
 
 
@@ -8,7 +8,7 @@
     
   </div>
 
-  <h4> Payout Accounts
+  <h4>Chart of Accounts
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group mr-2">
           <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddAccountFormModal">Add Account</button>
@@ -21,7 +21,7 @@
 <table class="display" id="export">
     <thead>
         <tr>
-            <th>Payout Account</th>
+            <th>Account</th>
             <th>Category</th>
         </tr>
     </thead>
@@ -54,10 +54,15 @@
                                         <input type = "text"  name="name" autocomplete="off" placeholder="Name" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group">
-                                        <select class="form-control" name="category">
-                                            <option selected>Category</option>
+                                        <label for="category">Select Category:</label>
+                                        <select id="category" class="form-control" name="category"required>
+                                            <option selected></option>
+                                            <option  value="Income">Income</option>
                                             <option  value="Expense">Expense</option>
-                                            <option  value="Expense">Supplier</option>
+                                            <option  value="Current Asset">Current Asset</option>
+                                            <option  value="Current Liability">Current Liability</option>
+                                            <option  value="GOGS">Cost of Sales</option>
+                                            
                                         </select>
                                     </div>
                                     <button class="btn btn-primary btn-block" type="submit">Add Account</button>

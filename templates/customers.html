@@ -170,12 +170,19 @@
                                                 <input type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
                                             </div>
                                             <select class="form-control" name="customers">
-                                                <option selected>Choose..</option>
+                                                <option selected></option>
                                                 {% for  customer in customers %}
                                                 <option  value="{{ customer.id }}">{{ customer.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
+                                        <select class="form-control" name="paypoint">
+                                            <option selected></option>
+                                            {% for  account in paypoints %}
+                                            <option  value="{{ account.id }}">{{ account.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
                                         <div class="form-group  ">
                                             <input type ="number" step="0.01" name="amount" autocomplete="off" placeholder="Amount ($)" autofocus class="form-control" required>
                                         </div>
