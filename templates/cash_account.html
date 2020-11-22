@@ -9,17 +9,17 @@
     <table class="table table-sm table-striped">
         <thead>
             <th>Date</th>
-            <th>Sales Receipts</th>
-            <th>Pay Outs</th>
+            <th>Details</th>
+            <th>Amount</th>
             <th>Balance</th>
         </thead>
         <tbody>
-            {% for r in report %}
+            {% for journal in report %}
             <tr>
-                <td>{{ r }}</td>
-                <td>{{ report[r]["rcpt"] }}</td>
-                <td><a href="{{ url_for('daily_payouts',date=r,cashaccount_id=account_id) }}">{{ report[r]["pay"] }}</a></td>
-                <td>{{ report[r]["bal"] }}</td>
+                <td>{{ journal.timestamp }}</td>
+                <td>{{ journal.details }}</td>
+                <td>{{ journal.amount }}</td>
+                <td>{{ journal['balance'] }}</td>
             </tr>
             {% endfor %}
         </tbody>

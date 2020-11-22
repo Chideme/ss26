@@ -109,6 +109,7 @@ class Product(db.Model):
     cost_price =  db.Column(db.Float,nullable=True)
     selling_price = db.Column(db.Float,nullable=False)
     qty = db.Column(db.Integer,nullable=False)
+    account_id = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
     
     def __repr__(self):
         name =self.name
@@ -181,6 +182,7 @@ class LubeProduct(db.Model):
     name = db.Column(db.String,nullable=False,unique=True)
     cost_price = db.Column(db.Float,nullable=False)
     selling_price = db.Column(db.Float,nullable=False)
+    avg_price = db.Column(db.Float,nullable=False)
     mls = db.Column(db.Float,nullable=False)
     qty = db.Column(db.Integer,nullable=False)
     
@@ -210,7 +212,7 @@ class Customer(db.Model):
     name= db.Column(db.String,nullable=False)
     contact_person =db.Column(db.String,nullable=True)
     phone_number = db.Column(db.String,nullable=True)
-    account_type=db.Column(db.String,nullable=True)
+    account_id= db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
 
     def __repr__(self):
         return "{}".format(self.name)
@@ -224,7 +226,7 @@ class Supplier(db.Model):
     name= db.Column(db.String,nullable=False)
     contact_person =db.Column(db.String,nullable=True)
     phone_number = db.Column(db.String,nullable=True)
-    
+    account_id=db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
 
     def __repr__(self):
         return "{}".format(self.name)
@@ -369,4 +371,16 @@ class CouponSale(db.Model):
     qty= db.Column(db.Integer,nullable=False)
 
 
-    
+class Journal(db.Model):
+    __tablename__="journals"
+    __table_args__={'schema':'tenant'}
+
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    timestamp =db.Column(db.DateTime, nullable=False)
+    details = db.Column(db.String,nullable=True)
+    dr = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
+    cr = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
+    amount= db.Column(db.Float,nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_on =db.Column(db.DateTime, nullable=False,default=datetime.utcnow)

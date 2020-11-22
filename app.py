@@ -95,6 +95,7 @@ def activate(tenant_schema):
                         hash_password = generate_password_hash(password)
                         tenant_id = session['tenant']
                         tenant = Tenant.query.get(tenant_id)
+
                         user=User(username=super_user,password=hash_password,role_id=1,tenant_id=tenant_id,schema=session["schema"])
                         shift_underway = Shift_Underway(state=False,current_shift=0)
                         msg_body = "<h3>Please find your login details :</h3><body><p>Company Code: {}</p><p>User Name: Admin</p><p>Password: {}</p><small>Make sure to change your password once logged in</small></body>".format(tenant.id,password)
@@ -216,6 +217,8 @@ def user_login():
                                 return render_template("login2.html")
                 else:
                         return render_template("login2.html")
+
+
 
 @app.route("/logout",methods=["GET"])
 @check_schema
@@ -472,8 +475,8 @@ def end_shift_update():
                 check_lube_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
                 if lubes:
                         if check__lube_cash_up and check_cash_up:
-                                shift_underway[0].state = False
-                                db.session.commit()
+                                post_shift_journals(shift_id)
+                                session["shift_underway"]=False
                                 flash('Shift Ended')
                                 return redirect(url_for('get_driveway'))
                         else:
@@ -481,8 +484,7 @@ def end_shift_update():
                                 return redirect(url_for('shift_lube_sales'))
                 else:
                         if check_cash_up:
-                                shift_underway[0].state = False
-                                db.session.commit()
+                                post_shift_journals(shift_id)
                                 session["shift_underway"]=False
                                 flash('Shift Ended')
                                 return redirect(url_for('get_driveway'))
@@ -702,7 +704,7 @@ def manage_users():
 def add_user():
         """Add User"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                username=request.form.get("username").capitalize()
+                username=request.form.get("username")
                 password=generate_password_hash(request.form.get("password"))
                 role_id = request.form.get("role")
                 tenant = Tenant.query.filter_by(schema=session['schema']).first()
@@ -769,7 +771,7 @@ def delete_user():
 
 
 
-@app.route("/inventory/pumps/",methods=["GET","POST"])
+@app.route("/pumps",methods=["GET","POST"])
 @check_schema
 @login_required
 def pumps():
@@ -875,8 +877,7 @@ def edit_pump():
 def add_tank():
         """Add Tank"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                name =request.form.get("tank_name").capitalize()
-                name = name.strip()
+                name =request.form.get("tank_name")
                 product_id=request.form.get("product")
                 dip = request.form.get("dip")
                 s = Shift.query.order_by(Shift.id.desc()).all()
@@ -981,8 +982,9 @@ def add_product():
                 cost = request.form.get("cost")
                 qty=request.form.get("qty")
                 product_type=request.form.get("product_type")
+                account = request.form.get("account")
                 try:
-                        product = Product(name=name,selling_price=price,qty=qty,product_type=product_type,cost_price=cost)
+                        product = Product(name=name,selling_price=price,qty=qty,product_type=product_type,cost_price=cost,account_id=account)
                         db.session.add(product)
                         db.session.commit()
                 except:
@@ -1046,7 +1048,7 @@ def add_lube_product():
 
                 s = Shift.query.order_by(Shift.id.desc()).all()
         
-                product = LubeProduct(name=name,cost_price=cost_price,selling_price=selling_price,mls=mls,qty=open_qty)
+                product = LubeProduct(name=name,cost_price=cost_price,selling_price=selling_price,avg_price =avg_price,mls=mls,qty=open_qty)
                 
                 try:
                         db.session.add(product)
@@ -1161,10 +1163,16 @@ def customer_payment():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 date = request.form.get("date")
                 customer_id = request.form.get("customers")
+                customer = Customer.query.get(customer_id)
                 amount = request.form.get("amount")
                 ref = request.form.get("ref") or ""
+                paypoint = Account.query.get(request.form.get("paypoint"))
                 try:
                         payment = CustomerPayments(date=date,customer_id=customer_id,amount=amount,ref=ref)
+                        cr = customer.account_id
+                        dr= paypoint.id
+                        journal = Journal(date=date,details=ref,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
+                        db.session.add(journal)
                         db.session.add(payment)
                         db.session.commit()
                 except:
@@ -1208,43 +1216,30 @@ def customer(customer_id):
 def add_customer():
         """Add Customer"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                name = request.form.get("name").strip().capitalize()
-                customer = Customer(name=name,account_type=request.form.get("type"),phone_number=request.form.get("phone"),contact_person=request.form.get("contact_person").capitalize())
+                name = request.form.get("name")
+                contact_person=request.form.get("contact_person")
+                phone_number=request.form.get("phone")
+                debtor = Account.query.filter_by(name="Accounts Receivables").first()
+                account_id=debtor.id
+                customer = Customer(name=name,account_id=account_id,phone_number=phone_number,contact_person=contact_person)
                 customer_exists = bool(Customer.query.filter_by(name=name).first())
                 if customer_exists:
-                        flash("User already exists, Try using another  account name!!")
+                        flash("User already exists, Try using another  user name!!")
                         return redirect(url_for('customers'))
                 else:
-                        account_type = request.form.get("type").strip().capitalize()
-                        account_name = request.form.get("name").strip().capitalize()
-                        if account_type == "Non-Cash":
-                                try:
-                                        db.session.add(customer)
-                                        account = Account(account_name=account_name,account_category="Receivables")
-                                        db.session.add(account)
-                                        db.session.commit()
-                                except:
-                                        db.session.rollback()
-                                        flash('There was an error')
-                                        return redirect(url_for('customers'))
-                                else:
-                                        
-                                        flash('Customer Successfully Added')
-                                        return redirect(url_for('customers'))
+                
+                        try:
+                                db.session.add(customer)
+                                db.session.commit()
+                        except:
+                                db.session.rollback()
+                                flash('There was an error')
+                                return redirect(url_for('customers'))
                         else:
-                                        
-                                try:
-                                        account = Account(account_name=account_name,account_category=account_type)
-                                        db.session.add(account)
-                                        db.session.add(customer)
-                                        db.session.commit()
-                                except:
-                                        db.session.rollback()
-                                        flash("There was an error")
-                                        return redirect(url_for('customers'))
-                                else:
-                                        flash('Customer Successfully Added')
-                                        return redirect(url_for('customers'))
+                                
+                                flash('Customer Successfully Added')
+                                return redirect(url_for('customers'))
+                        
 
 
 @app.route("/customers/edit_customer",methods=["POST"])
@@ -1311,10 +1306,11 @@ def suppliers():
 def add_supplier():
         """Add Supplier"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                name = request.form.get("name").strip().capitalize()
-                phone_number=request.form.get("phone").strip().capitalize()
-                contact_person=request.form.get("contact_person").capitalize()
-                supplier = Supplier(name=name,phone_number=phone_number,contact_person=contact_person)
+                name = request.form.get("name")
+                phone_number=request.form.get("phone")
+                contact_person=request.form.get("contact_person")
+                creditor = Account.query.filter_by(name="Accounts Payables").first()
+                supplier = Supplier(name=name,phone_number=phone_number,contact_person=contact_person,account_id=creditor.id)
                 supplier_exists = bool(Supplier.query.filter_by(name=name).first())
                 if supplier_exists:
                         flash("Supplier already exists, Try using another  account name !!")
@@ -1381,7 +1377,7 @@ def delete_supplier():
 def accounts():
         """Managing Expense Accounts"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                accounts= Account.query.filter_by(account_category="Expense").all()
+                accounts= Account.query.all()
                 return render_template("accounts.html",accounts=accounts)
 
 @app.route("/suppliers/expenses/delete_account",methods=["POST"])
@@ -1411,7 +1407,7 @@ def delete_account():
 def add_account():
         """Add Account"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                name=request.form.get("name").strip().capitalize()
+                name=request.form.get("name")
                 account = Account(account_name=name,account_category=request.form.get("category"))
                 account_exists = bool(Account.query.filter_by(account_name=request.form.get("name")).first())
                 if account_exists:
@@ -1430,6 +1426,23 @@ def add_account():
                                 flash('Account Successfully Added')
                                 return redirect(url_for('accounts'))
 
+
+@app.route("/create_model _accounts",methods=["POST"])
+@admin_required
+@check_schema
+@login_required
+def create_model_accounts():
+        """Add Accounts"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                accounts = [("Accounts Receivables","Current Account"),("Fuel Inventory","Current Account"),("Lubes Inventory","Current Account"),("Cash","Current Account"),("Lubes Inventory","Current Account"),
+                ,("Accounts Payables","Current Liability"),("Fuel Shrinkages","GOGS"),("Fuel COGS","COGS"),("Lubes COGS","COGS"),("Fuel Sales","Income"),("Lube Sales","Income")]
+                for account in accounts:
+                        acc = Account(account_name=account[0],account_category=account[1])
+                        db.session.add(acc)
+                db.session.commit()           
+                flash('Successful')
+                return redirect(url_for('accounts'))
+
 @app.route("/cash_accounts",methods=["GET","POST"])
 @check_schema
 @login_required
@@ -1439,8 +1452,8 @@ def cash_accounts():
                 accounts= Account.query.filter_by(account_category="Cash").all()
                 balances= {}
                 for account in accounts:
-                        receipts = SaleReceipt.query.filter_by(account_id=account.id).all()
-                        payouts = PayOut.query.filter_by(source_account=account.id).all()
+                        receipts = Journal.query.filter_by(dr=account.id).all()
+                        payouts = Journal.query.filter_by(cr=account.id).all()
                         balance = sum([i.amount for i in receipts])- sum([i.amount for i in payouts])
                         balances[account]=balance
                 return render_template("cash_accounts.html",accounts=accounts,balances=balances)
@@ -1455,33 +1468,21 @@ def cash_account(account_id):
         """Cash Account """
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 account= Account.query.get(account_id)
-                report= {}
-                receipts = SaleReceipt.query.filter_by(account_id=account.id).all()
-                payments = PayOut.query.filter_by(source_account=account.id).all()
+                receipts = Journal.query.filter_by(dr=account.id).all()
+                payments = Journal.query.filter_by(cr=account.id).all()
                 balances = sum([i.amount for i in receipts])- sum([i.amount for i in payments])
-                for receipt in receipts:
-                        report[receipt.date]= {"rcpt":0,"pay":0,"bal":0}
-                        report[receipt.date]["rcpt"]=report[receipt.date]["rcpt"]+receipt.amount
-                        report[receipt.date]["bal"]= sum([i.amount for i in receipts if i.date <= receipt.date])-sum([i.amount for i in payments if i.date <= receipt.date])
-                for payment in payments:
-                        if payment.date in report:
-                                report[payment.date]["pay"]=report[payment.date]["pay"]+payment.amount
-                        else:
-                                report[payment.date]={"rcpt":0,"pay":0,"bal":0}
-                                report[payment.date]["bal"] = sum([i.amount for i in receipts if i.date <= payment.date])-sum([i.amount for i in payments if i.date <= payment.date])
-                
-                return render_template("cash_account.html",account=account,report=report,account_id=account_id,balances=balances)
+                journals = Journal.query.all()
+                report = {}
+                for i in journals:
+                        amount = i.amount
+                        details = i.details
+                        balance = sum([i.amount for i in payments if i.timestamp < i.timestamp])-sum([i.amount for i in receipts if i.timestamp < i.timestamp])
+                        balance = balance-amount
+                        report[i.timestamp]= {"details":details,"amount":amount,"balance":balance}
+        
+                return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balances=balances)
 
 
-@app.route("/payouts/<date>/<cashaccount_id>",methods=["GET","POST"])
-@check_schema
-@login_required
-def daily_payouts(date,cashaccount_id):
-        """Expenses Report"""
-        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                payouts = db.session.query(PayOut,Account).filter(PayOut.pay_out_account==Account.id,PayOut.date==date,PayOut.source_account==cashaccount_id).all()
-                total = sum([i[0].amount for i in payouts])
-                return render_template("daily_payouts.html",payouts=payouts,cashaccount_id=cashaccount_id,total=total,date=date)
 
 
 @app.route("/profit_statement",methods=["GET","POST"])
@@ -1846,7 +1847,7 @@ def update_tank_dips():
                 current_shift = Shift.query.get(current_shift)
                 shift_daytime = current_shift.daytime
                 shift_id = current_shift.id
-                tank= Tank.query.filter_by(name=request.form.get("tank")).first()
+                tank = Tank.query.filter_by(name=request.form.get("tank")).first()
                 tank_id = tank.id
                 shift_dip = TankDip.query.filter(and_(TankDip.tank_id == tank_id,TankDip.shift_id ==shift_id)).first()
                 tank_dip = request.form.get("tank_dip")
@@ -1872,12 +1873,17 @@ def update_fuel_deliveries():
                 tank= Tank.query.filter_by(name=request.form.get("tank")).first()
                 document = request.form.get("document")
                 qty = request.form.get("delivery")
-                supplier = request.form.get("supplier")
+                supplier_id = request.form.get("supplier")
+                supplier = Supplier.query.get(supplier_id)
+                product = Product.query.get(tank.product_d)
+                cr = supplier.account_id
+                dr = product.account_id
                 cost_price = request.form.get("cost_price")
-                delivery = Fuel_Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier,cost_price=cost_price)
+                amount = cost_price * qty
+                delivery = Fuel_Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
+                journal = Journal(date=date,details=document,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
+                db.session.add(journal)
                 db.session.add(delivery)
-                
-                #db.session.query(Fuel_Delivery).filter(and_(Fuel_Delivery.tank_id == tank_id,Fuel_Delivery.shift_id ==shift_id)).update({Fuel_Delivery.qty: qty}, synchronize_session = False)
                 db.session.commit()
                 return redirect('ss26')
 
@@ -1893,7 +1899,6 @@ def update_cost_prices():
                 shift_underway = Shift_Underway.query.all()
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
-                shift_daytime = current_shift.daytime
                 shift_id = current_shift.id
                 product= Product.query.filter_by(name=request.form.get("product")).first()
                 cost_price = float(request.form.get("cost_price"))
@@ -2067,7 +2072,7 @@ def cash_up():
                 variance= float(request.form.get("variance"))
                 cash_account = Account.query.filter_by(account_name="Cash").first()
                 if cash_account :
-                        amount= cash_sales_amount
+                        amount  = cash_sales_amount
                         try:
                                 cash_up = CashUp(date=date,shift_id=shift_id,sales_amount=cash_sales_amount,expected_amount=expected_amount,actual_amount=actual_amount,variance=variance)
                                 receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
@@ -2108,8 +2113,11 @@ def pay_outs():
                 amount= request.form.get("amount")
                 source_account= request.form.get("source_account")
                 pay_out_account= request.form.get("pay_out_account")
+                details = "Shift {} expenses".format(shift_id)
                 pay_out = PayOut(source_account=source_account,pay_out_account=pay_out_account,date=date,shift_id=shift_id,amount=amount)
+                journal = Journal(date=date,details=details,amount=amount,dr=pay_out_account,cr=source_account,created_by=session['user_id'])
                 db.session.add(pay_out)
+                db.session.add(journal)
                 db.session.commit()
         return redirect(url_for('ss26'))
 

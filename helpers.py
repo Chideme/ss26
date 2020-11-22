@@ -842,3 +842,41 @@ def customer_statement(customer_id,start_date,end_date):
             stamp = payment.timestamp + timedelta(microseconds=0.1)
             report[stamp] = {"details":details,"dr":0,"cr":amount,"balance":balance}
     return report
+
+
+def post_shift_journals(shift_id):
+    """ Post amount to control accounts """
+    shift_underway = Shift_Underway.query.all()
+    shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+    prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
+    invoices = Invoice.query.filter_by(shift_id)
+    shift = Shift.query.get(shift_id)
+    amount = sum([i.price*i.qty for i in invoices])
+    sales_acc = Account.query.filter_by(name="Sales")
+    debtor = Account.query.filter_by(name="Accounts Receivables").first()
+    variance_acc = Account.query.filter_by(name="Fuel Shrinkages").first()
+    inventory = Account.query.filter_by(name="Fuel Inventory").first()
+    cogs = Account.query.filter_by(name="Fuel COGS").first()
+    details = "Shift {} sales".format(shift_id)
+    sales_journal=Journal(date=date,details=details,amount=amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
+    tanks = get_tank_dips(shift_id,prev_shift.id)
+    #tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
+
+    sales =0.00
+    variance = 0.00
+    for tank in tanks:
+        i = db.session.query(Product,Tank).filter(Product.id ==Tank.product_id,Tank.id==tank.id).first()
+        avg_price = i[0].avg_price
+        sale = tanks[tank][1]-(tanks[tank][0]+tanks[tank][3])
+        sales += sale*avg_price
+        variance += (sale - tanks[tank][2])*avg_price
+    detail_variance = "Shift {} variance".format(shift_id)
+    detail_cogs = "Shift {} cost of goods sold".format(shift_id)
+    variance_journal = Journal(date=date,details=detail_variance,amount=variance,dr=variance_acc.id,cr=inventory.id,created_by=session['user_id'])
+    cogs_journal =Journal(date=date,details=detail_cogs,amount=sales,dr=cogs.id,cr=inventory.id,created_by=session['user_id'])
+    shift_underway[0].state = False
+    db.session.add(sales_journal)
+    db.session.add(variance_journal)
+    db.session.add(cogs_journal)
+    db.session.commit()
+    return True
