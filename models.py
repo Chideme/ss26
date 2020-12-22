@@ -290,7 +290,7 @@ class Invoice(db.Model):
     __tablename__="invoices"
     __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    date= db.Column(db.Date, nullable=False
+    date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
     qty = db.Column(db.Float,nullable=False)
@@ -303,6 +303,7 @@ class Account(db.Model):
     __tablename__="accounts"
     __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
+    code = db.Column(db.Integer,primary_key=True,nullable=False)
     account_name= db.Column(db.String,nullable=False)
     account_category =db.Column(db.String,nullable=False)
    
@@ -366,6 +367,7 @@ class Price(db.Model):
     product_id= db.Column(db.Integer,db.ForeignKey("products.id"),nullable=False)
     cost_price= db.Column(db.Float,nullable=False)
     selling_price= db.Column(db.Float,nullable=False)
+    avg_price= db.Column(db.Float,nullable=False)
 
     
 class Coupon(db.Model):
@@ -388,6 +390,19 @@ class CouponSale(db.Model):
 
 class Journal(db.Model):
     __tablename__="journals"
+    __table_args__={'schema':'tenant'}
+
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.DateTime, nullable=False)
+    details = db.Column(db.String,nullable=True)
+    dr = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
+    cr = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
+    amount= db.Column(db.Float,nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_on =db.Column(db.DateTime, nullable=False,default=datetime.utcnow)
+
+class Journal_Pending(db.Model):
+    __tablename__="journals_pending"
     __table_args__={'schema':'tenant'}
 
     id = db.Column(db.Integer,primary_key=True,nullable=False)

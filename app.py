@@ -95,10 +95,10 @@ def activate(tenant_schema):
                         hash_password = generate_password_hash(password)
                         tenant_id = session['tenant']
                         tenant = Tenant.query.get(tenant_id)
-                        accounts = [("Accounts Receivables","Current Asset"),("Fuel Inventory","Current Asset"),("Lubes Inventory","Current Asset"),("Cash","Cash"),("Salaries","Expense")
-                        ("Accounts Payables","Current Liability"),("Fuel Shrinkages","GOGS"),("Fuel COGS","COGS"),("Lubes COGS","COGS"),("Fuel Sales","Income"),("Lube Sales","Income")]
+                        accounts = [(700,"Accounts Receivables","Current Asset"),(600,"Fuel Inventory","Current Asset"),(601,"Lubes Inventory","Current Asset"),(500,"Cash","Current Asset"),(200,"Salaries","Expense"),
+                        (800,"Accounts Payables","Current Liability"),(201,"Fuel Shrinkages","GOGS"),(200,"Fuel COGS","COGS"),(202,"Lubes COGS","COGS"),(100,"Fuel Sales","Income"),(101,"Lube Sales","Income")]
                         for account in accounts:
-                                acc = Account(account_name=account[0],account_category=account[1])
+                                acc = Account(code=account[0],account_name=account[1],account_category=account[2])
                                 db.session.add(acc)
                                 db.session.flush()
                         user=User(username=super_user,password=hash_password,role_id=1,tenant_id=tenant_id,schema=session["schema"])
@@ -1426,14 +1426,48 @@ def accounts():
                 accounts= Account.query.all()
                 return render_template("accounts.html",accounts=accounts)
 
-@app.route("/journal_entry",methods=["GET","POST"])
+@app.route("/create_journal",methods=["POST"])
 @check_schema
 @login_required
-def journal_entry():
-        """Managing  Accounts"""
+def create_journal():
+        """Initiate Journal Entry"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                accounts= Account.query.all()
-                return render_template("accounts.html",accounts=accounts)
+                date = request.form.get("date")
+                details = request.form.get("details")
+                amount = request.form.get("amount")
+                dr = request.form.get("debit")
+                dr = request.form.get("credit")
+                journal = Journal_Pending(date=date,details=details,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
+                db.session.add(journal)
+                db.session.commit()
+                return redirect(url_for('journal_pending'))
+
+
+@app.route("/post_journal",methods=["POST"])
+@check_schema
+@login_required
+def post_journal():
+        """Post Journal Entry"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                i = request.form.get("id")
+                j = Journal_Pending.query.get(i)
+                journal = Journal(date=j.date,details=j.details,amount=j.amount,dr=j.dr,cr=j.cr,created_by=j.created_by)
+                db.session.add(journal)
+                db.session.delete(j)
+                db.session.commit()
+                return redirect(url_for('journal_pending'))
+
+@app.route("/delete_journal",methods=["POST"])
+@check_schema
+@login_required
+def delete_journal():
+        """Delete Journal Entry"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                i = request.form.get("id")
+                j = Journal_Pending.query.get(i)
+                db.session.delete(j)
+                db.session.commit()
+                return redirect(url_for('journal_pending'))
 
 @app.route("/journal_pending",methods=["GET","POST"])
 @check_schema
@@ -1441,8 +1475,26 @@ def journal_entry():
 def journal_pending():
         """Managing  Accounts"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                accounts= Account.query.all()
-                return render_template("accounts.html",accounts=accounts)
+                journals= Journal_Pending.query.all()
+                return render_template("journals_pending.html",journals=journals)
+
+@app.route("/ledger",methods=["GET","POST"])
+@check_schema
+@login_required
+def legder():
+        """View Transactions"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                if request.method =="GET":
+                        return render_template("ledger.html",journals=journals)
+                else:
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        account_id = request.form.get("account")
+                        dr = Journal.query.filter(and_(Journal.Date.between(start_date,end_date),Journal.dr==account_id)).all()
+                        cr = Journal.query.filter(and_(Journal.Date.between(start_date,end_date),Journal.cr==account_id)).all()
+                        
+                        return render_template("ledger.html",journals=journals)
+
 
 @app.route("/accounts/delete_account",methods=["POST"])
 @admin_required
@@ -1472,7 +1524,8 @@ def add_account():
         """Add Account"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 name=request.form.get("name")
-                account = Account(account_name=name,account_category=request.form.get("category"))
+                code = request.form.get("code")
+                account = Account(code=code,account_name=name,account_category=request.form.get("category"))
                 account_exists = bool(Account.query.filter_by(account_name=request.form.get("name")).first())
                 if account_exists:
                         flash("Account already exists, Try using another username!!")
@@ -1498,7 +1551,7 @@ def add_account():
 def cash_accounts():
         """Cash Account Report"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                accounts= Account.query.filter_by(account_category="Cash").all()
+                accounts= Account.query.filter(Account.code.between(500,699)).all()
                 balances= {}
                 for account in accounts:
                         receipts = Journal.query.filter_by(dr=account.id).all()
@@ -1514,20 +1567,20 @@ def cash_accounts():
 @check_schema
 @login_required
 def cash_account(account_id):
-        """Cash Account """
+        """Cash Account"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 account = Account.query.get(account_id)
                 receipts = Journal.query.filter_by(dr=account.id).all()
                 payments = Journal.query.filter_by(cr=account.id).all()
                 balances = sum([i.amount for i in receipts])- sum([i.amount for i in payments])
-                journals = Journal.query.all()
+                journals = Journal.query.filter(or_(Journal.dr==account.id,Journal.cr==account.id)).all()
                 report = {}
                 for i in journals:
                         amount = i.amount
                         details = i.details
                         balance = sum([i.amount for i in payments if i.date < i.date])-sum([i.amount for i in receipts if i.date < i.date])
                         balance = balance-amount
-                        report[i.timestamp]= {"details":details,"amount":amount,"balance":balance}
+                        report[i.date]= {"details":details,"amount":amount,"balance":balance}
         
                 return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balances=balances)
 
@@ -1814,7 +1867,7 @@ def ss26():
                         data = get_driveway_data(shift_id,prev_shift_id)
                         ###### Cash breakdown
                         customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
-                        sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer)
+                        sales_breakdown = total_customer_sales(customer_sales) #calculate total sales per customer)
                         sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
                         
                         return render_template("ss26.html",products=data['products'],expense_accounts=data['expense_accounts'],
@@ -1844,15 +1897,15 @@ def update_pump_litre_readings():
                 current_shift = Shift.query.get(current_shift)
                 shift_id = current_shift.id
                 pump = Pump.query.filter_by(name=request.form.get("pump")).first()
-                produ = db.session.query(Product,Pump,Tank).filter(and_(Product.id==Tank.product_id,Pump.tank_id==Tank.id,Pump.id==pump.id)).first()
+                #product = db.session.query(Product,Pump,Tank).filter(and_(Product.id==Tank.product_id,Pump.tank_id==Tank.id,Pump.id==pump.id)).first()
                 pump_id = pump.id
                 litre_reading = request.form.get("litre_reading")
                 reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id== shift_id)).first()
                 sales = litre_reading - reading
                 pump.litre_reading = litre_reading
                 reading.litre_reading = litre_reading
-                product = Product.query.get(product[0].id)
-                product.qty = product.qty-sales
+                #product = Product.query.get(product[0].id)
+                #product.qty = product.qty-sales
                 db.session.commit()
 
                 return redirect('ss26')
@@ -1927,12 +1980,14 @@ def update_fuel_deliveries():
                 supplier_id = request.form.get("supplier")
                 supplier = Supplier.query.get(supplier_id)
                 product = Product.query.get(tank.product_id)
+                price= Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
                 cr = supplier.account_id
                 dr = product.account_id
                 cost_price = request.form.get("cost_price")
                 amount = cost_price * qty
                 new_cost = ((product.avg_price*product.qty) + amount)/(qty +product.qty)
                 product.avg_price = Decimal(new_cost,2)
+                price.avg_price = Decimal(new_cost,2)
                 delivery = Fuel_Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
                 journal = Journal(date=date,details=document,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                 db.session.add(journal)
@@ -1955,7 +2010,9 @@ def update_cost_prices():
                 shift_id = current_shift.id
                 product= Product.query.filter_by(name=request.form.get("product")).first()
                 cost_price = float(request.form.get("cost_price"))
-                db.session.query(Price).filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).update({Price.cost_price: cost_price}, synchronize_session = False)
+                price= Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
+                price.cost_price = cost_price
+                
                 product.cost_price = cost_price
                 db.session.commit()
                 return redirect('ss26')
@@ -2123,30 +2180,27 @@ def cash_up():
                 cash_sales_amount = float(request.form.get("cash_sales_amount"))
                 actual_amount= float(request.form.get("actual_amount"))
                 variance= float(request.form.get("variance"))
-                cash_account = Account.query.filter_by(account_name="Cash").first()
-                if cash_account :
-                        amount  = cash_sales_amount
-                        try:
-                                cash_up = CashUp(date=date,shift_id=shift_id,sales_amount=cash_sales_amount,expected_amount=expected_amount,actual_amount=actual_amount,variance=variance)
-                                receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
-                                db.session.add(cash_up)
-                                db.session.add(receipt)
-                                if len(shifts) > 1:
-                                        cash_sales(amount,account.id,shift_id,date)# add invoices to cash customer account
-                                        db.session.commit()
-                                        return redirect(url_for('ss26'))
-                                else:
-                                        db.session.commit()
-                                        flash("Cash up done")
-                                        return redirect(url_for('ss26'))
-                        except Exception as e:
-                                db.session.rollback()
-                                flash(str(e))
+               
+                amount  = cash_sales_amount
+                try:
+                        cash_up = CashUp(date=date,shift_id=shift_id,sales_amount=cash_sales_amount,expected_amount=expected_amount,actual_amount=actual_amount,variance=variance)
+                        receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
+                        db.session.add(cash_up)
+                        db.session.add(receipt)
+                        if len(shifts) > 1:
+                                cash_sales(amount,account.id,shift_id,date)# add invoices to cash customer account
+                                db.session.commit()
+                                flash("Cash up done")
                                 return redirect(url_for('ss26'))
-                else:
-                        
-                        flash("Configure Cash Account")
-                        return redirect(url_for('customers'))
+                        else:
+                                db.session.commit()
+                                flash("Cash up done")
+                                return redirect(url_for('ss26'))
+                except:
+                        db.session.rollback()
+                        flash("Something is wrong")
+                        return redirect(url_for('ss26'))
+                
 
 @app.route("/payouts",methods=["POST"])
 @view_only
@@ -2519,13 +2573,15 @@ def developer_login():
                 name = request.form.get("name")
                 password = request.form.get("password")
                 user = SystemAdmin.query.filter_by(name=name).first()
+                if user:
+                        if  not check_password_hash(user.password,password):
 
-                if  not check_password_hash(user.password,password):
-
-                        return redirect(url_for('index'))
+                                return redirect(url_for('index'))
+                        else:
+                                session["system_admin"]= user.id
+                                return redirect(url_for('developer'))
                 else:
-                        session["system_admin"]= user.id
-                        return redirect(url_for('developer'))
+                        return redirect(url_for('index'))
 
 @app.route("/developer_logout",methods=['GET'])
 @system_admin_required

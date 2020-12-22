@@ -1,0 +1,142 @@
+{% extends "accounts_layout.html" %}
+
+
+
+{% block main %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#CreateJournal">
+        Create Journal
+      </button>
+    
+</div>
+
+<div class="text-center">
+<h4>Pending Approval Journals</h4>
+    
+            <table class="display" id="export">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Details</th>
+                        <th>Debit</th>
+                        <th>Credit</th>
+                        <th>Amount</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for j in journals %}
+                    <tr>
+                        <td>{{ j.date }}</td>
+                        <td>{{ j.details }}</td>
+                        <td>{{ j.dr }}</td>
+                        <td>{{ j.cr }}</td>
+                        <td>{{ j.amount }}</td>
+                        <td>
+                            <button type="button" class="btn btn-light" data-toggle="modal" data-target="#ActionJournal{{ j.id }}">
+                                Approve/Delete
+                            </button>
+                        </td>
+                    
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+</div>               
+                            <!--ActionJournal Modal -->
+                            {% for j in journals %}
+                            <div class="modal fade" id="ActionJournal{{ j.id }}" tabindex="-1" role="dialog" aria-labelledby="ActionJournal{{ j.id }}FormModalLabel" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="ActionJournal{{ j.id }}FormLabel">Journal</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form  action="{{ url_for('post_journal') }}" method="post" > 
+                                                <div class="form-group" >
+                                                    <input type = "number"  value="{{ j.id }}" name="id" autocomplete="off"  autofocus class="form-control" readonly>
+                                                </div>
+                                                
+                                                <button class="btn btn-primary btn-block" type="submit">Approve</button>
+                                             </form>
+                                             <form  action="{{ url_for('delete_journal') }}" method="post" > 
+                                                <div class="form-group" >
+                                                    <input type = "number"  value="{{ j.id }}" name="id"  autocomplete="off" autofocus class="form-control" readonly>
+                                                </div>
+                                                
+                                                <button class="btn btn-warning btn-block" type="submit">Delete</button>
+                                             </form>
+                                        </div>
+                                        <div class="modal-footer">  
+                                            <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                     <!--Approve Journal Modal-->
+
+        
+                
+                    <!--Create Journal-->
+                    <div class="modal fade" id="CreateJournal" tabindex="-1" role="dialog" aria-labelledby="CreateJournalFormModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="CreateJournalFormLabel">Create Journal</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form action="{{ url_for('create_journal') }}" method="post" > 
+                                        <div class="form-group">
+                                                <input type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
+                                        </div>
+                                         <div class="form-group">
+                                             <label for="dr">Debit:</label>
+                                            <select id="dr" class="form-control" name="customers">
+                                                <option selected></option>
+                                                {% for  account in accounts %}
+                                                <option  value="{{ account.id }}">{{ account.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                             <label for="cr">Credit:</label>
+                                        <select id="dr" class="form-control" name="paypoint">
+                                            <option selected></option>
+                                            {% for  account in accounts %}
+                                            <option  value="{{ account.id }}">{{ account.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        </div>
+                                    </div>
+                                        <div class="form-group">
+                                        <label for="amt">Amount:</label>
+                                            <input id="amt" type ="number" step="0.01" name="amount" autocomplete="off" placeholder="Amount ($)" autofocus class="form-control" required>
+                                        </div>
+                                        <div class="form-group ">
+                                            <input type ="text"  name="ref" autocomplete="off" placeholder="Reference" autofocus class="form-control">
+                                        </div>
+                                
+                                        <button class="btn btn-primary btn-block btn-group" type="submit">Create</button>
+                                
+                                     </form>
+                                </div>
+                                <div class="modal-footer">  
+                                    <button type="button" class="btn btn-primary btn-group" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!--Create Journal-->
+   
+
+    
+
+    
+{% endblock %}
