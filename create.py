@@ -15,14 +15,32 @@ db.init_app(app)
 def main():
 
     #db.create_all()
-    admin_role = Role(name = "Owner")
-    db.session.add(admin_role)
-    supervisor_role = Role(name="Manager")
-    db.session.add(supervisor_role)
-    shift_underway = Shift_Underway(state=False,current_shift=0)
-    db.session.add(shift_underway)
-    db.session.commit()
-  
+     ## Insert management data
+    password = generate_password_hash("Kud@94")
+    op.bulk_insert(system_table,
+    [
+        {'name':'Admin','password':password}
+    ],
+     multiinsert=False)
+
+    op.bulk_insert(package_table,
+    [
+        {'name':'free','number_of_days':7},
+        {'name':'monthly','number_of_days':30},
+        {'name':'yearly','number_of_days':365}
+    ],
+     multiinsert=False)
+
+   
+
+    op.bulk_insert(roles_table,
+    [
+        {'name':'admin'},
+        {'name':'supervisor'},
+        {'name':'view-only'}
+    ],
+     multiinsert=False)
+    # 
 if __name__=="__main__":
     with app.app_context():
         main()

@@ -32,17 +32,17 @@
             <th>Dr</th>
             <th>Cr</th>
             <th>Balance</th>
-            <th>Closing Balance</th>
+         
 
         </thead>
         <tbody>
             {% for i in report %}
             <tr>
-                <td>{{ i }}</td>
+                <td>{{ report[i]["date"] }}</td>
                 <td>{{ report[i]["details"] }}</td>
-                <td>{{ report[i]['dr'] | round(2) }}</td>
-                <td>{{ report[i]['cr'] | round(2) }}</td>
-                <td>{{ report[i]['balance'] | round(2) }}</td>
+                <td>{{ report[i]['dr']  }}</td>
+                <td>{{ report[i]['cr']  }}</td>
+                <td>{{ report[i]['balance']  }}</td>
                 <td></td>
             </tr>
             {% endfor %}

@@ -822,25 +822,22 @@ def customer_statement(customer_id,start_date,end_date):
     """Returns Customer statement"""
     total_invoices = Invoice.query.filter_by(customer_id=customer_id).all()
     total_payments = CustomerPayments.query.filter_by(customer_id=customer_id).all()
-    invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).all()
-    payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).all()
-    report = {}
+    invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date < start_date)).all()
+    payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date < start_date)).all()     
+    balance = sum([i[0].amount for i in invoices]) - sum([i.amount for i in payments])
+
+    report = {"balance":balance}
     for invoice in invoices:
         details = "Driver: {}, Vehicle Reg: {}, Product: {}, Qty: {}, Price: {}".format(invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price)
         amount = invoice[0].qty*invoice[0].price
-        balance = sum([i.amount for i in total_payments if i.timestamp < invoice[0].timestamp])-sum([i.price*i.qty for i in total_invoices if i.timestamp < invoice[0].timestamp])
-        balance = balance-amount
-        report[invoice[0].timestamp] = {"details":details,"dr":amount,"cr":0,"balance":balance}
+        report[invoice[0].id] = {"date":invoice[0].date,"details":details,"dr":amount,"cr":0}
     for payment in payments:
         amount = float(payment.amount)
         details  = "Top up - {}".format(payment.ref)
-        balance = sum([i.amount for i in total_payments if i.timestamp < payment.timestamp])-sum([i.price*i.qty for i in total_invoices if i.timestamp < payment.timestamp])
-        balance = balance + amount
-        if payment.timestamp not in report:
-            report[payment.timestamp] = {"details":details,"dr":0,"cr":amount,"balance":balance}
-        else:
-            stamp = payment.timestamp + timedelta(microseconds=0.1)
-            report[stamp] = {"details":details,"dr":0,"cr":amount,"balance":balance}
+       
+        report[payment.id] = {"date":payment.date,"details":details,"dr":0,"cr":amount}
+        
+        
     return report
 
 
@@ -881,3 +878,19 @@ def post_shift_journals(shift_id):
     db.session.commit()
     return True
 
+def opening_balance(date,account_id):
+    """ calculate ledger opening balance for the period"""
+    account = Account.query.get(account_id)
+    if account.entry =="DR":
+        receipts = Journal.query.filter(and_(Journal.dr ==account_id,Journal.date < date)).all()
+        payouts = Journal.query.filter(and_(Journal.cr ==account_id,Journal.date < date)).all()
+        
+        balance = sum([i.amount for i in receipts]) - sum([i.amount for i in payouts])
+    else:
+        payouts = Journal.query.filter(and_(Journal.dr ==account_id,Journal.date < date)).all()
+        receipts = Journal.query.filter(and_(Journal.cr ==account_id,Journal.date < date)).all()
+        
+        balance = sum([i.amount for i in receipts]) - sum([i.amount for i in payouts])
+
+    return balance
+    

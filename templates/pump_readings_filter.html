@@ -17,7 +17,7 @@
         <label for="EndDate">Pump:</label>
         <div class="form-group">
             <select class="form-control" name="pump">
-                <option selected value="{{ pumps[0].id }}" >{{ pumps[0].name }}</option>
+                <option selected value="{{ pumps.id }}" >{{ pumps.name }}</option>
                 {% for pump in pumps[1:] %}
                 <option  value="{{ pump.id }}">{{ pump.name }}</option>
                 {% endfor %}

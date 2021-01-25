@@ -95,10 +95,10 @@ def activate(tenant_schema):
                         hash_password = generate_password_hash(password)
                         tenant_id = session['tenant']
                         tenant = Tenant.query.get(tenant_id)
-                        accounts = [(700,"Accounts Receivables","Current Asset"),(600,"Fuel Inventory","Current Asset"),(601,"Lubes Inventory","Current Asset"),(500,"Cash","Current Asset"),(200,"Salaries","Expense"),
-                        (800,"Accounts Payables","Current Liability"),(201,"Fuel Shrinkages","GOGS"),(200,"Fuel COGS","COGS"),(202,"Lubes COGS","COGS"),(100,"Fuel Sales","Income"),(101,"Lube Sales","Income")]
+                        accounts = [(700,"Accounts Receivables","Current Asset","DR"),(600,"Fuel Inventory","Current Asset","DR"),(601,"Lubes Inventory","Current Asset","DR"),(500,"Cash","Current Asset","DR"),(300,"Salaries","Expense","DR"),
+                        (800,"Accounts Payables","Current Liability","CR"),(201,"Fuel Shrinkages","GOGS","DR"),(200,"Fuel COGS","COGS","DR"),(202,"Lubes COGS","COGS","DR"),(100,"Fuel Sales","Income","CR"),(101,"Lube Sales","Income","CR")]
                         for account in accounts:
-                                acc = Account(code=account[0],account_name=account[1],account_category=account[2])
+                                acc = Account(code=account[0],account_name=account[1],account_category=account[2],entry=account[3])
                                 db.session.add(acc)
                                 db.session.flush()
                         user=User(username=super_user,password=hash_password,role_id=1,tenant_id=tenant_id,schema=session["schema"])
@@ -109,7 +109,7 @@ def activate(tenant_schema):
                         db.session.flush()
                         expiration= today + timedelta(days=7)
                         tenant.active = expiration
-                        package = Package.query.filter_by(name="Free").first()
+                        package = Package.query.filter_by(name="free").first()
                         sub = Subscriptions(date=today,package=package.id,tenant_id=tenant_id,amount=0.00,expiration_date=expiration)
                         session["user_id"] = user.id
                         session["user_tenant"]= user.tenant_id
@@ -1159,7 +1159,7 @@ def customers():
         """Managing Customers"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 customers= Customer.query.all()
-                paypoints = Account.query.filter_by(account_category="Current Asset").all()
+                paypoints = Account.query.filter(Account.code.between(500,599)).all()
                 # calculate balances
                 balances = {}
                 for customer in customers:
@@ -1234,7 +1234,7 @@ def add_customer():
                 name = request.form.get("name")
                 contact_person=request.form.get("contact_person")
                 phone_number=request.form.get("phone")
-                debtor = Account.query.filter_by(name="Accounts Receivables").first()
+                debtor = Account.query.filter_by(account_name="Accounts Receivables").first()
                 account_id =debtor.id
                 customer = Customer(name=name,account_id=debtor.id,phone_number=phone_number,contact_person=contact_person)
                 customer_exists = bool(Customer.query.filter_by(name=name).first())
@@ -1304,14 +1304,14 @@ def suppliers():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 
                 suppliers = Supplier.query.all()
-                paypoints = Accounts.query.filter_by(account_category="Current Asset").all()
+                paypoints = Account.query.filter(Account.code.between(500,599)).all()
                 # calculate balances
                 balances = {}
                 for supplier in suppliers:
                         deliveries = Fuel_Delivery.query.filter_by(supplier=supplier.id).all()
                         payments = SupplierPayments.query.filter_by(supplier_id=supplier.id).all()
                         net = sum([i.amount for i in payments]) - sum([i.cost_price*i.qty for i in deliveries])
-                        #SSnet = sum([i.amount for i in payments]) # use above line on database reset, the pains of development !!
+
                         balances[account[0].name]=net
                 return render_template("suppliers.html",suppliers=suppliers,balances=balances,paypoints=paypoints)
 
@@ -1357,7 +1357,7 @@ def add_supplier():
                 name = request.form.get("name")
                 phone_number=request.form.get("phone")
                 contact_person=request.form.get("contact_person")
-                creditor = Account.query.filter_by(name="Accounts Payables").first()
+                creditor = Account.query.filter_by(account_name="Accounts Payables").first()
                 supplier = Supplier(name=name,phone_number=phone_number,contact_person=contact_person,account_id=creditor.id)
                 supplier_exists = bool(Supplier.query.filter_by(name=name).first())
                 if supplier_exists:
@@ -1476,24 +1476,26 @@ def journal_pending():
         """Managing  Accounts"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 journals= Journal_Pending.query.all()
-                return render_template("journals_pending.html",journals=journals)
+                accounts = Account.query.all()
+                return render_template("journal_pending.html",journals=journals,accounts=accounts)
 
 @app.route("/ledger",methods=["GET","POST"])
 @check_schema
 @login_required
-def legder():
+def ledger():
         """View Transactions"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 if request.method =="GET":
-                        return render_template("ledger.html",journals=journals)
+                        accounts= Account.query.all()
+                        return render_template("ledger.html",accounts=accounts)
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
                         account_id = request.form.get("account")
-                        dr = Journal.query.filter(and_(Journal.Date.between(start_date,end_date),Journal.dr==account_id)).all()
-                        cr = Journal.query.filter(and_(Journal.Date.between(start_date,end_date),Journal.cr==account_id)).all()
-                        
-                        return render_template("ledger.html",journals=journals)
+                        balance = opening_balance(start_date,account_id)
+                        journals = Journal.query.filter(and_(Journal.Date.between(start_date,end_date),Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
+          
+                        return render_template("ledger.html",journals,account_id=account_id,opening_balance=balance)
 
 
 @app.route("/accounts/delete_account",methods=["POST"])
@@ -1551,7 +1553,7 @@ def add_account():
 def cash_accounts():
         """Cash Account Report"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                accounts= Account.query.filter(Account.code.between(500,699)).all()
+                accounts= Account.query.filter(Account.code.between(500,599)).all()
                 balances= {}
                 for account in accounts:
                         receipts = Journal.query.filter_by(dr=account.id).all()
@@ -1569,20 +1571,26 @@ def cash_accounts():
 def cash_account(account_id):
         """Cash Account"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                account = Account.query.get(account_id)
+                account = Account.query.get(account_id) 
                 receipts = Journal.query.filter_by(dr=account.id).all()
                 payments = Journal.query.filter_by(cr=account.id).all()
-                balances = sum([i.amount for i in receipts])- sum([i.amount for i in payments])
-                journals = Journal.query.filter(or_(Journal.dr==account.id,Journal.cr==account.id)).all()
-                report = {}
-                for i in journals:
-                        amount = i.amount
-                        details = i.details
-                        balance = sum([i.amount for i in payments if i.date < i.date])-sum([i.amount for i in receipts if i.date < i.date])
-                        balance = balance-amount
-                        report[i.date]= {"details":details,"amount":amount,"balance":balance}
-        
-                return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balances=balances)
+                balance = sum([i.amount for i in receipts])- sum([i.amount for i in payments])
+
+                if request.method == "GET":
+
+                        return render_template("cash_account.html",account=account,balance=balance)
+                else:
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        opening = opening_balance(start_date,account_id)
+                        journals = Journal.query.filter(or_(Journal.dr==account.id,Journal.cr==account.id)).all()
+                        report = {}
+                        for i in journals:
+                                amount = i.amount
+                                details = i.details
+                                report[i.date]= {"details":details,"amount":amount,"balance":balance}
+                
+                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance)
 
 
 
@@ -1709,7 +1717,7 @@ def tank_variances(tank_id):
 
                         return render_template("tank_variances.html",tank_dips=tank_dips,tank=tank)
                 
-@app.route("/reports/sales_summary",methods=["GET","POST"])
+@app.route("/sales_summary",methods=["GET","POST"])
 @check_schema
 @login_required
 def sales_summary():
@@ -2012,7 +2020,6 @@ def update_cost_prices():
                 cost_price = float(request.form.get("cost_price"))
                 price= Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
                 price.cost_price = cost_price
-                
                 product.cost_price = cost_price
                 db.session.commit()
                 return redirect('ss26')
@@ -2559,7 +2566,7 @@ def developer():
                 package = Package.query.get(package_id)
                 tenant_id = request.form.get("tenant")
                 tenant = Tenant.query.get(tenant_id)
-                tenant.active = date.today() + timedelta(days=package.number_of_days)
+                tenant.active = date.today() + timedelta(days=int(package.number_of_days))
                 db.session.commit()
                 return redirect(url_for('developer'))
 

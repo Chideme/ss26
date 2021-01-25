@@ -279,7 +279,7 @@ class Fuel_Delivery(db.Model):
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     tank_id = db.Column(db.Integer, db.ForeignKey("tanks.id"), nullable=False)
-    date= db.Column(db.Date, nullable=False)
+    date= db.Column(db.Date,nullable=False)
     qty = db.Column(db.Float,nullable=False)
     cost_price = db.Column(db.Float,nullable=False)
     product_id = db.Column(db.Integer,db.ForeignKey("products.id"),nullable=True)
@@ -303,10 +303,11 @@ class Account(db.Model):
     __tablename__="accounts"
     __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    code = db.Column(db.Integer,primary_key=True,nullable=False)
+    code = db.Column(db.Integer,nullable=False)
     account_name= db.Column(db.String,nullable=False)
     account_category =db.Column(db.String,nullable=False)
-   
+    entry = db.Column(db.String,nullable=False)
+    
 
     def __repr__(self):
 
