@@ -96,7 +96,8 @@ def activate(tenant_schema):
                         tenant_id = session['tenant']
                         tenant = Tenant.query.get(tenant_id)
                         accounts = [(700,"Accounts Receivables","Current Asset","DR"),(600,"Fuel Inventory","Current Asset","DR"),(601,"Lubes Inventory","Current Asset","DR"),(500,"Cash","Current Asset","DR"),(300,"Salaries","Expense","DR"),
-                        (800,"Accounts Payables","Current Liability","CR"),(201,"Fuel Shrinkages","GOGS","DR"),(200,"Fuel COGS","COGS","DR"),(202,"Lubes COGS","COGS","DR"),(100,"Fuel Sales","Income","CR"),(101,"Lube Sales","Income","CR")]
+                        (800,"Accounts Payables","Current Liability","CR"),(201,"Fuel Shrinkages","GOGS","DR"),(900,"Capital","Equity","CR"),
+                        (200,"Fuel COGS","COGS","DR"),(202,"Lubes COGS","COGS","DR"),(100,"Fuel Sales","Income","CR"),(101,"Lube Sales","Income","CR")]
                         for account in accounts:
                                 acc = Account(code=account[0],account_name=account[1],account_category=account[2],entry=account[3])
                                 db.session.add(acc)
@@ -404,7 +405,7 @@ def start_shift_update():
                                         for product in lubes_dict:
                                                 prev_qty = LubeQty.query.filter(and_(LubeQty.shift_id==prev.id,LubeQty.product_id==lubes_dict[product].id)).first() if prev else product.qty
                                                 prev_qty = prev_qty.qty if prev else lubes_dict[product].qty
-                                                lubes_dict[product] = LubeQty(shift_id=shift_id,date=date,qty=prev_qty,delivery_qty=0,product_id=lubes_dict[product].id)
+                                                lubes_dict[product] = LubeQty(shift_id=shift_id,date=date,qty=prev_qty,product_id=lubes_dict[product].id)
                                                 db.session.add(lubes_dict[product])
                                                 db.session.flush()
                                 for pump in pumps_dict:
@@ -433,7 +434,7 @@ def start_shift_update():
                                         product_id = product[1].id
                                         supplier = Supplier.query.get(1)
                                         if supplier:
-                                                fuel_delivery = Fuel_Delivery(date=date,shift_id=shift_id,tank_id=tank.id,qty=0,cost_price=product[1].cost_price,supplier=supplier.id,product_id=product_id,document_number='0000')
+                                                fuel_delivery = Delivery(date=date,shift_id=shift_id,tank_id=tank.id,qty=0,cost_price=product[1].cost_price,supplier=supplier.id,product_id=product_id,document_number='0000')
                                                 db.session.add(fuel_delivery)
                                                 db.session.flush()
                                         else:
@@ -600,7 +601,7 @@ def fuel_delivery():
                 delivery =request.form.get("litres_delivered")
                 supplier = request.form.get("supplier")
                 cost_price = request.form.get("cost_price")
-                delivery = Fuel_Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier,cost_price=cost_price)
+                delivery = Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier,cost_price=cost_price)
                 db.session.add(delivery)
                 db.session.commit()
                 return redirect(url_for('readings_entry'))
@@ -956,7 +957,7 @@ def edit_tank():
                 return redirect(url_for('tanks'))
 
 
-@app.route("/inventory/tanks/",methods=["GET","POST"])
+@app.route("/tanks",methods=["GET","POST"])
 @check_schema
 @login_required
 def tanks():
@@ -967,7 +968,7 @@ def tanks():
                 products = Product.query.all()
                 return render_template("tanks.html",tanks=tanks,products=products,tank_product=tank_product)
 
-@app.route("/inventory/fuel_products/",methods=["GET","POST"])
+@app.route("/fuel_products",methods=["GET","POST"])
 @admin_required
 @check_schema
 @login_required
@@ -975,6 +976,7 @@ def products():
         """Product List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 products = Product.query.all()
+                accounts = Account.query.filter(Account.code.between(600,699)).all()
                 tank_product = db.session.query(Tank,Product).filter(Product.id == Tank.product_id).all()
                 qty = {}
                 for i in tank_product:
@@ -982,7 +984,7 @@ def products():
                                 qty[i[1].name]=i[0].dip
                         else:
                                 qty[i[1].name]+=i[0].dip
-                return render_template("products.html",products=products,qty=qty)
+                return render_template("products.html",products=products,qty=qty,accounts=accounts)
 
 @app.route("/inventory/fuel_products/add_product",methods=["POST"])
 @admin_required
@@ -994,12 +996,17 @@ def add_product():
                 name=request.form.get("product_name").capitalize()
                 price=request.form.get("price")
                 cost = request.form.get("cost")
+                amt = price * cost
                 qty = request.form.get("qty")
                 product_type=request.form.get("product_type")
+                date = request.form.get("date")
+                equity = Account.query.filter_by(account_name="Capital").first()
                 account = request.form.get("account")
                 try:
                         product = Product(name=name,selling_price=price,qty=qty,product_type=product_type,cost_price=cost,avg_price=cost,account_id=account)
+                        journal = Journal(date=date,details="Opening Balance",dr=account,cr=equity.id,amount=amt,created_by=session['user_id'])
                         db.session.add(product)
+                        db.session.add(journal)
                         db.session.commit()
                 except:
                         db.session.rollback()
@@ -1059,13 +1066,17 @@ def add_lube_product():
                 selling_price=request.form.get("selling_price")
                 mls=request.form.get("mls")
                 open_qty = request.form.get("open_qty")
-
+                date = request.form.get("date")
+                amt = open_qty* cost_price
+                equity = Account.query.filter_by(account_name="Capital").first()
+                account =Account.query.filter_by(account_name="Lubes Inventory").first()
                 s = Shift.query.order_by(Shift.id.desc()).all()
         
                 product = LubeProduct(name=name,cost_price=cost_price,selling_price=selling_price,avg_price =cost_price,mls=mls,qty=open_qty)
-                
+                journal = Journal(date=date,details="Opening Balance",dr=account.id,cr=equity.id,amount=amt,created_by=session['user_id'])
                 try:
                         db.session.add(product)
+                        db.session.add(journal)
                         db.session.flush()
                         for shift in s:
                                 qty = LubeQty(shift_id = shift.id,date=shift.date,qty=open_qty,delivery_qty=0,product_id=product.id)
@@ -1166,7 +1177,7 @@ def customers():
                         invoices = Invoice.query.filter_by(customer_id=customer.id).all()
                         payments = CustomerPayments.query.filter_by(customer_id=customer.id).all()
                         net = sum([i.amount for i in payments]) - sum([i.price*i.qty for i in invoices])
-                        balances[customer]=net
+                        balances[customer]=net + customer.opening_balance
                 return render_template("customers.html",customers=customers,balances=balances,paypoints=paypoints)
 
 @app.route("/customers/customer_payment",methods=["POST"])
@@ -1232,11 +1243,16 @@ def add_customer():
         """Add Customer"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 name = request.form.get("name")
+                date = request.form.get("date")
                 contact_person=request.form.get("contact_person")
                 phone_number=request.form.get("phone")
+                opening_balance = request.form.get("balance")
+                details = "Opening Balance - {}".format(name)
                 debtor = Account.query.filter_by(account_name="Accounts Receivables").first()
                 account_id =debtor.id
-                customer = Customer(name=name,account_id=debtor.id,phone_number=phone_number,contact_person=contact_person)
+                equity = Account.query.filter_by(account_name="Capital").first()
+                journal = Journal(date=date,details=details,dr=account_id.id,cr=equity.id,amount=opening_balance,created_by=session['user_id'])
+                customer = Customer(name=name,account_id=debtor.id,phone_number=phone_number,contact_person=contact_person,opening_balance=opening_balance)
                 customer_exists = bool(Customer.query.filter_by(name=name).first())
                 if customer_exists:
                         flash("User already exists, Try using another  user name!!")
@@ -1245,6 +1261,7 @@ def add_customer():
                 
                         try:
                                 db.session.add(customer)
+                                db.session.add(journal)
                                 db.session.commit()
                         except:
                                 db.session.rollback()
@@ -1308,11 +1325,11 @@ def suppliers():
                 # calculate balances
                 balances = {}
                 for supplier in suppliers:
-                        deliveries = Fuel_Delivery.query.filter_by(supplier=supplier.id).all()
+                        deliveries = Delivery.query.filter_by(supplier=supplier.id).all()
                         payments = SupplierPayments.query.filter_by(supplier_id=supplier.id).all()
                         net = sum([i.amount for i in payments]) - sum([i.cost_price*i.qty for i in deliveries])
 
-                        balances[account[0].name]=net
+                        balances[account[0].name]=net + supplier.opening_balance
                 return render_template("suppliers.html",suppliers=suppliers,balances=balances,paypoints=paypoints)
 
 
@@ -1355,10 +1372,15 @@ def add_supplier():
         """Add Supplier"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 name = request.form.get("name")
+                date = request.form.get("date")
                 phone_number=request.form.get("phone")
                 contact_person=request.form.get("contact_person")
+                opening_balance = request.form.get("balance")
+                details = "Opening Balance - {}".format(name)
                 creditor = Account.query.filter_by(account_name="Accounts Payables").first()
-                supplier = Supplier(name=name,phone_number=phone_number,contact_person=contact_person,account_id=creditor.id)
+                equity = Account.query.filter_by(account_name="Capital").first()
+                journal = Journal(date=date,details=details,dr=equity.id,cr=creditor.id,amount=opening_balance,created_by=session['user_id'])
+                supplier = Supplier(name=name,phone_number=phone_number,contact_person=contact_person,account_id=creditor.id,opening_balance=opening_balance)
                 supplier_exists = bool(Supplier.query.filter_by(name=name).first())
                 if supplier_exists:
                         flash("Supplier already exists, Try using another  account name !!")
@@ -1366,6 +1388,7 @@ def add_supplier():
                 else:
                         try:
                                 db.session.add(supplier)
+                                db.session.add(journal)
                                 db.session.commit()
                         except:
                                 db.session.rollback()
@@ -1527,7 +1550,10 @@ def add_account():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 name=request.form.get("name")
                 code = request.form.get("code")
-                account = Account(code=code,account_name=name,account_category=request.form.get("category"))
+                account_category=request.form.get("category")
+                entry = {"Income":"CR","Expense":"DR","Current Asset":"DR","Current Liability":"CR","COGS":"DR",
+                "Non Current Asset":"DR","Equity":"CR","Non Current Liability":"CR"}
+                account = Account(code=code,account_name=name,account_category=account_category,entry=entry[account_category])
                 account_exists = bool(Account.query.filter_by(account_name=request.form.get("name")).first())
                 if account_exists:
                         flash("Account already exists, Try using another username!!")
@@ -1583,14 +1609,14 @@ def cash_account(account_id):
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
                         opening = opening_balance(start_date,account_id)
-                        journals = Journal.query.filter(or_(Journal.dr==account.id,Journal.cr==account.id)).all()
+                        journals = Journal.query.filter(or_(Journal.dr==account.id,Journal.cr==account.id),Journal.date.between(start_date,end_date)).all()
                         report = {}
                         for i in journals:
                                 amount = i.amount
                                 details = i.details
-                                report[i.date]= {"details":details,"amount":amount,"balance":balance}
+                                report[i.id]= {"date":i.date,"details":details,"amount":amount}
                 
-                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance)
+                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=opening)
 
 
 
@@ -1996,7 +2022,7 @@ def update_fuel_deliveries():
                 new_cost = ((product.avg_price*product.qty) + amount)/(qty +product.qty)
                 product.avg_price = Decimal(new_cost,2)
                 price.avg_price = Decimal(new_cost,2)
-                delivery = Fuel_Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
+                delivery = Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
                 journal = Journal(date=date,details=document,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                 db.session.add(journal)
                 db.session.add(delivery)
@@ -2124,16 +2150,21 @@ def sales_receipts():
                 shift_id = current_shift.id
                 account= request.form.get("account")
                 customer = Customer.query.filter_by(name=account).first()
-                cash_account = Account.query.filter_by(account_name=account).first()
-                amount= float(request.form.get("amount"))
-                receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
-                db.session.add(receipt)
-                cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
-                
-                db.session.commit()
+                try:
+                        cash_account = Account.query.filter_by(account_name=account).first()
+                        amount= float(request.form.get("amount"))
+                        receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
+                except:
+                        flash("Create Customer with the same name as cash account!")
+                        return redirect(url_for('ss26'))
+                else:
+                        db.session.add(receipt)
+                        cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
                         
-                        
-                return redirect(url_for('ss26'))
+                        db.session.commit()
+                                
+                                
+                        return redirect(url_for('ss26'))
 
 
 @app.route("/coupon_sales",methods=["POST"])
@@ -2283,16 +2314,17 @@ def shift_lube_sales():
                 prev_shift = shifts[1]
                 #######
                 shift_id = current_shift.id
+                suppliers = Supplier.query.all()
                 date = current_shift.date
                 daytime = current_shift.daytime
                 prev_shift_id = prev_shift.id
-                products = LubeProduct.query.all()
+                products = Product.query.all()
                 product_sales = lube_sales(shift_id,prev_shift_id)               
                 total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
                 total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
                 
                 return render_template("shift_lube_sales.html",product_sales=product_sales,shift_number=shift_id,
-                                        date=date,shift_daytime =daytime,total_sales_amt=total_sales_amt,total_sales_ltrs=total_sales_ltrs,products=products)
+                                        date=date,shift_daytime =daytime,suppliers=suppliers,total_sales_amt=total_sales_amt,total_sales_ltrs=total_sales_ltrs,products=products)
 
 
 @app.route("/update_lube_qty",methods=['POST'])
@@ -2304,7 +2336,7 @@ def update_lube_qty():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 #current_shift = Shift.query.order_by(Shift.id.desc()).first()
                 req =request.form.get("shift_id")# if the update is from  editing a previous shift
-                product = LubeProduct.query.filter_by(name=request.form.get("product")).first() 
+                product = Product.query.filter_by(name=request.form.get("product")).first() 
                 if req:
                         current_shift = Shift.query.get(req)
                         shift_id = current_shift.id
@@ -2323,7 +2355,7 @@ def update_lube_qty():
                                         
                         else:
                                 qty =request.form.get("qty")
-                                lube_qty = LubeQty(shift_id=shift_id,date=date,qty=qty,delivery_qty=0,product_id=product.id)
+                                lube_qty = LubeQty(shift_id=shift_id,date=date,qty=qty,product_id=product.id)
                                 try:
                                         db.session.add(lube_qty)
                                         db.session.commit()
@@ -2341,6 +2373,7 @@ def update_lube_qty():
                         current_shift = Shift.query.get(current_shift)
                         shift_id = current_shift.id
                         date = current_shift.date
+                        
                         try:
                                 lube_qty = LubeQty.query.filter(and_(LubeQty.shift_id==shift_id,LubeQty.product_id==product.id)).first()
                                 product.qty = request.form.get("qty")
@@ -2389,10 +2422,21 @@ def update_lubes_deliveries():
                         shift_daytime = current_shift.daytime
                         shift_id = current_shift.id
                         date = current_shift.date
+
                         try:
                                 product = LubeProduct.query.filter_by(name=request.form.get("product")).first() 
-                                product = LubeQty.query.filter(and_(LubeQty.shift_id==current_shift.id,LubeQty.product_id==product.id)).first()
-                                product.delivery_qty = request.form.get("qty")
+                                qty =request.form.get("qty")
+                                cost_price = product.cost_price
+                                amount = cost_price * qty
+                                new_cost = ((product.avg_price*product.qty) + amount)/(qty +product.qty)
+                                product.avg_price = Decimal(new_cost,2)
+                                supplier = Supplier.query.get("supplier")
+                                document = request.form.get("document")
+                                inventory = Account.query.filter_by(account_name="Lubes Inventory").first()
+                                delivery = Delivery(date=current_shift.date,shift_id=shift_id,qty=qty,product_id=product.id,document_number=document,supplier=supplier.id,cost_price=cost_price)
+                                journal = Journal(date=date,details="Lubes Delivery",amount=amount,dr=inventory.id,cr=supplier.account_id,created_by=session['user_id'])
+                                db.session.add(delivery)
+                                db.session.add(journal)
                                 db.session.commit()
                         except:
                                 db.session.rollback()
@@ -2419,9 +2463,7 @@ def update_lubes_cost_prices():
                         shift_underway = Shift_Underway.query.all()
                         current_shift = shift_underway[0].current_shift
                         current_shift = Shift.query.get(current_shift)
-                shift_daytime = current_shift.daytime
-                shift_id = current_shift.id
-                date = current_shift.date
+                
                 product = LubeProduct.query.filter_by(name=request.form.get("product")).first() 
                 try:
                         product.cost_price = request.form.get("cost_price")
@@ -2448,9 +2490,6 @@ def update_lubes_selling_prices():
                         shift_underway = Shift_Underway.query.all()
                         current_shift = shift_underway[0].current_shift
                         current_shift = Shift.query.get(current_shift)
-                shift_daytime = current_shift.daytime
-                shift_id = current_shift.id
-                date = current_shift.date
                 product = LubeProduct.query.filter_by(name=request.form.get("product")).first() 
                 try:
                         product.cost_price = request.form.get("selling_price")

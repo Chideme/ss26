@@ -146,14 +146,28 @@
                           </button>
                   </div>
                   <div class="modal-body">
-                      <form  action="{{ url_for('update_lubes_deliveries') }}" method="post" > 
+                      <form  action="{{ url_for('update_lubes_deliveries') }}" method="post" >
+                        <div class="form-group" >
+                            <label for="supplier">Supplier:</label>
+                            <select id="supplier" class="form-control" name="supplier">
+                                <option selected></option>
+                                {% for supplier in suppliers %}
+                                <option  value="{{ supplier.id }}">{{ supplier.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                           <div class="form-group  " >
                               <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
                           </div>
+                          </div>
+
                           <div class="form-group">
                               <input type = "number" step="any" value="{{ product_sales[product][6] }} " name="qty" autocomplete="off"autofocus class="form-control" required>
                           </div>
-   
+                          <div class="form-group  " >
+                            <input type = "text"   name="document" placeholder="Reference" autocomplete="off"  autofocus class="form-control" required>
+                        </div>
+                        </div>
                           <button class="btn btn-primary btn-block" type="submit">Enter Delivery</button>
                   
                        </form>

@@ -109,6 +109,7 @@ class Product(db.Model):
     cost_price =  db.Column(db.Float,nullable=True)
     avg_price =  db.Column(db.Float,nullable=True)
     selling_price = db.Column(db.Float,nullable=False)
+    unit = db.Column(db.Float,nullable=False)
     qty = db.Column(db.Float,nullable=False)
     account_id = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
     
@@ -118,6 +119,35 @@ class Product(db.Model):
 
     __table_args__={'schema':'tenant'}
 
+
+class LubeProduct(db.Model):
+    __tablename__="lube_products"
+    
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name = db.Column(db.String,nullable=False,unique=True)
+    cost_price = db.Column(db.Float,nullable=False)
+    selling_price = db.Column(db.Float,nullable=False)
+    avg_price = db.Column(db.Float,nullable=False)
+    mls = db.Column(db.Float,nullable=False)
+    qty = db.Column(db.Integer,nullable=False)
+    
+    def __repr__(self):
+        name =self.name
+        return "{}".format(name)
+
+    __table_args__={'schema':'tenant'}
+
+class LubeQty(db.Model):
+    __tablename__="lube_qty"
+    __table_args__={'schema':'tenant'}
+
+    id = db.Column(db.Integer, primary_key=True)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    qty = db.Column(db.Float,nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    
+    
 class Tank(db.Model):
 
     __tablename__="tanks"
@@ -176,34 +206,6 @@ class TankDip(db.Model):
 
 
 
-class LubeProduct(db.Model):
-    __tablename__="lube_products"
-    
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name = db.Column(db.String,nullable=False,unique=True)
-    cost_price = db.Column(db.Float,nullable=False)
-    selling_price = db.Column(db.Float,nullable=False)
-    avg_price = db.Column(db.Float,nullable=False)
-    mls = db.Column(db.Float,nullable=False)
-    qty = db.Column(db.Integer,nullable=False)
-    
-    def __repr__(self):
-        name =self.name
-        return "{}".format(name)
-
-    __table_args__={'schema':'tenant'}
-
-class LubeQty(db.Model):
-    __tablename__="lube_qty"
-
-    id = db.Column(db.Integer, primary_key=True)
-    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
-    date= db.Column(db.Date, nullable=False)
-    qty = db.Column(db.Float,nullable=False)
-    delivery_qty = db.Column(db.Float,nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey("lube_products.id"), nullable=False)
-    
-    __table_args__={'schema':'tenant'}
 
 
 class Customer(db.Model):
@@ -214,6 +216,7 @@ class Customer(db.Model):
     contact_person =db.Column(db.String,nullable=True)
     phone_number = db.Column(db.String,nullable=True)
     account_id= db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
+    opening_balance= db.Column(db.Float,nullable=False)
 
     def __repr__(self):
         return "{}".format(self.name)
@@ -243,6 +246,7 @@ class Supplier(db.Model):
     contact_person =db.Column(db.String,nullable=True)
     phone_number = db.Column(db.String,nullable=True)
     account_id=db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
+    opening_balance= db.Column(db.Float,nullable=False)
 
     def __repr__(self):
         return "{}".format(self.name)
@@ -273,12 +277,12 @@ class Shift_Underway(db.Model):
 
     __table_args__={'schema':'tenant'}
 
-class Fuel_Delivery(db.Model):
-    __tablename__="fuel_delivery"
+class Delivery(db.Model):
+    __tablename__="delivery"
     __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
-    tank_id = db.Column(db.Integer, db.ForeignKey("tanks.id"), nullable=False)
+    tank_id = db.Column(db.Integer, db.ForeignKey("tanks.id"), nullable=True)
     date= db.Column(db.Date,nullable=False)
     qty = db.Column(db.Float,nullable=False)
     cost_price = db.Column(db.Float,nullable=False)

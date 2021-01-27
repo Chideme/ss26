@@ -14,9 +14,9 @@
         <div class="form-group">
         <input id="EndDate" type = "date"  name="end_date" autocomplete="off"autofocus class="form-control" required>
         </div>
-        <label for="EndDate">Pump:</label>
+        <label for="Pump">Pump:</label>
         <div class="form-group">
-            <select class="form-control" name="pump">
+            <select id="Pump" class="form-control" name="pump">
                 <option selected value="{{ pumps.id }}" >{{ pumps.name }}</option>
                 {% for pump in pumps[1:] %}
                 <option  value="{{ pump.id }}">{{ pump.name }}</option>

@@ -430,7 +430,7 @@ def get_tank_variance(start_date,end_date,tank_id):
                 prev_shift_dip = prev_shift_dip.dip
                 current_shift_dip= TankDip.query.filter(and_(TankDip.shift_id == shift.id,TankDip.tank_id == tank_id)).first()
                 current_shift_dip = current_shift_dip.dip
-                delivery = Fuel_Delivery.query.filter(and_(Fuel_Delivery.shift_id==shift.id,Fuel_Delivery.tank_id==tank_id)).all()
+                delivery = Delivery.query.filter(and_(Delivery.shift_id==shift.id,Delivery.tank_id==tank_id)).all()
                 deliveries = sum([i.qty for i in delivery])
                 tank_sales = float(prev_shift_dip+deliveries-current_shift_dip)
                 shrinkage2sales = float(pump_sales-tank_sales)
@@ -730,7 +730,7 @@ def get_tank_dips(shift_id,prev_shift_id):
         if prev_shift_dip and current_shift_dip:
             prev_shift_dip = prev_shift_dip.dip
             current_shift_dip = current_shift_dip.dip
-            delivery = Fuel_Delivery.query.filter(and_(Fuel_Delivery.shift_id==shift_id,Fuel_Delivery.tank_id==tank.id)).all()
+            delivery = Delivery.query.filter(and_(Delivery.shift_id==shift_id,Delivery.tank_id==tank.id)).all()
             deliveries = sum([i.qty for i in delivery])
             tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
     return tank_dips
@@ -820,12 +820,11 @@ def get_random_string():
 
 def customer_statement(customer_id,start_date,end_date):
     """Returns Customer statement"""
-    total_invoices = Invoice.query.filter_by(customer_id=customer_id).all()
-    total_payments = CustomerPayments.query.filter_by(customer_id=customer_id).all()
+    customer = Customer.query.get(customer_id)
     invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date < start_date)).all()
     payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date < start_date)).all()     
     balance = sum([i[0].amount for i in invoices]) - sum([i.amount for i in payments])
-
+    balance = balance + customer.opening_balance
     report = {"balance":balance}
     for invoice in invoices:
         details = "Driver: {}, Vehicle Reg: {}, Product: {}, Qty: {}, Price: {}".format(invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price)
