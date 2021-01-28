@@ -23,7 +23,7 @@ def main():
     ],
      multiinsert=False)
 
-    op.bulk_insert(package_table,
+    op.bulk_insert(packages_table,
     [
         {'name':'free','number_of_days':7},
         {'name':'monthly','number_of_days':30},

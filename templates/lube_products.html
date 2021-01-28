@@ -63,12 +63,15 @@
                                     <div class="form-group " >
                                         <input type = "text"  name="unit" autocomplete="off" placeholder="Millitres per unit" autofocus class="form-control" required>
                                     </div>
-                                    {% if shift %}
+                                    
                                     <div class="form-group " >
                                         <input type = "text"  name="open_qty" autocomplete="off" placeholder="Open Quantity" autofocus class="form-control" required>
                                     </div>
-                                    {% endif %}
-                                        
+                                    
+                                    <div class="form-group" >
+                                        <label for="SD">Starting Date:</label>
+                                        <input id="SD" type = "date"   name="date" autocomplete="off" placeholder="Quantity" autofocus class="form-control" required>
+                                    </div>
                                     
                                     <button class="btn btn-primary btn-block" type="submit">Add Product</button>
                             

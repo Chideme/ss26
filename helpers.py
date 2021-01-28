@@ -279,7 +279,7 @@ def check_first_date(date):
 
 def product_sales_litres(shift_id,prev_shift_id):
     """ Calculates Sales per fuel product e.g Total Petrol Sales per shift"""
-    products = Product.query.all()
+    products = Product.query.filter_by(product_type="Fuels").all()
     prices = db.session.query(Product,Price).filter(and_(Product.id==Price.product_id,Price.shift_id==shift_id,Product.name=="Petrol")).all()
     prev_readings = db.session.query(Product,PumpReading).filter(and_(Product.id == PumpReading.product_id,PumpReading.shift_id == prev_shift_id)).all()
     curr_readings = db.session.query(Product,PumpReading).filter(and_(Product.id == PumpReading.product_id,PumpReading.shift_id == shift_id)).all()
@@ -301,21 +301,23 @@ def product_sales_litres(shift_id,prev_shift_id):
 
 def lube_sales(shift_id,prev_shift_id):
     """Calcuates lube sales per shift"""
-    products = Product.query.filter_by(product_category="Lubricants").all()
+    products = Product.query.filter_by(product_type="Lubricants").all()
     product_sales = {}
 
     for product in products:
             prev = LubeQty.query.filter(and_(LubeQty.shift_id == prev_shift_id,LubeQty.product_id== product.id)).first()
             curr = LubeQty.query.filter(and_(LubeQty.shift_id == shift_id,LubeQty.product_id== product.id)).first()
             if prev and curr: # check if previous shift exists
-                sales = ( prev.qty + curr.delivery_qty)-curr.qty
+                delivery = Delivery.query.filter(and_(Delivery.shift_id==shift_id,Delivery.product_id==product.id)).all()
+                deliveries = sum([i.qty for i in delivery])
+                sales = ( prev.qty + deliveries)-curr.qty
                 cost_price = product.cost_price
                 selling_price = product.selling_price
-                mls = product.mls
-                delivery = curr.delivery_qty
+                mls = product.unit
+                
                 #remove spaces fron names so as to render modals correctly
-                modal_name = product.name.replace(" ","")
-                product_sales[product.name]= (prev.qty,curr.qty,sales,cost_price,selling_price,mls,delivery,modal_name)
+                #modal_name = product.name.replace(" ","")
+                product_sales[product.name]= (prev.qty,curr.qty,sales,cost_price,selling_price,mls,deliveries)
             else:
                 pass
 
@@ -761,10 +763,10 @@ def get_driveway_data(shift_id,prev_shift_id):
     data['expenses'] = expenses
     data['total_cash_expenses'] = sum([i[0].amount for i in expenses])
     data['cash_up'] = CashUp.query.filter_by(shift_id=shift_id).first()
-    data['products'] = Product.query.order_by(Product.id.asc()).all()
+    data['products'] = Product.query.filter_by(product_type="Fuels").order_by(Product.id.asc()).all()
     data['coupons'] = Coupon.query.all()
     data['customers'] = Customer.query.all()
-    data['cash_customers'] = Customer.query.filter_by(account_type="Cash")
+    #data['cash_customers'] = Customer.query.filter_by(account_type="Cash").all()
     data['expense_accounts'] = Account.query.filter_by(account_category="Expense").all()
     data['cash_accounts'] = Account.query.filter_by(account_category="Cash").all()
     ######## query report data

@@ -381,9 +381,9 @@ def start_shift_update():
                         pumps_dict= create_dict(pumps)
                         tanks = Tank.query.all()
                         tanks_dict= create_dict(tanks)
-                        lubes = Product.query.filter_by(product_category="Lubricants").all()
+                        lubes = Product.query.filter_by(product_type="Lubricants").all()
                         lubes_dict = create_dict(lubes)
-                        fuels = Product.query.all()
+                        fuels = Product.query.filter_by(product_type="Fuels").all()
                         fuels_dict= create_dict(fuels)
 
                         if  pumps and  tanks:                      
@@ -403,7 +403,7 @@ def start_shift_update():
                         
                                 if lubes:
                                         for product in lubes_dict:
-                                                prev_qty = LubeQty.query.filter(and_(LubeQty.shift_id==prev.id,LubeQty.product_id==lubes_dict[product].id)).first() if prev else product.qty
+                                                prev_qty = LubeQty.query.filter(and_(LubeQty.shift_id==prev.id,LubeQty.product_id==lubes_dict[product].id)).first() if prev else lubes_dict[product].qty
                                                 prev_qty = prev_qty.qty if prev else lubes_dict[product].qty
                                                 lubes_dict[product] = LubeQty(shift_id=shift_id,date=date,qty=prev_qty,product_id=lubes_dict[product].id)
                                                 db.session.add(lubes_dict[product])
@@ -429,7 +429,7 @@ def start_shift_update():
                                                 tanks_dict[tank] = TankDip(date=date,dip=tanks_dict[tank].dip,tank_id=tanks_dict[tank].id,shift_id=shift_id)
                                         db.session.add(tanks_dict[tank])
                                         db.session.flush()
-                                """"
+                                """
                                 for tank in tanks:
                                         product = db.session.query(Tank,Product).filter(and_(Tank.product_id == Product.id,Tank.id == tank.id)).first()
                                         product_id = product[1].id
@@ -441,9 +441,9 @@ def start_shift_update():
                                         else:
                                                 flash("Set Up a supplier to run a shift update")
                                                 return redirect(url_for('suppliers'))
-                               """"
+                               """
                                 for i in fuels_dict:
-                                        fuels_dict[i] = Price(date=date,shift_id=shift_id,product_id=fuels_dict[i].id,cost_price=fuels_dict[i].cost_price,selling_price=fuels_dict[i].selling_price)
+                                        fuels_dict[i] = Price(date=date,shift_id=shift_id,product_id=fuels_dict[i].id,cost_price=fuels_dict[i].cost_price,selling_price=fuels_dict[i].selling_price,avg_price=fuels_dict[i].avg_price)
                                         db.session.add(fuels_dict[i])
                                         db.session.flush()
                                 
@@ -477,7 +477,7 @@ def end_shift_update():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 shift_underway = Shift_Underway.query.all()
                 shift_id = shift_underway[0].current_shift
-                lubes = Product.query.filter_by(product_category="Lubricants").all()
+                lubes = Product.query.filter_by(product_type="Lubricants").all()
                 check_cash_up = CashUp.query.filter_by(shift_id=shift_id).first()
                 check_lube_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
                 if lubes:
@@ -524,7 +524,7 @@ def readings_entry():
                 customers= Customer.query.all()
                 cash_customers = Customer.query.filter_by(account_type="Cash").all()
                 accounts =Account.query.all()
-                lubes = Product.query.filter_by(product_category="Lubricants").all()
+                lubes = Product.query.filter_by(product_type="Lubricants").all()
                 return render_template("readings_entry.html",lubes=lubes,tanks=tanks,pumps=pumps,products=products,customers=customers,accounts=accounts,cash_customers=cash_customers)
 
 @app.route("/driveway/edit/price_change",methods=["GET","POST"])
@@ -1002,7 +1002,7 @@ def add_product():
                 qty = request.form.get("qty")
                 account = request.form.get("account")
                 unit = 1
-                amt = price * cost
+                amt = float(qty) * float(cost)
                 equity = Account.query.filter_by(account_name="Capital").first()
                 
                 try:
@@ -1051,7 +1051,7 @@ def lube_products():
         """Lubes Product List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 shift = Shift.query.order_by(Shift.id.desc()).first()
-                products = Product.query.filter_by(product_category="Lubricants").all()
+                products = Product.query.filter_by(product_type="Lubricants").all()
                 return render_template("lube_products.html",products=products,shift=shift)
 
 @app.route("/inventory/lubes/add_lube_product/",methods=["POST"])
@@ -1061,29 +1061,29 @@ def lube_products():
 def add_lube_product():
         """Add Product"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                shift = Shift.query.order_by(Shift.id.desc()).first()
-                
+ 
                 #####
                 name=request.form.get("product_name")
-                cost_price=request.form.get("cost_price")
-                selling_price=request.form.get("selling_price")
-                mls=request.form.get("unit")
-                open_qty = request.form.get("open_qty")
+                cost_price=float(request.form.get("cost_price"))
+                selling_price=float(request.form.get("selling_price"))
+                mls =float(request.form.get("unit"))
+                open_qty = float(request.form.get("open_qty"))
                 date = request.form.get("date")
-                amt = open_qty* cost_price
+                product_type = "Lubricants"
+                amt = open_qty * cost_price
                 equity = Account.query.filter_by(account_name="Capital").first()
                 account =Account.query.filter_by(account_name="Lubes Inventory").first()
                 s = Shift.query.order_by(Shift.id.desc()).all()
-                product = Product(name=name,selling_price=price,qty=qty,product_type=product_type,cost_price=cost,avg_price=cost,unit=unit,account_id=account)
-                journal = Journal(date=date,details="Opening Balance",dr=account,cr=equity.id,amount=amt,created_by=session['user_id'])
+                product = Product(name=name,selling_price=selling_price,qty=open_qty,product_type=product_type,cost_price=cost_price,avg_price=cost_price,unit=mls,account_id=account.id)
+                journal = Journal(date=date,details="Opening Balance",dr=account.id,cr=equity.id,amount=amt,created_by=session['user_id'])
                
-               
+                
                 try:
                         db.session.add(product)
                         db.session.add(journal)
-                        db.session.flush()
+                        db.session.flush()  
                         for shift in s:
-                                qty = LubeQty(shift_id = shift.id,date=shift.date,qty=open_qty,delivery_qty=0,product_id=product.id)
+                                qty = LubeQty(shift_id = shift.id,date=shift.date,qty=open_qty,product_id=product.id)
                                 db.session.add(qty)
                                 db.session.flush()
                         db.session.commit()
@@ -1909,7 +1909,7 @@ def ss26():
                         sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
                         
                         return render_template("ss26.html",products=data['products'],expense_accounts=data['expense_accounts'],
-                        cash_accounts=data['cash_accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
+                        cash_accounts=data['cash_accounts'],customers=data['customers'],
                         coupons=data['coupons'],cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],
                         expenses=data['expenses'],sales_breakdown=sales_breakdown,shift=current_shift,date=date,
                         shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],suppliers=data['suppliers'],
@@ -2315,14 +2315,14 @@ def shift_lube_sales():
 
                 shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
                 current_shift = shifts[0]
-                prev_shift = shifts[1]
+                prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
                 #######
                 shift_id = current_shift.id
                 suppliers = Supplier.query.all()
                 date = current_shift.date
                 daytime = current_shift.daytime
                 prev_shift_id = prev_shift.id
-                products = Product.query.filter_by(product_category="Lubricants")
+                products = Product.query.filter_by(product_type="Lubricants")
                 product_sales = lube_sales(shift_id,prev_shift_id)               
                 total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
                 total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
