@@ -301,7 +301,7 @@ def product_sales_litres(shift_id,prev_shift_id):
 
 def lube_sales(shift_id,prev_shift_id):
     """Calcuates lube sales per shift"""
-    products = LubeProduct.query.all()
+    products = Product.query.filter_by(product_category="Lubricants").all()
     product_sales = {}
 
     for product in products:
@@ -731,7 +731,7 @@ def get_tank_dips(shift_id,prev_shift_id):
             prev_shift_dip = prev_shift_dip.dip
             current_shift_dip = current_shift_dip.dip
             delivery = Delivery.query.filter(and_(Delivery.shift_id==shift_id,Delivery.tank_id==tank.id)).all()
-            deliveries = sum([i.qty for i in delivery])
+            deliveries = sum([i.qty for i in delivery]) if delivery else 0
             tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
     return tank_dips
 

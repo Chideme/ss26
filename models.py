@@ -120,22 +120,7 @@ class Product(db.Model):
     __table_args__={'schema':'tenant'}
 
 
-class LubeProduct(db.Model):
-    __tablename__="lube_products"
-    
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name = db.Column(db.String,nullable=False,unique=True)
-    cost_price = db.Column(db.Float,nullable=False)
-    selling_price = db.Column(db.Float,nullable=False)
-    avg_price = db.Column(db.Float,nullable=False)
-    mls = db.Column(db.Float,nullable=False)
-    qty = db.Column(db.Integer,nullable=False)
-    
-    def __repr__(self):
-        name =self.name
-        return "{}".format(name)
 
-    __table_args__={'schema':'tenant'}
 
 class LubeQty(db.Model):
     __tablename__="lube_qty"
