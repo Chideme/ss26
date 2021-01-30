@@ -95,17 +95,20 @@ def activate(tenant_schema):
                         hash_password = generate_password_hash(password)
                         tenant_id = session['tenant']
                         tenant = Tenant.query.get(tenant_id)
-                        accounts = [(700,"Accounts Receivables","Current Asset","DR"),(600,"Fuel Inventory","Current Asset","DR"),(601,"Lubes Inventory","Current Asset","DR"),(500,"Cash","Current Asset","DR"),(300,"Salaries","Expense","DR"),
+                        cash = Account(code=500,account_name="Cash",account_category="Current Asset",entry="DR")
+                        accounts = [(700,"Accounts Receivables","Current Asset","DR"),(600,"Fuel Inventory","Current Asset","DR"),(601,"Lubes Inventory","Current Asset","DR"),(300,"Salaries","Expense","DR"),
                         (800,"Accounts Payables","Current Liability","CR"),(201,"Fuel Shrinkages","GOGS","DR"),(900,"Capital","Equity","CR"),
                         (200,"Fuel COGS","COGS","DR"),(202,"Lubes COGS","COGS","DR"),(100,"Fuel Sales","Income","CR"),(101,"Lube Sales","Income","CR")]
                         for account in accounts:
                                 acc = Account(code=account[0],account_name=account[1],account_category=account[2],entry=account[3])
                                 db.session.add(acc)
                                 db.session.flush()
+                        customer = Customer(name="Cash",account_id=cash.id,opening_balance=0)
                         user=User(username=super_user,password=hash_password,role_id=1,tenant_id=tenant_id,schema=session["schema"])
                         shift_underway = Shift_Underway(state=False,current_shift=0)
                         msg_body = "<h3>Please find your login details :</h3><body><p>Company Code: {}</p><p>User Name: Admin</p><p>Password: {}</p><small>Make sure to change your password once logged in</small></body>".format(tenant.id,password)
-                        db.session.add(shift_underway)  
+                        db.session.add(shift_underway)
+                        db.session.add(customer)  
                         db.session.add(user)
                         db.session.flush()
                         expiration= today + timedelta(days=7)
@@ -481,16 +484,16 @@ def end_shift_update():
                 check_cash_up = CashUp.query.filter_by(shift_id=shift_id).first()
                 check_lube_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
                 if lubes:
-                        if check_lube_cash_up and check_cash_up:
-                                try:
+                        if check_lube_cash_up :
+                                if check_cash_up:
+                               
                                        
                                         post_shift_journals(shift_id)
                                         session["shift_underway"]=False
                                         shift_underway[0].state = False
                                         db.session.commit()
                                         flash('Shift Ended')
-                                        return redirect(url_for('get_driveway'))
-                                except:
+                                else:
                                         flash('Something is wrong')
                                         return redirect(url_for('ss26'))
                         else:
@@ -1174,6 +1177,7 @@ def customers():
         """Managing Customers"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 customers= Customer.query.all()
+                cash_accountss = Account.query.filter(Account.code.between(500,800)).all()
                 paypoints = Account.query.filter(Account.code.between(500,599)).all()
                 # calculate balances
                 balances = {}
@@ -1251,11 +1255,17 @@ def add_customer():
                 contact_person=request.form.get("contact_person")
                 phone_number=request.form.get("phone")
                 opening_balance = request.form.get("balance")
+                account = request.form.get("account")
+                acc_type = request.form.get("type")
                 details = "Opening Balance - {}".format(name)
-                debtor = Account.query.filter_by(account_name="Accounts Receivables").first()
-                account_id =debtor.id
+                if acc_type =="Non-Cash":
+                        debtor = Account.query.filter_by(account_name="Accounts Receivables").first()
+                        account_id =debtor.id
+                else:
+                        debtor = Account.query.get(int(account))
+                        account_id =debtor.id
                 equity = Account.query.filter_by(account_name="Capital").first()
-                journal = Journal(date=date,details=details,dr=account_id.id,cr=equity.id,amount=opening_balance,created_by=session['user_id'])
+                journal = Journal(date=date,details=details,dr=account_id,cr=equity.id,amount=opening_balance,created_by=session['user_id'])
                 customer = Customer(name=name,account_id=debtor.id,phone_number=phone_number,contact_person=contact_person,opening_balance=opening_balance)
                 customer_exists = bool(Customer.query.filter_by(name=name).first())
                 if customer_exists:
@@ -1333,7 +1343,7 @@ def suppliers():
                         payments = SupplierPayments.query.filter_by(supplier_id=supplier.id).all()
                         net = sum([i.amount for i in payments]) - sum([i.cost_price*i.qty for i in deliveries])
 
-                        balances[account[0].name]=net + supplier.opening_balance
+                        balances[supplier.name]= net + supplier.opening_balance
                 return render_template("suppliers.html",suppliers=suppliers,balances=balances,paypoints=paypoints)
 
 
@@ -1512,17 +1522,18 @@ def journal_pending():
 def ledger():
         """View Transactions"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                accounts= Account.query.all()
                 if request.method =="GET":
-                        accounts= Account.query.all()
+                       
                         return render_template("ledger.html",accounts=accounts)
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
-                        account_id = request.form.get("account")
+                        account_id = int(request.form.get("account"))
                         balance = opening_balance(start_date,account_id)
-                        journals = Journal.query.filter(and_(Journal.Date.between(start_date,end_date),Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
+                        journals = Journal.query.filter(Journal.date.between(start_date,end_date)).filter(or_(Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
           
-                        return render_template("ledger.html",journals,account_id=account_id,opening_balance=balance)
+                        return render_template("ledger.html",journals=journals,account_id=account_id,opening_balance=balance,accounts=accounts)
 
 
 @app.route("/accounts/delete_account",methods=["POST"])
@@ -1891,7 +1902,7 @@ def ss26():
         """UPDATE DRIVEWAY DATA """
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):      
                 #current_shift = Shift.query.order_by(Shift.id.desc()).first()
-                shift_underway = Shift_Underway.query.all()
+                
                 #######
                 shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
                 if shifts:
@@ -1903,13 +1914,15 @@ def ss26():
                         date = current_shift.date
                         prev_shift_id = prev_shift.id
                         data = get_driveway_data(shift_id,prev_shift_id)
+                        receivable = Account.query.filter_by(account_name="Accounts Receivable").first()
+                        cash_customers = Customer.query.filter(Customer.account_id != receivable.id).all()
                         ###### Cash breakdown
                         customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
                         sales_breakdown = total_customer_sales(customer_sales) #calculate total sales per customer)
                         sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
                         
                         return render_template("ss26.html",products=data['products'],expense_accounts=data['expense_accounts'],
-                        cash_accounts=data['cash_accounts'],customers=data['customers'],
+                        cash_accounts=data['cash_accounts'],customers=data['customers'],cash_customers=cash_customers,
                         coupons=data['coupons'],cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],
                         expenses=data['expenses'],sales_breakdown=sales_breakdown,shift=current_shift,date=date,
                         shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],suppliers=data['suppliers'],
@@ -2153,21 +2166,22 @@ def sales_receipts():
                 date = current_shift.date
                 shift_id = current_shift.id
                 account= request.form.get("account")
-                customer = Customer.query.filter_by(name=account).first()
+                customer = Customer.query.filter_by(account_id=account).first()
                 try:
                         cash_account = Account.query.filter_by(account_name=account).first()
                         amount= float(request.form.get("amount"))
+                        payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id))
                         receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
                 except:
                         flash("Create Customer with the same name as cash account!")
                         return redirect(url_for('ss26'))
                 else:
                         db.session.add(receipt)
+                        db.session.add(payment)
                         cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
                         
                         db.session.commit()
-                                
-                                
+                                        
                         return redirect(url_for('ss26'))
 
 
@@ -2188,14 +2202,17 @@ def coupon_sales():
                 shift_id = current_shift.id
                 product = Product.query.get(request.form.get("product_id"))
                 coupon = Coupon.query.get(request.form.get("coupon_id"))
+                account = Account.query.get(coupon.account_id)
                 number_of_coupons = request.form.get("number_of_coupons")
                 total_litres = int(coupon.coupon_qty) * int(number_of_coupons)
-                customer = Customer.query.filter_by(name="Coupons").first()
+                customer = Customer.query.filter_by(account_id=account.id).first()
                 price = Price.query.filter(and_(Price.shift_id==shift_id,Price.product_id==product.id)).first()
+                amount  = price.selling_price * total_litres
                 coupon_sale = CouponSale(date=date,shift_id=shift_id,product_id=product.id,coupon_id=coupon.id,qty=number_of_coupons)
-                db.session.add(coupon_sale)
-                
                 invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer.id,qty=total_litres,price=price.selling_price)
+                payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id))
+                db.session.add(coupon_sale)
+                db.session.add(payment)
                 db.session.add(invoice)
                 db.session.commit()
                         
@@ -2217,7 +2234,8 @@ def cash_up():
                 current_shift = Shift.query.get(current_shift)
                 shift_id = current_shift.id
                 date = current_shift.date
-                account = Customer.query.filter_by(name="Cash").first()
+                customer = Customer.query.filter_by(name="Cash").first()
+                account = Account.query.get(customer.account_id)
                 expected_amount = float(request.form.get("expected_amount"))
                 cash_sales_amount = float(request.form.get("cash_sales_amount"))
                 actual_amount= float(request.form.get("actual_amount"))
@@ -2226,11 +2244,13 @@ def cash_up():
                 amount  = cash_sales_amount
                 try:
                         cash_up = CashUp(date=date,shift_id=shift_id,sales_amount=cash_sales_amount,expected_amount=expected_amount,actual_amount=actual_amount,variance=variance)
-                        receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
+                        receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=account.id,amount=amount)
+                        payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id))
+                        db.session.add(payment)
                         db.session.add(cash_up)
                         db.session.add(receipt)
                         if len(shifts) > 1:
-                                cash_sales(amount,account.id,shift_id,date)# add invoices to cash customer account
+                                cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
                                 db.session.commit()
                                 flash("Cash up done")
                                 return redirect(url_for('ss26'))
@@ -2238,9 +2258,9 @@ def cash_up():
                                 db.session.commit()
                                 flash("Cash up done")
                                 return redirect(url_for('ss26'))
-                except:
+                except Exception as e:
                         db.session.rollback()
-                        flash("Something is wrong")
+                        flash(str(e))
                         return redirect(url_for('ss26'))
                 
 
@@ -2256,7 +2276,6 @@ def pay_outs():
                 shift_underway = Shift_Underway.query.all()
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
-                shift_daytime = current_shift.daytime
                 shift_id = current_shift.id
                 date = current_shift.date
                 amount= request.form.get("amount")
@@ -2523,19 +2542,23 @@ def lubes_cash_up():
                 expected_amount = float(request.form.get("expected_amount"))
                 variance = cash_sales_amount-expected_amount
                 check_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
-                cash_up = LubesCashUp(date=date,shift_id=shift_id,sales_amount=expected_amount,expected_amount=expected_amount,actual_amount=cash_sales_amount,variance=variance)
-                
-                try:
-                        db.session.add(cash_up)
-                        db.session.commit()
-                except:
-                        db.session.rollback()
-                        flash("There was an error")
-                        return redirect(url_for('shift_lube_sales'))
-
-                else:
+                if not check_cash_up:
+                        cash_up = LubesCashUp(date=date,shift_id=shift_id,sales_amount=expected_amount,expected_amount=expected_amount,actual_amount=cash_sales_amount,variance=variance)
                         
-                        flash("Cash up for Lubricants done!!")
+                        try:
+                                db.session.add(cash_up)
+                                db.session.commit()
+                        except:
+                                db.session.rollback()
+                                flash("There was an error")
+                                return redirect(url_for('shift_lube_sales'))
+
+                        else:
+                                
+                                flash("Cash up for Lubricants done!!")
+                                return redirect(url_for('ss26'))
+                else:
+                        flash("Cash up for Lubricants already done!!")
                         return redirect(url_for('ss26'))
 
 

@@ -111,7 +111,16 @@
                                         <option  value="Non-Cash">Non-Cash</option>
                                         <option  value="Cash">Cash</option>
                                     </select>
-                                </div>
+                                    </div>
+                                    <div id="account" class="form-group">
+                                        <label for="SA">Select Account:</label>
+                                        <select id="SA" class="form-control" name="type" name="account">
+                                            <option selected></option>
+                                            {% for account in cash_accounts %}
+                                            <option  value="{{ account.id }}">{{ account.account_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        </div>
                                 <div class="form-group  ">
                                     <label for="OP">Opening Balance:</label>
                                     <input id="OP" type = "number" step="0.01" name="balance" autocomplete="off" placeholder="Opening Balance" autofocus class="form-control" required>

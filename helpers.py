@@ -840,56 +840,127 @@ def customer_statement(customer_id,start_date,end_date):
         
         
     return report
-
-
-def post_shift_journals(shift_id):
-    """ Post amount to control accounts """
-    shift_underway = Shift_Underway.query.all()
+def fuel_variance_amt(shift_id):
+    """ Calculate Variance Amount for journal posting """
     shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
     prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
-    invoices = Invoice.query.filter_by(shift_id)
-    shift = Shift.query.get(shift_id)
-    amount = sum([i.price*i.qty for i in invoices])
-    sales_acc = Account.query.filter_by(name="Sales")
-    debtor = Account.query.filter_by(name="Accounts Receivables").first()
-    variance_acc = Account.query.filter_by(name="Fuel Shrinkages").first()
-    inventory = Account.query.filter_by(name="Fuel Inventory").first()
-    cogs = Account.query.filter_by(name="Fuel COGS").first()
-    details = "Shift {} sales".format(shift_id)
-    sales_journal=Journal(date=date,details=details,amount=amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
     tanks = get_tank_dips(shift_id,prev_shift.id)
-    #tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
-
     sales = 0.00
     variance = 0.00
     for tank in tanks:
-        i = db.session.query(Product,Tank).filter(Product.id ==Tank.product_id,Tank.id==tank.id).first()
+        i = db.session.query(Product,Tank).filter(Product.id ==Tank.product_id,Tank.id==int(tanks[tank][4])).first()
         avg_price = i[0].avg_price
         sale = tanks[tank][1]-(tanks[tank][0]+tanks[tank][3])
         sales += sale*avg_price
         variance += (sale - tanks[tank][2])*avg_price
+
+    return sales,variance
+
+def post_fuel_variance_journals(shift_id):
+    """Post amount for fuel shrinkages to journals """
+    amount = fuel_variance_amt(shift_id)
+    shift = Shift.query.get(shift_id)
+    variance_acc = Account.query.filter_by(account_name="Fuel Shrinkages").first()
+    inventory = Account.query.filter_by(account_name="Fuel Inventory").first()
+    cogs = Account.query.filter_by(account_name="Fuel COGS").first()
     detail_variance = "Shift {} variance".format(shift_id)
     detail_cogs = "Shift {} cost of goods sold".format(shift_id)
-    variance_journal = Journal(date=date,details=detail_variance,amount=variance,dr=variance_acc.id,cr=inventory.id,created_by=session['user_id'])
-    cogs_journal =Journal(date=date,details=detail_cogs,amount=sales,dr=cogs.id,cr=inventory.id,created_by=session['user_id'])
-    shift_underway[0].state = False
-    db.session.add(sales_journal)
+    variance_journal = Journal(date=shift.date,details=detail_variance,amount=amount[1],dr=variance_acc.id,cr=inventory.id,created_by=session['user_id'])
+    cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount[0],dr=cogs.id,cr=inventory.id,created_by=session['user_id'])
     db.session.add(variance_journal)
     db.session.add(cogs_journal)
-    db.session.commit()
+    db.session.flush()
+    return True
+    
+def coupon_amount(shift_id):
+    """ Calculate amount for Coupon Receivables posting """
+    coupon_sales = db.session.query(Coupon,CouponSale,Product).filter(and_(Coupon.id==CouponSale.coupon_id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id)).all()
+    amount = sum([(i[0].coupon_qty* i[1].qty * i[2].selling_price )for i in coupon_sales ])
+    return amount
+
+def cash_sales_amount(shift_id):
+    """ Sales receipts total sales/shift for journal posting """
+    receipts = SaleReceipt.query.filter_by(shift_id=shift_id).all()
+    amount = sum([i.amount for i in receipts])
+    return amount
+
+
+def post_fuel_sales_journals(shift_id):
+    """ Post non cash amount to debtor control account """
+    shift = Shift.query.get(shift_id)
+    invoices = Invoice.query.filter_by(shift_id=shift_id)
+    total_receivable_amount = sum([i.price*i.qty for i in invoices])
+    coupon_sales_amt = coupon_amount(shift_id)
+    cash_sales_amt = cash_sales_amount(shift_id)
+    sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
+    debtor = Account.query.filter_by(account_name="Accounts Receivables").first()
+    details = "Shift {} sales".format(shift_id)
+    coupon_sales_amt = coupon_amount(shift_id)
+    non_cash_receivable_amt = total_receivable_amount - (coupon_sales_amt + cash_sales_amt)
+    sales_journal=Journal(date=shift.date,details=details,amount=non_cash_receivable_amt,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
+    db.session.add(sales_journal)
+    db.session.flush()
+    return True
+
+
+def post_coupon_sales_journal(shift_id):
+    """ Post coupon sales journal """
+    shift = Shift.query.get(shift_id)
+    amt = coupon_amount(shift_id)
+    coupons = CouponSale.query.filter_by(shift_id).all()
+    sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
+    details = "Shift {} coupon sales".format(shift_id)
+    for sale in coupons:
+        coupon_journal=Journal(date=shift.date,details=details,amount=amt,dr=sale.account_id,cr=sales_acc.id,created_by=session['user_id'])
+        db.session.add(coupon_journal)
+        db.session.flush()
+    return True
+
+def post_cash_sales_journal(shift_id):
+    """ Post cash sales (sales receipts) journal """
+    shift = Shift.query.get(shift_id)
+    sales_receipts = SaleReceipt.query.filter_by(shift_id=shift_id).all() # use sum ?
+    sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
+    details = "Shift {} sales receipts".format(shift_id)
+    for receipt in sales_receipts:
+        cash_journal = Journal(date=shift.date,details=details,amount=receipt.amount,dr=receipt.account_id,cr=sales_acc.id,created_by=session['user_id'])
+        db.session.add(cash_journal)
+        db.session.flush()
+    return True
+
+def post_lubes_sales_journal(shift_id):
+    """ Post sales journal for Lube sales """
+    shift = Shift.query.get(shift_id)
+    cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
+    sales_acc = Account.query.filter_by(account_name="Lubes Sales").first()
+    debtor = Account.query.filter_by(account_name="Cash").first()
+    details = "Shift {} lubricants sales".format(shift_id)
+    sales_journal=Journal(date=shift.date,details=details,amount=cash_up.amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
+    db.session.add(sales_journal)
+    db.session.flush()
+    return True
+
+def post_all_shift_journals(shift_id):
+    """ Post all Journals """
+    post_cash_sales_journal(shift_id)
+    post_coupon_sales_journal(shift_id)
+    post_fuel_sales_journals(shift_id)
+    post_fuel_variance_journals(shift_id)
+    post_lubes_sales_journal(shift_id)
+
     return True
 
 def opening_balance(date,account_id):
     """ calculate ledger opening balance for the period"""
     account = Account.query.get(account_id)
     if account.entry =="DR":
-        receipts = Journal.query.filter(and_(Journal.dr ==account_id,Journal.date < date)).all()
-        payouts = Journal.query.filter(and_(Journal.cr ==account_id,Journal.date < date)).all()
+        receipts = Journal.query.filter(and_(Journal.dr == account.id,Journal.date < date)).all()
+        payouts = Journal.query.filter(and_(Journal.cr == account.id,Journal.date < date)).all()
         
         balance = sum([i.amount for i in receipts]) - sum([i.amount for i in payouts])
     else:
-        payouts = Journal.query.filter(and_(Journal.dr ==account_id,Journal.date < date)).all()
-        receipts = Journal.query.filter(and_(Journal.cr ==account_id,Journal.date < date)).all()
+        payouts = Journal.query.filter(and_(Journal.dr == account_id,Journal.date < date)).all()
+        receipts = Journal.query.filter(and_(Journal.cr == account_id,Journal.date < date)).all()
         
         balance = sum([i.amount for i in receipts]) - sum([i.amount for i in payouts])
 
