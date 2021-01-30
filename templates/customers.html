@@ -106,15 +106,15 @@
                                         <input type ="tel"  name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group">
-                                    <select class="form-control" name="type">
+                                    <select class="form-control" name="type" onchange="showDiv('account', this)">
                                         <option selected>Choose..</option>
                                         <option  value="Non-Cash">Non-Cash</option>
                                         <option  value="Cash">Cash</option>
                                     </select>
                                     </div>
-                                    <div id="account" class="form-group">
+                                    <div id="account" style="display: none;" class="form-group">
                                         <label for="SA">Select Account:</label>
-                                        <select id="SA" class="form-control" name="type" name="account">
+                                        <select id="SA" class="form-control" name="type" name="account" >
                                             <option selected></option>
                                             {% for account in cash_accounts %}
                                             <option  value="{{ account.id }}">{{ account.account_name }}</option>
