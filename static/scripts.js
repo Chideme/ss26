@@ -77,8 +77,5 @@ $('#download').on('click',function(){
                 html2pdf(element, opt);
             })
 
-    // show div
-    function showDiv(divId, element){
-        document.getElementById(divId).style.display = element.value == 'Cash' ? 'block' : 'none';
-        }        
+           
     });

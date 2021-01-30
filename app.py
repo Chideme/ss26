@@ -96,6 +96,7 @@ def activate(tenant_schema):
                         tenant_id = session['tenant']
                         tenant = Tenant.query.get(tenant_id)
                         cash = Account(code=500,account_name="Cash",account_category="Current Asset",entry="DR")
+                        db.session.add(cash)
                         accounts = [(700,"Accounts Receivables","Current Asset","DR"),(600,"Fuel Inventory","Current Asset","DR"),(601,"Lubes Inventory","Current Asset","DR"),(300,"Salaries","Expense","DR"),
                         (800,"Accounts Payables","Current Liability","CR"),(201,"Fuel Shrinkages","GOGS","DR"),(900,"Capital","Equity","CR"),
                         (200,"Fuel COGS","COGS","DR"),(202,"Lubes COGS","COGS","DR"),(100,"Fuel Sales","Income","CR"),(101,"Lube Sales","Income","CR")]
