@@ -755,6 +755,8 @@ def get_driveway_data(shift_id,prev_shift_id):
     data['total_sales_amt']= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
     cash_sales = customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name == "Cash")).all()
     cash_breakdown = total_customer_sales(cash_sales)
+    receivable = Account.query.filter_by(account_name="Accounts Receivables").first()
+    data['cash_customers'] = Customer.query.filter(Customer.account_id != receivable.id).all()
     #sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
     sales_breakdown["Cash"] = sum([cash_breakdown[i] for i in cash_breakdown])
     data['sales_breakdown'] = sales_breakdown
@@ -907,7 +909,7 @@ def post_coupon_sales_journal(shift_id):
     """ Post coupon sales journal """
     shift = Shift.query.get(shift_id)
     amt = coupon_amount(shift_id)
-    coupons = CouponSale.query.filter_by(shift_id).all()
+    coupons = CouponSale.query.filter_by(shift_id=shift_id).all()
     sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
     details = "Shift {} coupon sales".format(shift_id)
     for sale in coupons:
@@ -932,10 +934,11 @@ def post_lubes_sales_journal(shift_id):
     """ Post sales journal for Lube sales """
     shift = Shift.query.get(shift_id)
     cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
-    sales_acc = Account.query.filter_by(account_name="Lubes Sales").first()
+    amount = cash_up.expected_amount
+    sales_acc = Account.query.filter_by(account_name="Lube Sales").first()
     debtor = Account.query.filter_by(account_name="Cash").first()
     details = "Shift {} lubricants sales".format(shift_id)
-    sales_journal=Journal(date=shift.date,details=details,amount=cash_up.amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
+    sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
     db.session.add(sales_journal)
     db.session.flush()
     return True

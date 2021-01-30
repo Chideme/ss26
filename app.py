@@ -489,11 +489,12 @@ def end_shift_update():
                                 if check_cash_up:
                                
                                        
-                                        post_shift_journals(shift_id)
+                                        post_all_shift_journals(shift_id)
                                         session["shift_underway"]=False
                                         shift_underway[0].state = False
                                         db.session.commit()
                                         flash('Shift Ended')
+                                        return redirect(url_for('get_driveway'))
                                 else:
                                         flash('Something is wrong')
                                         return redirect(url_for('ss26'))
@@ -503,7 +504,7 @@ def end_shift_update():
                 else:
                         if check_cash_up:
                                
-                                post_shift_journals(shift_id)
+                                post_all_shift_journals(shift_id)
                                 shift_underway[0].state = False
                                 db.session.commit()
                                 session["shift_underway"]=False
@@ -970,7 +971,7 @@ def tanks():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 tank_product = db.session.query(Tank,Product).filter(Product.id == Tank.product_id).all()
                 tanks = Tank.query.order_by(Tank.id.asc()).all()
-                products = Product.query.all()
+                products = Product.query.filter_by(product_type="Fuels").all()
                 return render_template("tanks.html",tanks=tanks,products=products,tank_product=tank_product)
 
 @app.route("/fuel_products",methods=["GET","POST"])
@@ -1187,7 +1188,7 @@ def customers():
                         payments = CustomerPayments.query.filter_by(customer_id=customer.id).all()
                         net = sum([i.amount for i in payments]) - sum([i.price*i.qty for i in invoices])
                         balances[customer]=net + customer.opening_balance
-                return render_template("customers.html",customers=customers,balances=balances,paypoints=paypoints)
+                return render_template("customers.html",customers=customers,balances=balances,paypoints=paypoints,cash_accounts=cash_accountss)
 
 @app.route("/customers/customer_payment",methods=["POST"])
 @admin_required
@@ -1915,7 +1916,7 @@ def ss26():
                         date = current_shift.date
                         prev_shift_id = prev_shift.id
                         data = get_driveway_data(shift_id,prev_shift_id)
-                        receivable = Account.query.filter_by(account_name="Accounts Receivable").first()
+                        receivable = Account.query.filter_by(account_name="Accounts Receivables").first()
                         cash_customers = Customer.query.filter(Customer.account_id != receivable.id).all()
                         ###### Cash breakdown
                         customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
