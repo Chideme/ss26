@@ -97,24 +97,27 @@
                             <div class="modal-body">
                                 <form  action="{{ url_for('add_customer') }}" method="post" > 
                                     <div class="form-group" >
-                                        <input type = "text"  name="name" autocomplete="off" placeholder="name" autofocus class="form-control" required>
+                                        <label for="CustomerName">Customer Name:</label>
+                                        <input id="CustomerName" type = "text"  name="name" autocomplete="off" placeholder="name" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group  ">
-                                        <input type = "text"  name="contact_person" autocomplete="off" placeholder="contact person" autofocus class="form-control" required>
+                                        <label for="ContactPerson">Contact Person:</label>
+                                        <input id="ContactPerson" type = "text"  name="contact_person" autocomplete="off" placeholder="contact person" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group  ">
-                                        <input type ="tel"  name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
+                                        <label for="PH">Phone Number:</label>
+                                        <input id="PH" type ="tel"  name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group">
-                                    <select class="form-control" name="type" onchange="showDiv('account', this)">
-                                        <option selected>Choose..</option>
-                                        <option  value="Non-Cash">Non-Cash</option>
+                                        <label for="TYP">Type (Cash or Non-Cash):</label>
+                                    <select id="TYP" class="form-control" name="type" onchange="showDiv('account', this)">
+                                        <option selected  value="Non-Cash">Non-Cash</option>
                                         <option  value="Cash">Cash</option>
                                     </select>
                                     </div>
                                     <div id="account" style="display: none;" class="form-group">
                                         <label for="SA">Select Account:</label>
-                                        <select id="SA" class="form-control" name="type" name="account" >
+                                        <select id="SA" class="form-control"  name="acct" >
                                             <option selected></option>
                                             {% for account in cash_accounts %}
                                             <option  value="{{ account.id }}">{{ account.account_name }}</option>
@@ -152,8 +155,9 @@
                                 <div class="modal-body">
                                     <form action="{{ url_for('delete_customer') }}" method="post" > 
                                         <div class="form-group">
-                                            <select class="form-control" name="customers">
-                                                <option selected>Choose..</option>
+                                            <label for="Choose">Choose:</label>
+                                            <select id="Choose" class="form-control" name="customers">
+                                                
                                                 {% for  customer in customers %}
                                                 <option  value="{{ customer.id }}">{{ customer.name }}</option>
                                                 {% endfor %}
@@ -179,32 +183,41 @@
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
-                                </div>
+                                 </div>
                                 <div class="modal-body">
                                     <form action="{{ url_for('customer_payment') }}" method="post" > 
                                         <div class="form-group">
                                             <div class="form-group">
+                                                <label for="DATE">Date:</label>
                                                 <input type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
                                             </div>
-                                            <select class="form-control" name="customers">
+                                            <div class="form-group">
+                                                <label for="C">Customer:</label>
+                                            <select id="C" class="form-control" name="customers">
                                                 <option selected></option>
                                                 {% for  customer in customers %}
                                                 <option  value="{{ customer.id }}">{{ customer.name }}</option>
                                                 {% endfor %}
                                             </select>
+                                            </div>
                                         </div>
-                                        <select class="form-control" name="paypoint">
+                                        <div class="form-group  ">
+                                            <label for="cash_account">Account:</label>
+                                            <select id="cash_account" class="form-control" name="paypoint">
+                                            
                                             <option selected></option>
                                             {% for  account in paypoints %}
-                                            <option  value="{{ account.id }}">{{ account.name }}</option>
+                                            <option  value="{{ account.id }}">{{ account.account_name }}</option>
                                             {% endfor %}
                                         </select>
-                                    </div>
+                                        </div>
                                         <div class="form-group  ">
-                                            <input type ="number" step="0.01" name="amount" autocomplete="off" placeholder="Amount ($)" autofocus class="form-control" required>
+                                            <label for="AMT">Amount:</label>
+                                            <input id="AMT" type ="number" step="0.01" name="amount" autocomplete="off" placeholder="Amount ($)" autofocus class="form-control" required>
                                         </div>
                                         <div class="form-group ">
-                                            <input type ="text"  name="ref" autocomplete="off" placeholder="Reference" autofocus class="form-control">
+                                            <label for="REF">Payment Reference:</label>
+                                            <input id="REF" type ="text"  name="ref" autocomplete="off" placeholder="Reference" autofocus class="form-control">
                                         </div>
                                 
                                         <button class="btn btn-primary btn-block btn-group" type="submit">Add Payment</button>
@@ -216,8 +229,8 @@
                                 </div>
                             </div>
                         </div>
-
                     </div><!--Customer Payment-->
+                    
    <script>
        function showDiv(divId, element){
         document.getElementById(divId).style.display = element.value == 'Cash' ? 'block' : 'none';

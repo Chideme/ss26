@@ -9,7 +9,7 @@ from helpers import *
 from models import *
 from random import randint
 from datetime import timedelta,datetime,date
-from decimal import Decimal
+from decimal import Decimal,getcontext
 
 
 DATABASE_URL=os.getenv("DATABASE_URL")
@@ -31,7 +31,7 @@ app.config.update(dict(
 ))
 mail = Mail(app)
 
-
+getcontext().prec = 2
 
 @app.route("/",methods=["GET"])
 def index():
@@ -1186,8 +1186,8 @@ def customers():
                 for customer in customers:
                         invoices = Invoice.query.filter_by(customer_id=customer.id).all()
                         payments = CustomerPayments.query.filter_by(customer_id=customer.id).all()
-                        net = sum([i.amount for i in payments]) - sum([i.price*i.qty for i in invoices])
-                        balances[customer]=net + customer.opening_balance
+                        net =  sum([i.price*i.qty for i in invoices])-sum([i.amount for i in payments]) 
+                        balances[customer]= net + customer.opening_balance
                 return render_template("customers.html",customers=customers,balances=balances,paypoints=paypoints,cash_accounts=cash_accountss)
 
 @app.route("/customers/customer_payment",methods=["POST"])
@@ -1229,7 +1229,7 @@ def customer(customer_id):
                 customer = Customer.query.filter_by(id=customer_id).first()
                 total_invoices = Invoice.query.filter_by(customer_id=customer_id).all()
                 total_payments = CustomerPayments.query.filter_by(customer_id=customer_id).all()
-                net = sum([i.amount for i in total_payments]) - sum([i.price*i.qty for i in total_invoices])
+                net = customer.opening_balance + sum([i.amount for i in total_payments]) - sum([i.price*i.qty for i in total_invoices])
                 
                 if request.method == "POST":
                         start_date = request.form.get("start_date")
@@ -1257,7 +1257,7 @@ def add_customer():
                 contact_person=request.form.get("contact_person")
                 phone_number=request.form.get("phone")
                 opening_balance = request.form.get("balance")
-                account = request.form.get("account")
+                account = request.form.get("acct")
                 acc_type = request.form.get("type")
                 details = "Opening Balance - {}".format(name)
                 if acc_type =="Non-Cash":
@@ -1453,7 +1453,28 @@ def delete_supplier():
                         flash('Supplier Successfully Removed!!')
                         return redirect(url_for('suppliers'))
 
+@app.route("/suppliers/<int:supplier_id>",methods=["GET","POST"])
+@check_schema
+@login_required
+def supplier(supplier_id):
+        """Report for single supplier"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                supplier = Supplier.query.filter_by(id=supplier_id).first()
+                total_deliveries = Delivery.query.filter_by(supplier_id=supplier_id).all()
+                total_payments = SupplierPayments.query.filter_by(supplier_id=supplier_id).all()
+                net =supplier.opening_balance + sum([i.amount for i in total_payments]) - sum([i.cost_price*i.qty for i in total_deliveries])
+                
+                if request.method == "POST":
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        report = customer_statement(customer_id,start_date,end_date)
 
+                        return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
+                else:
+                        end_date = date.today()
+                        start_date = end_date - timedelta(days=900)
+                        report = customer_statement(customer_id,start_date,end_date)
+                        return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
 
 
 @app.route("/accounts",methods=["GET","POST"])
@@ -1472,10 +1493,10 @@ def create_journal():
         """Initiate Journal Entry"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 date = request.form.get("date")
-                details = request.form.get("details")
+                details = request.form.get("ref")
                 amount = request.form.get("amount")
                 dr = request.form.get("debit")
-                dr = request.form.get("credit")
+                cr = request.form.get("credit")
                 journal = Journal_Pending(date=date,details=details,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                 db.session.add(journal)
                 db.session.commit()
@@ -1484,6 +1505,7 @@ def create_journal():
 
 @app.route("/post_journal",methods=["POST"])
 @check_schema
+@admin_required
 @login_required
 def post_journal():
         """Post Journal Entry"""
@@ -1516,7 +1538,9 @@ def journal_pending():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 journals= Journal_Pending.query.all()
                 accounts = Account.query.all()
-                return render_template("journal_pending.html",journals=journals,accounts=accounts)
+                names = {i.id:i.account_name for i in accounts}
+                
+                return render_template("journal_pending.html",journals=journals,accounts=accounts,names=names)
 
 @app.route("/ledger",methods=["GET","POST"])
 @check_schema
@@ -1954,11 +1978,10 @@ def update_pump_litre_readings():
                 pump_id = pump.id
                 litre_reading = request.form.get("litre_reading")
                 reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id== shift_id)).first()
-                sales = litre_reading - reading
+               
                 pump.litre_reading = litre_reading
                 reading.litre_reading = litre_reading
-                #product = Product.query.get(product[0].id)
-                #product.qty = product.qty-sales
+                
                 db.session.commit()
 
                 return redirect('ss26')
@@ -1975,9 +1998,9 @@ def update_pump_money_readings():
                 shift_underway = Shift_Underway.query.all()
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
-                shift_daytime = current_shift.daytime
+                
                 shift_id = current_shift.id
-                date = current_shift.date
+        
                 pump = Pump.query.filter_by(name=request.form.get("pump")).first()# get pumpid
                 pump_id = pump.id
                 reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id== shift_id)).first()
@@ -2029,20 +2052,20 @@ def update_fuel_deliveries():
                 shift_id = current_shift.id
                 tank= Tank.query.filter_by(name=request.form.get("tank")).first()
                 document = request.form.get("document")
-                qty = request.form.get("delivery")
+                qty = float(request.form.get("delivery"))
                 supplier_id = request.form.get("supplier")
                 supplier = Supplier.query.get(supplier_id)
                 product = Product.query.get(tank.product_id)
                 price= Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
                 cr = supplier.account_id
                 dr = product.account_id
-                cost_price = request.form.get("cost_price")
+                cost_price = float(request.form.get("cost_price"))
                 amount = cost_price * qty
                 new_cost = ((product.avg_price*product.qty) + amount)/(qty +product.qty)
-                product.avg_price = Decimal(new_cost,2)
-                price.avg_price = Decimal(new_cost,2)
+                product.avg_price = Decimal(new_cost)
+                price.avg_price = Decimal(new_cost)
                 delivery = Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
-                journal = Journal(date=date,details=document,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
+                journal = Journal(date=current_shift.date,details=document,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                 db.session.add(journal)
                 db.session.add(delivery)
                 db.session.commit()
@@ -2168,9 +2191,9 @@ def sales_receipts():
                 date = current_shift.date
                 shift_id = current_shift.id
                 account= request.form.get("account")
-                customer = Customer.query.filter_by(account_id=account).first()
+                customer = Customer.query.filter_by(id=account).first()
                 try:
-                        cash_account = Account.query.filter_by(account_name=account).first()
+                        cash_account = Account.query.filter_by(id=customer.account_id).first()
                         amount= float(request.form.get("amount"))
                         payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id))
                         receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
@@ -2454,7 +2477,7 @@ def update_lubes_deliveries():
                                 cost_price = product.cost_price
                                 amount = cost_price * qty
                                 new_cost = ((product.avg_price*product.qty) + amount)/(qty +product.qty)
-                                product.avg_price = Decimal(new_cost,2)
+                                product.avg_price = Decimal(new_cost)
                                 supplier = Supplier.query.get("supplier")
                                 document = request.form.get("document")
                                 inventory = Account.query.filter_by(account_name="Lubes Inventory").first()

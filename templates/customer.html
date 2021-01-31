@@ -36,13 +36,19 @@
 
         </thead>
         <tbody>
+            <tr>
+                <td>{{ start }}</td>
+                <td>Opening Balance</td>
+                <td></td>
+                <td></td>
+                <td>{{ report['balance'] | round(2) }}</td>
+            </tr>
             {% for i in report %}
             <tr>
-                <td>{{ report[i]["date"] }}</td>
+                <td>{{ report[i]["date"]  }}</td>
                 <td>{{ report[i]["details"] }}</td>
-                <td>{{ report[i]['dr']  }}</td>
-                <td>{{ report[i]['cr']  }}</td>
-                <td>{{ report[i]['balance']  }}</td>
+                <td>{{ "$%.2f" | format(report[i]['cr']) }}</td>
+                <td>{{ "$%.2f" | format(report[i]['cr']) }}</td>
                 <td></td>
             </tr>
             {% endfor %}

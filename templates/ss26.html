@@ -583,7 +583,7 @@
                         <select id="cash_account" class="form-control" name="account">
                             <option selected></option>
                             {% for account in cash_customers %}
-                            <option  value="{{ account.name }}">{{ account.name }}</option>
+                            <option  value="{{ account.id }}">{{ account.name }}</option>
                             {% endfor %}
                         </select>
                     </div>

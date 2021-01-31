@@ -57,11 +57,11 @@
                         <td>{{ j.date }}</td>
                         <td>{{ j.details }}</td>
                         {% if j.dr == account_id %}
-                        <td>{{ j.amount }}</td>
+                        <td>{{ j.amount| round(2) }}</td>
                         <td></td>
                         {% else %}
                         <td>0</td>
-                        <td>{{ j.amount }}</td>
+                        <td>{{ j.amount| round(2)  }}</td>
                         {% endif %}
                         <td>00</td>
                     </tr>

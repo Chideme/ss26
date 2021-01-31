@@ -30,8 +30,8 @@
                     <tr>
                         <td>{{ j.date }}</td>
                         <td>{{ j.details }}</td>
-                        <td>{{ j.dr }}</td>
-                        <td>{{ j.cr }}</td>
+                        <td>{{ names[j.dr] }}</td>
+                        <td>{{ names[j.cr] }}</td>
                         <td>{{ j.amount }}</td>
                         <td>
                             <button type="button" class="btn btn-light" data-toggle="modal" data-target="#ActionJournal{{ j.id }}">
@@ -58,18 +58,20 @@
                                         <div class="modal-body">
                                             <form  action="{{ url_for('post_journal') }}" method="post" > 
                                                 <div class="form-group" >
-                                                    <input type = "number"  value="{{ j.id }}" name="id" autocomplete="off"  autofocus class="form-control" readonly>
+                                                    <input type = "hidden"  value="{{ j.id }}" name="id" autocomplete="off"  autofocus class="form-control" readonly>
                                                 </div>
                                                 
                                                 <button class="btn btn-primary btn-block" type="submit">Approve</button>
                                              </form>
+                                             <div class="p-2" >
                                              <form  action="{{ url_for('delete_journal') }}" method="post" > 
                                                 <div class="form-group" >
-                                                    <input type = "number"  value="{{ j.id }}" name="id"  autocomplete="off" autofocus class="form-control" readonly>
+                                                    <input type = "hidden"  value="{{ j.id }}" name="id"  autocomplete="off" autofocus class="form-control" readonly>
                                                 </div>
                                                 
                                                 <button class="btn btn-warning btn-block" type="submit">Delete</button>
                                              </form>
+                                             </div>
                                         </div>
                                         <div class="modal-footer">  
                                             <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
@@ -98,8 +100,8 @@
                                                 <input type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
                                         </div>
                                          <div class="form-group">
-                                             <label for="dr">Debit:</label>
-                                            <select id="dr" class="form-control" name="customers">
+                                             <label for="DR">Debit:</label>
+                                            <select id="DR" class="form-control" name="debit">
                                                 <option selected></option>
                                                 {% for  account in accounts %}
                                                 <option  value="{{ account.id }}">{{ account.account_name }}</option>
@@ -108,7 +110,7 @@
                                         </div>
                                         <div class="form-group">
                                              <label for="cr">Credit:</label>
-                                        <select id="dr" class="form-control" name="paypoint">
+                                        <select id="dr" class="form-control" name="credit">
                                             <option selected></option>
                                             {% for  account in accounts %}
                                             <option  value="{{ account.id }}">{{ account.account_name }}</option>

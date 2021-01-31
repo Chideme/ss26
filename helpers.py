@@ -824,10 +824,12 @@ def get_random_string():
 
 def customer_statement(customer_id,start_date,end_date):
     """Returns Customer statement"""
+    total_invoices = Invoice.query.filter(and_(Invoice.customer_id==customer_id,Invoice.date < start_date)).all()
+    total_payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date < start_date)).all()
     customer = Customer.query.get(customer_id)
-    invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date < start_date)).all()
-    payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date < start_date)).all()     
-    balance = sum([i[0].amount for i in invoices]) - sum([i.amount for i in payments])
+    invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).all()
+    payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).all()     
+    balance = sum([i.qty * i.price for i in total_invoices]) - sum([i.amount for i in total_payments])
     balance = balance + customer.opening_balance
     report = {"balance":balance}
     for invoice in invoices:
@@ -852,10 +854,10 @@ def fuel_variance_amt(shift_id):
     for tank in tanks:
         i = db.session.query(Product,Tank).filter(Product.id ==Tank.product_id,Tank.id==int(tanks[tank][4])).first()
         avg_price = i[0].avg_price
-        sale = tanks[tank][1]-(tanks[tank][0]+tanks[tank][3])
+        sale = (tanks[tank][0]+tanks[tank][3])-tanks[tank][1]
         sales += sale*avg_price
-        variance += (sale - tanks[tank][2])*avg_price
-
+        variance += (tanks[tank][2]-sale)*avg_price
+# tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
     return sales,variance
 
 def post_fuel_variance_journals(shift_id):
