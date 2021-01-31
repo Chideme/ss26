@@ -1343,7 +1343,7 @@ def suppliers():
                 for supplier in suppliers:
                         deliveries = Delivery.query.filter_by(supplier=supplier.id).all()
                         payments = SupplierPayments.query.filter_by(supplier_id=supplier.id).all()
-                        net = sum([i.amount for i in payments]) - sum([i.cost_price*i.qty for i in deliveries])
+                        net = sum([i.cost_price*i.qty for i in deliveries])-sum([i.amount for i in payments]) 
 
                         balances[supplier.name]= net + supplier.opening_balance
                 return render_template("suppliers.html",suppliers=suppliers,balances=balances,paypoints=paypoints)
@@ -1358,13 +1358,13 @@ def supplier_payment():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 date = request.form.get("date")
                 supplier_id = request.form.get("suppliers")
-                paypoint = Supplier.query.get(supplier_id)
+                supplier = Supplier.query.get(supplier_id)
                 amount = request.form.get("amount")
-                ref = request.form.get("ref") or ""
+                ref = request.form.get("ref") 
                 paypoint = Account.query.get(request.form.get("paypoint"))
                 try:
-                        payment = SupplierPayments(datetime=date,supplier_id=supplier_id,amount=amount,ref=ref)
-                        dr = supplier_id
+                        payment = SupplierPayments(date=date,supplier_id=supplier_id,amount=amount,ref=ref)
+                        dr = supplier.account_id
                         cr= paypoint.id
                         journal = Journal(date=date,details=ref,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                         db.session.add(journal)
@@ -1460,21 +1460,21 @@ def supplier(supplier_id):
         """Report for single supplier"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 supplier = Supplier.query.filter_by(id=supplier_id).first()
-                total_deliveries = Delivery.query.filter_by(supplier_id=supplier_id).all()
+                total_deliveries = Delivery.query.filter_by(supplier=supplier_id).all()
                 total_payments = SupplierPayments.query.filter_by(supplier_id=supplier_id).all()
-                net =supplier.opening_balance + sum([i.amount for i in total_payments]) - sum([i.cost_price*i.qty for i in total_deliveries])
+                net =supplier.opening_balance +  sum([i.cost_price*i.qty for i in total_deliveries])-sum([i.amount for i in total_payments])
                 
                 if request.method == "POST":
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
-                        report = customer_statement(customer_id,start_date,end_date)
+                        report = supplier_statement(supplier_id,start_date,end_date)
 
-                        return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
+                        return render_template("supplier.html",report=report,supplier=supplier,net=net,start=start_date,end=end_date)
                 else:
                         end_date = date.today()
                         start_date = end_date - timedelta(days=900)
-                        report = customer_statement(customer_id,start_date,end_date)
-                        return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
+                        report = supplier_statement(supplier_id,start_date,end_date)
+                        return render_template("supplier.html",report=report,supplier=supplier,net=net,start=start_date,end=end_date)
 
 
 @app.route("/accounts",methods=["GET","POST"])

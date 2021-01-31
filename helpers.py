@@ -9,6 +9,7 @@ from functools import wraps
 from models import *
 from collections import *
 from sqlalchemy import and_ , or_,MetaData,create_engine
+from decimal import Decimal,getcontext
 
 from datetime import timedelta
 
@@ -16,7 +17,7 @@ from datetime import timedelta
 ##########
 
 DATABASE_URL=os.getenv("DATABASE_URL")
-
+getcontext().prec = 2
 ####################
 
 
@@ -824,6 +825,7 @@ def get_random_string():
 
 def customer_statement(customer_id,start_date,end_date):
     """Returns Customer statement"""
+  
     total_invoices = Invoice.query.filter(and_(Invoice.customer_id==customer_id,Invoice.date < start_date)).all()
     total_payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date < start_date)).all()
     customer = Customer.query.get(customer_id)
@@ -835,14 +837,37 @@ def customer_statement(customer_id,start_date,end_date):
     for invoice in invoices:
         details = "Driver: {}, Vehicle Reg: {}, Product: {}, Qty: {}, Price: {}".format(invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price)
         amount = invoice[0].qty*invoice[0].price
+        amount = round(amount,2)
         report[invoice[0].id] = {"date":invoice[0].date,"details":details,"dr":amount,"cr":0}
     for payment in payments:
         amount = float(payment.amount)
+        amount = round(amount,2)
         details  = "Top up - {}".format(payment.ref)
        
         report[payment.id] = {"date":payment.date,"details":details,"dr":0,"cr":amount}
         
-        
+def supplier_statement(supplier_id,start_date,end_date):
+    """Returns Supplier statement"""
+  
+    total_deliveries = Delivery.query.filter(and_(Delivery.supplier==supplier_id,Delivery.date < start_date)).all()
+    total_payments = SupplierPayments.query.filter(and_(SupplierPayments.supplier_id==supplier_id,SupplierPayments.date < start_date)).all()
+    supplier = Supplier.query.get(supplier_id)
+    deliveries = db.session.query(Delivery,Product).filter(and_(Delivery.product_id == Product.id,Delivery.supplier==supplier_id,Delivery.date.between(start_date,end_date))).all()
+    payments = SupplierPayments.query.filter(and_(SupplierPayments.supplier_id==supplier_id,SupplierPayments.date.between(start_date,end_date))).all()     
+    balance = sum([i.qty * i.cost_price for i in total_deliveries]) - sum([i.amount for i in total_payments])
+    balance = balance + supplier.opening_balance
+    report = {"balance":balance}
+    for delivery in deliveries:
+        details = str(delivery[0].document_number)
+        amount = delivery[0].qty*delivery[0].cost_price
+        amount = round(amount,2)
+        report[delivery[0].id] = {"date":delivery[0].date,"details":details,"dr":0,"cr":amount}
+    for payment in payments:
+        amount = float(payment.amount)
+        amount = round(amount,2)
+        details  = "Top up - {}".format(payment.ref)
+       
+        report[payment.id] = {"date":payment.date,"details":details,"dr":amount,"cr":0}       
     return report
 def fuel_variance_amt(shift_id):
     """ Calculate Variance Amount for journal posting """
@@ -869,16 +894,18 @@ def post_fuel_variance_journals(shift_id):
     cogs = Account.query.filter_by(account_name="Fuel COGS").first()
     detail_variance = "Shift {} variance".format(shift_id)
     detail_cogs = "Shift {} cost of goods sold".format(shift_id)
-    variance_journal = Journal(date=shift.date,details=detail_variance,amount=amount[1],dr=variance_acc.id,cr=inventory.id,created_by=session['user_id'])
-    cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount[0],dr=cogs.id,cr=inventory.id,created_by=session['user_id'])
-    db.session.add(variance_journal)
-    db.session.add(cogs_journal)
-    db.session.flush()
+    if amount[1]:
+        variance_journal = Journal(date=shift.date,details=detail_variance,amount=amount[1],dr=variance_acc.id,cr=inventory.id,created_by=session['user_id'])
+        db.session.add(variance_journal)
+    if amount[0]:
+        cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount[0],dr=cogs.id,cr=inventory.id,created_by=session['user_id'])
+        db.session.add(cogs_journal)
+        db.session.flush()
     return True
     
-def coupon_amount(shift_id):
+def coupon_amount(shift_id,coupon_id):
     """ Calculate amount for Coupon Receivables posting """
-    coupon_sales = db.session.query(Coupon,CouponSale,Product).filter(and_(Coupon.id==CouponSale.coupon_id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id)).all()
+    coupon_sales = db.session.query(Coupon,CouponSale,Product).filter(and_(Coupon.id==CouponSale.coupon_id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id,CouponSale.coupon_id==coupon_id)).all()
     amount = sum([(i[0].coupon_qty* i[1].qty * i[2].selling_price )for i in coupon_sales ])
     return amount
 
@@ -901,23 +928,25 @@ def post_fuel_sales_journals(shift_id):
     details = "Shift {} sales".format(shift_id)
     coupon_sales_amt = coupon_amount(shift_id)
     non_cash_receivable_amt = total_receivable_amount - (coupon_sales_amt + cash_sales_amt)
-    sales_journal=Journal(date=shift.date,details=details,amount=non_cash_receivable_amt,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
-    db.session.add(sales_journal)
-    db.session.flush()
+    if non_cash_receivable_amt:
+        sales_journal=Journal(date=shift.date,details=details,amount=non_cash_receivable_amt,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
+        db.session.add(sales_journal)
+        db.session.flush()
     return True
 
 
 def post_coupon_sales_journal(shift_id):
     """ Post coupon sales journal """
     shift = Shift.query.get(shift_id)
-    amt = coupon_amount(shift_id)
-    coupons = CouponSale.query.filter_by(shift_id=shift_id).all()
+    coupons = db.session.query(Coupon,CouponSale,Product).filter(and_(Coupon.id==CouponSale.coupon_id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id,CouponSale.coupon_id==coupon_id)).all()
     sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
     details = "Shift {} coupon sales".format(shift_id)
     for sale in coupons:
-        coupon_journal=Journal(date=shift.date,details=details,amount=amt,dr=sale.account_id,cr=sales_acc.id,created_by=session['user_id'])
-        db.session.add(coupon_journal)
-        db.session.flush()
+        amt =sum([(i[0].coupon_qty* i[1].qty * i[2].selling_price )for i in coupon_sales ])
+        if amt:
+            coupon_journal=Journal(date=shift.date,details=details,amount=amt,dr=sale[3].account_id,cr=sales_acc.id,created_by=session['user_id'])
+            db.session.add(coupon_journal)
+            db.session.flush()
     return True
 
 def post_cash_sales_journal(shift_id):

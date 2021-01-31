@@ -29,14 +29,16 @@ app.config.update(dict(
 ))
 mail = Mail(app)
 def main():
-    tenant = "test1"
-    customer_id=36
+    tenant = "test"
+    
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
         
         end_date = date.today()
-        start_date = end_date - timedelta(days=16)
-        customer_id=36
-        r = customer_statement(customer_id,start_date,end_date)
+        start_date = end_date - timedelta(days=32)
+        supplier_id=1
+        #r = supplier_statement(supplier_id,start_date,end_date)
+        r = db.session.query(Delivery,Product).filter(and_(Delivery.product_id == Product.id,Delivery.supplier==supplier_id,Delivery.date.between(start_date,end_date))).all()
+        r = Delivery.query.all()
         print(r)
 
 with app.app_context():

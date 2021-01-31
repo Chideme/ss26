@@ -5,6 +5,9 @@
 {% block main %}
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#SupplierPayment">
+     Pay Vendor
+      </button>
     <div class="btn-toolbar mb-2 mb-md-0">
       <div class="btn-group mr-2">
         <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddSupplierFormModal">Add Supplier</button>
@@ -32,7 +35,7 @@
                         <td>{{ supplier.name }}</td>
                         <td>{{ supplier.contact_person }}</td>
                         <td>{{ supplier.phone_number }}</td>
-                        <td>{{ balances[supplier.name] }}</td>
+                        <td><a href="{{ url_for('supplier',supplier_id=supplier.id) }}">{{ balances[supplier.name] }}</a></td>
                         <td>
                             <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditSupplier{{ supplier.id }}">
                                 Edit Supplier
@@ -59,16 +62,20 @@
                                         <div class="modal-body">
                                             <form  action="{{ url_for('edit_supplier') }}" method="post" > 
                                                 <div class="form-group  " >
-                                                    <input type = "text"  value="{{ supplier.id }}" name="id" autocomplete="off" placeholder="Username" autofocus class="form-control" hidden>
+                                                    
+                                                    <input id="PH"  type="text"  value="{{ supplier.id }}" name="id" autocomplete="off"  autofocus class="form-control" hidden>
                                                 </div>
                                                 <div class="form-group  " >
-                                                    <input type = "text"  value="{{ supplier.name }}" name="name" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
+                                                    <label for="CN">Contact Number:</label>
+                                                    <input id="SN" type = "text"  value="{{ supplier.name }}" name="name" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
                                                 </div>
                                                 <div class="form-group  ">
-                                                    <input type = "text" value="{{ supplier.contact_person }}" name="contact_person" autocomplete="off" placeholder="contact_person" autofocus class="form-control" required>
+                                                    <label for="CP">Contact Person:</label>
+                                                    <input id="CP" type = "text" value="{{ supplier.contact_person }}" name="contact_person" autocomplete="off" placeholder="contact_person" autofocus class="form-control" required>
                                                 </div>
                                                 <div class="form-group  ">
-                                                    <input type ="text" value="{{ supplier.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
+                                                    <label for="PH">Phone Number:</label>
+                                                    <input id="PH" type ="text" value="{{ supplier.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
                                                 </div>
                                                 
                                                 <button class="btn btn-primary btn-block" type="submit">Update Supplier</button>
@@ -168,29 +175,36 @@
                                 </div>
                                 <div class="modal-body">
                                     <form action="{{ url_for('supplier_payment') }}" method="post" > 
-                                        <div class="form-group">
+                                        
                                             <div class="form-group">
-                                                <input type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
+                                                <label for="SD">Date:</label>
+                                                <input id="SD" type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
                                             </div>
-                                            <select class="form-control" name="suppliers">
+                                            <div class="form-group">
+                                                <label for="Supplier">Select Vendor:</label>
+                                            <select id="Supplier" class="form-control" name="suppliers">
                                                 <option selected></option>
                                                 {% for  supplier in suppliers %}
                                                 <option  value="{{ supplier.id }}">{{ supplier.name }}</option>
                                                 {% endfor %}
                                             </select>
-                                        </div>
-                                        <select class="form-control" name="paypoint">
+                                            </div>
+                                    <div class="form-group">
+                                        <label for="PP">Select Account:</label>
+                                        <select id="PP" class="form-control" name="paypoint">
                                             <option selected></option>
                                             {% for  account in paypoints %}
-                                            <option  value="{{ account.id }}">{{ account.name }}</option>
+                                            <option  value="{{ account.id }}">{{ account.account_name }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
-                                        <div class="form-group  ">
-                                            <input type ="number" step="0.01" name="amount" autocomplete="off" placeholder="Amount ($)" autofocus class="form-control" required>
+                                        <div class="form-group ">
+                                            <label for="AMT">Amount:</label>
+                                            <input id="AMT" type ="number" step="0.01" name="amount" autocomplete="off" placeholder="Amount ($)" autofocus class="form-control" required>
                                         </div>
                                         <div class="form-group ">
-                                            <input type ="text"  name="ref" autocomplete="off" placeholder="Reference" autofocus class="form-control">
+                                            <label for="REF">Reference:</label>
+                                            <input id="REF" type ="text"  name="ref" autocomplete="off" placeholder="Reference" autofocus class="form-control">
                                         </div>
                                 
                                         <button class="btn btn-primary btn-block btn-group" type="submit">Pay</button>
@@ -200,8 +214,8 @@
                                 <div class="modal-footer">  
                                     <button type="button" class="btn btn-primary btn-group" data-dismiss="modal">Close</button>
                                 </div>
-                            </div>
                         </div>
+                        
                     </div><!--Customer Payment-->
     
 

@@ -6,14 +6,14 @@
  <link rel="stylesheet" type="text/css" href="/static/DataTables/Buttons-1.6.3/css/buttons.dataTables.min.css"/>
  <link rel="stylesheet" type="text/css" href="/static/DataTables/SearchPanes-1.1.1/css/searchPanes.dataTables.min.css"/>
  
-<a href="{{ url_for('customers') }}"><span style="color: royalblue;">Back</span></a>
+<a href="{{ url_for('suppliers') }}"><span style="color: royalblue;">Back</span></a>
 
 
-<h4 class="h4 text-center p3">{{ customer }} Statement</h4>
+<h4 class="h4 text-center p3">{{ supplier }} Statement</h4>
 <div class="text-center">
 <h5>Balance: {{ net | round(2) }}</h5>
 
-    <form style="display: inline-block;" action="{{ url_for('customer',customer_id= customer.id) }}"  method="post">
+    <form style="display: inline-block;" action="{{ url_for('supplier',supplier_id= supplier.id) }}"  method="post">
     <div class="btn-toolbar mb-2 mb-md-0">
     <div class="btn-group mr-2">
         <input type = "date"  name="start_date" autocomplete="off"autofocus class="form-control" required>
