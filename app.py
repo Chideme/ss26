@@ -1649,15 +1649,11 @@ def cash_account(account_id):
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
-                        opening = opening_balance(start_date,account_id)
-                        journals = Journal.query.filter(or_(Journal.dr==account.id,Journal.cr==account.id),Journal.date.between(start_date,end_date)).all()
-                        report = {}
-                        for i in journals:
-                                amount = i.amount
-                                details = i.details
-                                report[i.id]= {"date":i.date,"details":details,"amount":amount}
+                        account_id = account_id
+                        opening_ = opening_balance(start_date,account_id)
+                        report = Journal.query.filter(Journal.date.between(start_date,end_date)).filter(or_(Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
                 
-                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=opening)
+                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance)
 
 
 

@@ -251,10 +251,11 @@ def total_customer_sales(results):
     d={}
     for customer in results:
         if customer[0] in d:
-            d[customer[0]]= d[customer[0]] + (customer[1].price*customer[1].qty)
+            amt = d[customer[0]] + (customer[1].price*customer[1].qty)
+            d[customer[0]]= round(amt,2)
         else:
-            
-            d[customer[0]]= customer[1].price*customer[1].qty
+            amt = customer[1].price*customer[1].qty
+            d[customer[0]]= round(amt,2)
     return d
 
 
@@ -823,29 +824,44 @@ def get_random_string():
     result_str = ''.join(random.choice(letters) for i in range(8))
     return result_str
 
+def sum_entries(report):
+    """sum entries per column"""
+    dr  = 0
+    cr  = 0
+    
+    for i in report:
+        if i != "balance":
+            dr += report[i]["dr"]
+            cr += report[i]["cr"]
+    return dr,cr
+
 def customer_statement(customer_id,start_date,end_date):
     """Returns Customer statement"""
   
     total_invoices = Invoice.query.filter(and_(Invoice.customer_id==customer_id,Invoice.date < start_date)).all()
     total_payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date < start_date)).all()
     customer = Customer.query.get(customer_id)
-    invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).all()
-    payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).all()     
+    invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).order_by(Invoice.date.asc()).all()
+    payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).order_by(CustomerPayments.date.asc()).all()     
     balance = sum([i.qty * i.price for i in total_invoices]) - sum([i.amount for i in total_payments])
     balance = balance + customer.opening_balance
-    report = {"balance":balance}
+    report = {"balance":round(balance,2)}
+    j = 1
     for invoice in invoices:
         details = "Driver: {}, Vehicle Reg: {}, Product: {}, Qty: {}, Price: {}".format(invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price)
         amount = invoice[0].qty*invoice[0].price
         amount = round(amount,2)
-        report[invoice[0].id] = {"date":invoice[0].date,"details":details,"dr":amount,"cr":0}
+        bal  =  balance + sum_entries(report)[0]-sum_entries(report)[1]+amount
+        report[j] = {"date":invoice[0].date,"details":details,"dr":amount,"cr":0,"bal":bal}
+        j +=1
     for payment in payments:
         amount = float(payment.amount)
         amount = round(amount,2)
         details  = "Top up - {}".format(payment.ref)
-       
-        report[payment.id] = {"date":payment.date,"details":details,"dr":0,"cr":amount}
-        
+        bal  =  balance + sum_entries(report)[0]-sum_entries(report)[1]+amount
+        report[j] = {"date":payment.date,"details":details,"dr":0,"cr":amount,"bal":bal}
+        j += 1
+    return report   
 def supplier_statement(supplier_id,start_date,end_date):
     """Returns Supplier statement"""
   
@@ -857,17 +873,19 @@ def supplier_statement(supplier_id,start_date,end_date):
     balance = sum([i.qty * i.cost_price for i in total_deliveries]) - sum([i.amount for i in total_payments])
     balance = balance + supplier.opening_balance
     report = {"balance":balance}
+    j = 1
     for delivery in deliveries:
         details = str(delivery[0].document_number)
         amount = delivery[0].qty*delivery[0].cost_price
         amount = round(amount,2)
-        report[delivery[0].id] = {"date":delivery[0].date,"details":details,"dr":0,"cr":amount}
+        report[j] = {"date":delivery[0].date,"details":details,"dr":0,"cr":amount}
+        j += 1
     for payment in payments:
         amount = float(payment.amount)
         amount = round(amount,2)
         details  = "Top up - {}".format(payment.ref)
-       
-        report[payment.id] = {"date":payment.date,"details":details,"dr":amount,"cr":0}       
+        report[j] = {"date":payment.date,"details":details,"dr":amount,"cr":0}
+        j += 1       
     return report
 def fuel_variance_amt(shift_id):
     """ Calculate Variance Amount for journal posting """

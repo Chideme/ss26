@@ -41,7 +41,7 @@
                 <td>Opening Balance</td>
                 <td></td>
                 <td></td>
-                <td>{{ report['balance'] | round(2) }}</td>
+                <td>{{ report['balance'] }}</td>
             </tr>
             {% for i in report %}
             <tr>
@@ -49,7 +49,7 @@
                 <td>{{ report[i]["details"] }}</td>
                 <td>{{ report[i]['dr']  }}</td>
                 <td>{{ report[i]['cr'] }}</td>
-                <td></td>
+                <td>{{ report[i]['bal'] }}</td>
             </tr>
             {% endfor %}
         </tbody>
