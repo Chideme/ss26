@@ -34,12 +34,14 @@ def main():
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
         
         end_date = date.today()
-        start_date = end_date - timedelta(days=32)
-        supplier_id=1
-        #r = supplier_statement(supplier_id,start_date,end_date)
-        r = db.session.query(Delivery,Product).filter(and_(Delivery.product_id == Product.id,Delivery.supplier==supplier_id,Delivery.date.between(start_date,end_date))).all()
-        r = Delivery.query.all()
-        print(r)
+        start_date = end_date - timedelta(days=100)
+        accounts = Account.query.filter(Account.code.between(100,399)).all()
+        report = {}
+        for account in accounts:
+            dr = Journal.query.filter(and_(account.id == Journal.dr,Journal.date.between(start_date,end_date))).all()
+            cr = db.session.query(Account,Journal).filter(and_(account.id == Journal.cr,Journal.date.between(start_date,end_date))).all()
+            print(account.account_name)
+            print(dr)
 
 with app.app_context():
         main()

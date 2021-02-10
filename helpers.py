@@ -887,6 +887,7 @@ def supplier_statement(supplier_id,start_date,end_date):
         report[j] = {"date":payment.date,"details":details,"dr":amount,"cr":0}
         j += 1       
     return report
+
 def fuel_variance_amt(shift_id):
     """ Calculate Variance Amount for journal posting """
     shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
@@ -913,17 +914,18 @@ def post_fuel_variance_journals(shift_id):
     detail_variance = "Shift {} variance".format(shift_id)
     detail_cogs = "Shift {} cost of goods sold".format(shift_id)
     if amount[1]:
-        variance_journal = Journal(date=shift.date,details=detail_variance,amount=amount[1],dr=variance_acc.id,cr=inventory.id,created_by=session['user_id'])
+        variance_journal = Journal(date=shift.date,details=detail_variance,amount=-amount[1],dr=variance_acc.id,cr=inventory.id,created_by=session['user_id'])
         db.session.add(variance_journal)
+        db.session.flush()
     if amount[0]:
         cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount[0],dr=cogs.id,cr=inventory.id,created_by=session['user_id'])
         db.session.add(cogs_journal)
         db.session.flush()
     return True
     
-def coupon_amount(shift_id,coupon_id):
+def coupon_amount(shift_id):
     """ Calculate amount for Coupon Receivables posting """
-    coupon_sales = db.session.query(Coupon,CouponSale,Product).filter(and_(Coupon.id==CouponSale.coupon_id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id,CouponSale.coupon_id==coupon_id)).all()
+    coupon_sales = db.session.query(CouponSale,Product).filter(and_(Coupon.id==CouponSale.coupon_id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id)).all()
     amount = sum([(i[0].coupon_qty* i[1].qty * i[2].selling_price )for i in coupon_sales ])
     return amount
 
@@ -954,21 +956,19 @@ def post_fuel_sales_journals(shift_id):
 
 
 def post_coupon_sales_journal(shift_id):
-    """ Post coupon sales journal """
+    """ Post coupon sales journal"""
     shift = Shift.query.get(shift_id)
-    coupons = db.session.query(Coupon,CouponSale,Product).filter(and_(Coupon.id==CouponSale.coupon_id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id,CouponSale.coupon_id==coupon_id)).all()
+    amt = coupon_amount(shift_id)
     sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
     details = "Shift {} coupon sales".format(shift_id)
-    for sale in coupons:
-        amt =sum([(i[0].coupon_qty* i[1].qty * i[2].selling_price )for i in coupon_sales ])
-        if amt:
-            coupon_journal=Journal(date=shift.date,details=details,amount=amt,dr=sale[3].account_id,cr=sales_acc.id,created_by=session['user_id'])
-            db.session.add(coupon_journal)
-            db.session.flush()
+    coupon = Coupon.query.all()[0]
+    coupon_journal=Journal(date=shift.date,details=details,amount=amt,dr=coupon.account_id,cr=sales_acc.id,created_by=session['user_id'])
+    db.session.add(coupon_journal)
+    db.session.flush()
     return True
 
 def post_cash_sales_journal(shift_id):
-    """ Post cash sales (sales receipts) journal """
+    """ Post cash sales (sales receipts) journal"""
     shift = Shift.query.get(shift_id)
     sales_receipts = SaleReceipt.query.filter_by(shift_id=shift_id).all() # use sum ?
     sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
@@ -1017,4 +1017,72 @@ def opening_balance(date,account_id):
         balance = sum([i.amount for i in receipts]) - sum([i.amount for i in payouts])
 
     return balance
-    
+
+
+def retained_earnings(start_date):
+    """ Calculate Retained Earnings Balance for Trial Balance"""
+
+    expenses_dr = db.session.query(Account,Journal).filter(and_(Account.code.between(200,399),Account.id == Journal.dr,Journal.date < start_date)).all()
+    expenses_cr = db.session.query(Account,Journal).filter(and_(Account.code.between(200,399),Account.id == Journal.cr,Journal.date < start_date)).all()
+    income_dr = db.session.query(Account,Journal).filter(and_(Account.code.between(100,199),Account.id == Journal.dr,Journal.date < start_date)).all()
+    income_cr = db.session.query(Account,Journal).filter(and_(Account.code.between(100,199),Account.id == Journal.cr,Journal.date < start_date)).all()
+    expenses = sum([i[1].amount for i in expenses_dr])-sum([i[1].amount for i in expenses_cr])
+    income = sum([i[1].amount for i in income_cr])-sum([i[1].amount for i in income_dr])
+    balance =income - expenses
+    return balance
+
+def p_n_l_balances(start_date,end_date):
+    """ Balance for P n L accounts """
+    accounts = Account.query.filter(Account.code.between(100,399)).all()
+    report = {}
+    for account in accounts:
+        dr = Journal.query.filter(and_(account.id == Journal.dr,Journal.date.between(start_date,end_date))).all()
+        cr = Journal.query.filter(and_(account.id == Journal.cr,Journal.date.between(start_date,end_date))).all()
+        if account.entry == "DR":
+            balance = sum([i.amount for i in dr]) - sum([i.amount for i in cr])
+        else:
+            balance = sum([i.amount for i in cr]) - sum([i.amount for i in dr])
+        report[account.id]= balance
+    return report
+
+def s_o_p_balances(end_date):
+    """ Balances for Asset and Liabilities"""
+    accounts = Account.query.filter(Account.code > 399 ).all()
+    report = {}
+    for account in accounts:
+        dr = Journal.query.filter(and_(account.id == Journal.dr,Journal.date <= end_date)).all()
+        cr = Journal.query.filter(and_(account.id == Journal.cr,Journal.date <= end_date)).all()
+        if account.entry == "DR":
+            balance = sum([i.amount for i in dr]) - sum([i.amount for i in cr])
+        else:
+            balance = sum([i.amount for i in cr]) - sum([i.amount for i in dr])
+        report[account.id]= balance
+    return report
+
+def trial_balance_report(start_date,end_date):
+    """Trial Balance"""
+    p_n_l = p_n_l_balances(start_date,end_date)
+    s_o_p = s_o_p_balances(end_date)
+    report = {}
+    for i in p_n_l:
+        report[i] = p_n_l[i]
+    for i in s_o_p:
+        report[i]= s_o_p[i]
+    return report
+
+def account_code(account_category):
+    """ Create code for new ledger account """
+    codes = {"Income":(100,199),
+            "Expense":(251,399),
+            "Bank":(400,450),
+            "Current Asset":(451,599),
+            "Current Liability":(600,699),
+            "COGS":(200,250),
+            "Equity":(900,999),
+            "Non Current Asset":(700,799),
+            "Non Current Liability":(800,899)}
+    last_account = Account.query.order_by(Account.code.desc()).filter(Account.code.between(codes[account_category][0],codes[account_category][1])).first()
+    code = last_account.code  + 1
+    if code > codes[account_category][1]:
+        return False
+    return code

@@ -95,11 +95,11 @@ def activate(tenant_schema):
                         hash_password = generate_password_hash(password)
                         tenant_id = session['tenant']
                         tenant = Tenant.query.get(tenant_id)
-                        cash = Account(code=500,account_name="Cash",account_category="Current Asset",entry="DR")
+                        cash = Account(code=400,account_name="Cash",account_category="Current Asset",entry="DR")
                         db.session.add(cash)
-                        accounts = [(700,"Accounts Receivables","Current Asset","DR"),(600,"Fuel Inventory","Current Asset","DR"),(601,"Lubes Inventory","Current Asset","DR"),(300,"Salaries","Expense","DR"),
-                        (800,"Accounts Payables","Current Liability","CR"),(201,"Fuel Shrinkages","GOGS","DR"),(900,"Capital","Equity","CR"),
-                        (200,"Fuel COGS","COGS","DR"),(202,"Lubes COGS","COGS","DR"),(100,"Fuel Sales","Income","CR"),(101,"Lube Sales","Income","CR")]
+                        accounts = [(401,"Accounts Receivables","Current Asset","DR"),(402,"Fuel Inventory","Current Asset","DR"),(403,"Lubes Inventory","Current Asset","DR"),(300,"Salaries","Expense","DR"),
+                        (600,"Accounts Payables","Current Liability","CR"),(200,"Fuel Shrinkages","GOGS","DR"),(900,"Capital","Equity","CR"),
+                        (201,"Fuel COGS","COGS","DR"),(203,"Lubes COGS","COGS","DR"),(100,"Fuel Sales","Income","CR"),(101,"Lube Sales","Income","CR")]
                         for account in accounts:
                                 acc = Account(code=account[0],account_name=account[1],account_category=account[2],entry=account[3])
                                 db.session.add(acc)
@@ -1485,6 +1485,60 @@ def accounts():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 accounts= Account.query.all()
                 return render_template("accounts.html",accounts=accounts)
+@app.route("/accounts/delete_account",methods=["POST"])
+@admin_required
+@check_schema
+@login_required
+def delete_account():
+        """Deletes Account"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                account = db.session.query(Account).get(int(request.form.get("accounts")))
+                try:
+                        db.session.delete(account)
+                        db.session.commit()
+                except:
+                        db.session.rollback()
+                        flash("There was an error")
+                        return redirect(url_for('accounts'))
+                else:
+                        
+                        flash('Account Successfully Removed!!')
+                        return redirect(url_for('accounts'))
+
+@app.route("/accounts/add_accounts",methods=["POST"])
+@admin_required
+@check_schema
+@login_required
+def add_account():
+        """Add Account"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                name=request.form.get("name")
+                account_category=request.form.get("category")
+                code = account_code(account_category)
+                if code == False:
+                        flash("You have reached the number of {} accounts".format(account_category))
+                        return redirect(url_for('accounts'))
+                entry = {"Income":"CR","Expense":"DR","Current Asset":"DR","Current Liability":"CR","COGS":"DR",
+                "Non Current Asset":"DR","Equity":"CR","Non Current Liability":"CR"}
+                account = Account(code=code,account_name=name,account_category=account_category,entry=entry[account_category])
+                account_exists = bool(Account.query.filter_by(account_name=request.form.get("name")).first())
+                if account_exists:
+                        flash("Account already exists, Try using another username!!")
+                        return redirect(url_for('accounts'))
+                else:
+                        try:
+                                db.session.add(account)
+                                db.session.commit()
+                        except:
+                                db.session.rollback()
+                                flash("There was an error")
+                                return redirect(url_for('accounts'))
+                        else:
+                                
+                                flash('Account Successfully Added')
+                                return redirect(url_for('accounts'))
+
+
 
 @app.route("/create_journal",methods=["POST"])
 @check_schema
@@ -1561,56 +1615,27 @@ def ledger():
           
                         return render_template("ledger.html",journals=journals,account_id=account_id,opening_balance=balance,accounts=accounts)
 
-
-@app.route("/accounts/delete_account",methods=["POST"])
-@admin_required
+@app.route("/trial_balance",methods=["GET","POST"])
 @check_schema
 @login_required
-def delete_account():
-        """Deletes Account"""
+def trial_balance():
+        """View Transactions"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                account = db.session.query(Account).get(int(request.form.get("accounts")))
-                try:
-                        db.session.delete(account)
-                        db.session.commit()
-                except:
-                        db.session.rollback()
-                        flash("There was an error")
-                        return redirect(url_for('accounts'))
-                else:
+                accounts= Account.query.all()
+                if request.method =="GET":
+                        end_date = date.today()
+                        start_date = end_date - timedelta(days=30)
+                        report = trial_balance_report(start_date,end_date)
+                        r_e = retained_earnings(start_date)
+                        return render_template("trial_balance.html",accounts=accounts,report=report,r_e=r_e,start_date=start_date,end_date=end_date)
                         
-                        flash('Account Successfully Removed!!')
-                        return redirect(url_for('accounts'))
-
-@app.route("/accounts/add_accounts",methods=["POST"])
-@admin_required
-@check_schema
-@login_required
-def add_account():
-        """Add Account"""
-        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                name=request.form.get("name")
-                code = request.form.get("code")
-                account_category=request.form.get("category")
-                entry = {"Income":"CR","Expense":"DR","Current Asset":"DR","Current Liability":"CR","COGS":"DR",
-                "Non Current Asset":"DR","Equity":"CR","Non Current Liability":"CR"}
-                account = Account(code=code,account_name=name,account_category=account_category,entry=entry[account_category])
-                account_exists = bool(Account.query.filter_by(account_name=request.form.get("name")).first())
-                if account_exists:
-                        flash("Account already exists, Try using another username!!")
-                        return redirect(url_for('accounts'))
                 else:
-                        try:
-                                db.session.add(account)
-                                db.session.commit()
-                        except:
-                                db.session.rollback()
-                                flash("There was an error")
-                                return redirect(url_for('accounts'))
-                        else:
-                                
-                                flash('Account Successfully Added')
-                                return redirect(url_for('accounts'))
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        report = trial_balance_report(start_date,end_date)
+                        r_e = retained_earnings(start_date)
+                        return render_template("trial_balance.html",accounts=accounts,report=report,r_e=r_e,start_date=start_date,end_date=end_date)
+
 
 
 
@@ -1620,7 +1645,7 @@ def add_account():
 def cash_accounts():
         """Cash Account Report"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                accounts= Account.query.filter(Account.code.between(500,599)).all()
+                accounts= Account.query.filter(Account.code.between(400,450)).all()
                 balances= {}
                 for account in accounts:
                         receipts = Journal.query.filter_by(dr=account.id).all()
@@ -1653,7 +1678,7 @@ def cash_account(account_id):
                         opening_ = opening_balance(start_date,account_id)
                         report = Journal.query.filter(Journal.date.between(start_date,end_date)).filter(or_(Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
                 
-                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance)
+                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance,opening=opening_)
 
 
 
@@ -1665,7 +1690,7 @@ def cash_account(account_id):
 def profit_statement():
         """ Gross Profit Statement as per shift"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                products = Product.query.all()
+                products = Product.query.filter_by(product_type="Fuels").all()
                 products = [product.name for product in products]
                 if request.method =="GET":
 
