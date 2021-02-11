@@ -50,7 +50,8 @@ $(document).ready(function(){
         
         // DataTables function
         $('#export').DataTable( {
-            dom: 'Bfrtip',
+            
+            paging: 'true'
             buttons: [
                 'copyHtml5',
                 'excelHtml5',
