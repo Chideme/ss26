@@ -50,13 +50,12 @@ $(document).ready(function(){
         
         // DataTables function
         $('#export').DataTable( {
-            
-            paging: 'true'
+            dom: '<Blf<t>ip>',
             buttons: [
-                'copyHtml5',
-                'excelHtml5',
-                'csvHtml5',
-                'pdfHtml5'
+                'copy',
+                'excel',
+                'csv',
+                'pdf'
             ]
         } );
 
