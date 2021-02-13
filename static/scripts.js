@@ -13,7 +13,7 @@ $(document).ready(function(){
         // click and the save to "activeTab". I leave the console for you to 
         // see. And when you refresh the browser, the last one where you 
         // clicked will be active.
-        console.log(activeTab);
+        
 
         if (activeTab) {
            $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
@@ -46,11 +46,12 @@ $(document).ready(function(){
         window.onbeforeunload = function(e) {
             localStorage.setItem('scrollpos',window.scrollY);
         };
-        console.log(scrollpos);
+        
         
         // DataTables function
         $('#export').DataTable( {
             dom: '<Blf<t>ip>',
+            "lengthMenu": [ 200, 150, 100, 75],
             buttons: [
                 'copy',
                 'excel',
@@ -59,8 +60,46 @@ $(document).ready(function(){
             ]
         } );
 
-   
+        // Statement DataTables function
+        
+         $('#statement').DataTable( {
+            dom: '<Bfl<t>ip>',
+            buttons: [
+                'copy',
+                'excel',
+                'csv',
+                'pdf'
+                ],
+                "columnDefs": [
+                    {
+                    // The `data` parameter refers to the data for the cell (defined by the
+                    // `data` option, which defaults to the column being worked with, in
+                    // this case `data: 0`.
+                    "targets": 4,
+                    data: 0,
+                    "render": function ( data, type, row, meta ) {
+                            if (meta.row == 0 ) {
+                                return row[4];
+                            } else {
+                                var i = (Number(meta.settings.aoData[meta.row-1].anCells[4].innerText));
+                                console.log(i)
+                                return Number(i + Number(row[2])-Number(row[3]));
+                            }
+                        
+                           
+                        },
+                    
+                    }  
+                
+            ]
+            } );
+            //Trial Balance Totals
+            
+            
+            
 
+             
+            
 // html2pdf
 $('#download').on('click',function(){
             var element = document.getElementById('printTable');

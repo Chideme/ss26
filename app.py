@@ -1229,7 +1229,7 @@ def customer(customer_id):
                 customer = Customer.query.filter_by(id=customer_id).first()
                 total_invoices = Invoice.query.filter_by(customer_id=customer_id).all()
                 total_payments = CustomerPayments.query.filter_by(customer_id=customer_id).all()
-                net = customer.opening_balance + sum([i.amount for i in total_payments]) - sum([i.price*i.qty for i in total_invoices])
+                net = customer.opening_balance - sum([i.amount for i in total_payments]) + sum([i.price*i.qty for i in total_invoices])
                 
                 if request.method == "POST":
                         start_date = request.form.get("start_date")
