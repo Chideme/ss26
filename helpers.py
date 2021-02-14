@@ -893,7 +893,7 @@ def supplier_statement(supplier_id,start_date,end_date):
     return report
 
 def fuel_variance_amt(shift_id):
-    """ Calculate Variance Amount for journal posting """
+    """ Calculate Variance and COGS Amounts for journal posting """
     shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
     prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
     tanks = get_tank_dips(shift_id,prev_shift.id)
@@ -929,7 +929,7 @@ def post_fuel_variance_journals(shift_id):
     
 def coupon_amount(shift_id):
     """ Calculate amount for Coupon Receivables posting """
-    coupon_sales = db.session.query(CouponSale,Product).filter(and_(Coupon.id==CouponSale.coupon_id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id)).all()
+    coupon_sales = db.session.query(CouponSale,Product).filter(and_(CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id)).all()
     amount = sum([(i[0].coupon_qty* i[1].qty * i[2].selling_price )for i in coupon_sales ])
     return amount
 
@@ -962,14 +962,16 @@ def post_fuel_sales_journals(shift_id):
 def post_coupon_sales_journal(shift_id):
     """ Post coupon sales journal"""
     shift = Shift.query.get(shift_id)
-    amt = coupon_amount(shift_id)
     sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
     details = "Shift {} coupon sales".format(shift_id)
     coupons = Coupon.query.all()
-    coupon = coupons[0] if coupons else 0
-    if amt:
-        if coupon:
-            coupon_journal=Journal(date=shift.date,details=details,amount=amt,dr=coupon.account_id,cr=sales_acc.id,created_by=session['user_id'])
+    for coupon in coupons:
+        customer = Customer.query.get(coupon.customer_id)
+        details = "Shift {} {} coupon sales".format(shift_id,coupon.name)
+        coupon_sales = db.session.query(CouponSale,Product).filter(and_(CouponSale.coupon_id==coupon.id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id)).all()
+        amount = sum([(i[0].coupon_qty* i[1].qty * i[2].selling_price )for i in coupon_sales ])
+        if amount:
+            coupon_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'])
             db.session.add(coupon_journal)
             db.session.flush()
     return True
@@ -1093,9 +1095,13 @@ def account_code(account_category):
             "Non Current Asset":(700,799),
             "Non Current Liability":(800,899)}
     last_account = Account.query.order_by(Account.code.desc()).filter(Account.code.between(codes[account_category][0],codes[account_category][1])).first()
-    code = last_account.code  + 1
-    if code > codes[account_category][1]:
-        return False
+    if last_account:
+        code = last_account.code  + 1 
+        if code > codes[account_category][1]:
+            return False
+        return code
+    else:
+        code = codes[account_category][0]
     return code
 
 def day_sales_breakdown(dates):

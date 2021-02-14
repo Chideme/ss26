@@ -95,7 +95,7 @@ def activate(tenant_schema):
                         hash_password = generate_password_hash(password)
                         tenant_id = session['tenant']
                         tenant = Tenant.query.get(tenant_id)
-                        cash = Account(code=400,account_name="Cash",account_category="Current Asset",entry="DR")
+                        cash = Account(code=400,account_name="Cash",account_category="Bank",entry="DR")
                         db.session.add(cash)
                         accounts = [(451,"Accounts Receivables","Current Asset","DR"),(452,"Fuel Inventory","Current Asset","DR"),(453,"Lubes Inventory","Current Asset","DR"),(300,"Salaries","Expense","DR"),
                         (600,"Accounts Payables","Current Liability","CR"),(200,"Fuel Shrinkages","GOGS","DR"),(900,"Capital","Equity","CR"),
@@ -1130,7 +1130,7 @@ def coupons():
         """Coupon List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 coupons = Coupon.query.all()
-                accounts = Account.query.filter(Account.code.between(451,599)).all()
+                accounts = Customer.query.all()
                 return render_template("coupons.html",coupons=coupons,accounts=accounts)
 
 @app.route("/inventory/coupons/add_coupon",methods=["POST"])
@@ -1142,8 +1142,8 @@ def add_coupon():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 name = request.form.get("coupon_name")
                 qty=request.form.get("coupon_qty")
-                account_id = request.form.get("account")
-                coupon = Coupon(name=name,coupon_qty=qty,account_id=account_id)
+                customer_id = request.form.get("customer")
+                coupon = Coupon(name=name,coupon_qty=qty,customer_id=customer_id)
                 try:
                         db.session.add(coupon)
                         db.session.commit()
@@ -1163,7 +1163,7 @@ def add_coupon():
 def delete_coupon():
         """Delete Coupon"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                coupon = Coupon.query.get(request.form.get("coupon_id"))
+                coupon = Coupon.query.get(request.form.get("Coupons"))
                 try:
                         db.session.delete(coupon)
                         db.session.commit()
@@ -2255,17 +2255,13 @@ def coupon_sales():
                 shift_id = current_shift.id
                 product = Product.query.get(request.form.get("product_id"))
                 coupon = Coupon.query.get(request.form.get("coupon_id"))
-                account = Account.query.get(coupon.account_id)
                 number_of_coupons = request.form.get("number_of_coupons")
                 total_litres = int(coupon.coupon_qty) * int(number_of_coupons)
-                customer = Customer.query.filter_by(account_id=account.id).first()
+                customer = Customer.query.get(coupon.customer_id)
                 price = Price.query.filter(and_(Price.shift_id==shift_id,Price.product_id==product.id)).first()
-                amount  = price.selling_price * total_litres
                 coupon_sale = CouponSale(date=date,shift_id=shift_id,product_id=product.id,coupon_id=coupon.id,qty=number_of_coupons)
                 invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer.id,qty=total_litres,price=price.selling_price)
-                payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id))
                 db.session.add(coupon_sale)
-                db.session.add(payment)
                 db.session.add(invoice)
                 db.session.commit()
                         
