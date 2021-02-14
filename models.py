@@ -366,6 +366,7 @@ class Coupon(db.Model):
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     name = db.Column(db.String,nullable=False)
     coupon_qty = db.Column(db.Float,nullable=False)
+    account_id = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
 
 class CouponSale(db.Model):
     __tablename__="coupon_sales"

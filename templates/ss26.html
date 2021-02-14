@@ -90,12 +90,12 @@
                 <tr class="driveway-table">
                   <td class="driveway-table">{{ product.name }}</td>
                   <td class="driveway-table">
-                    <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#CostPrice{{ product.id }}">
+                    <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#CostPrice{{ product.id }}">
                     {{ product_sales_ltr[product.name][1][1].cost_price }}
                   </button>
                 </td>
                   <td class="driveway-table">
-                    <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#SellingPrice{{ product.id }}">
+                    <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#SellingPrice{{ product.id }}">
                     {{ product_sales_ltr[product.name][1][1].selling_price }}
                     </button>
                   </td>
@@ -127,12 +127,12 @@
                 <td>{{ tank.name }}</td>
                 <td class="numbers driveway-table">{{ tank_dips[tank.name][0] }}</td>
                 <td class="numbers driveway-table">
-                  <button type="button" class="btn btn-light" data-toggle="modal" data-target="#FuelDelivery{{ tank.id }}">
+                  <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#FuelDelivery{{ tank.id }}">
                     {{ tank_dips[tank.name][3] }} 
                   </button>
                 </td>
                 <td class="numbers driveway-table">
-                  <button type="button" id="postion" class="btn btn-light" data-toggle="modal" data-target="#ClosingTankDip{{ tank.id }}">
+                  <button type="button" id="postion" class="btn btn-outline-secondary" data-toggle="modal" data-target="#ClosingTankDip{{ tank.id }}">
                   {{ tank_dips[tank.name][1] }}
                   </button>
                 </td>

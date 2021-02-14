@@ -33,6 +33,7 @@
                     <th> Total Sales (L)</th>
                     <th> Expected Sales Amount</th>
                     <th>Actual Sales Amount</th>
+                    <th>View</th>
                 </thead>
                 <tbody>
                     {% for date in reports %}
@@ -40,13 +41,57 @@
                         
                         <td>{{ date }}</td>
                         <td>{{ reports[date][0] }}</td>
-                        <td>{{ reports[date][1] }}</td> 
-                        <td><a href="{{ url_for('sales_breakdown',date=date ) }}">{{ reports[date][2] }}</a></td>   
+                        <td>{{ reports[date][1] }}</td>
+                        <td><a href="{{ url_for('sales_breakdown',date=date ) }}">{{ reports[date][2] }}</a></td>
+                        <td>
+                            <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#SalesBreakdown{{ date }}">
+                                View Breakdown
+                            </button>
+                        </td> 
+                           
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
 </div>
+
+<!--Sales Breakdown-->
+{% for date in reports %}
+<div class="modal fade" id="SalesBreakdown{{ date }}" tabindex="-1" role="dialog" aria-labelledby="SalesBreakdown{{ date }}FormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="SalesBreakdown{{ date }}FormLabel">Period: {{ date }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <table class="display" id="export">
+                    <thead>
+                        <th>Account</th>
+                        <th>Amount</th>
+                    </thead>
+                    <tbody>
+                        {% for customer in sales_breakdown[date] %}
+                        <tr>
+                            
+                            <td>{{ customer }}</td>
+                            <td>{{ sales_breakdown[date][customer] }}</td>
+                               
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  {% endfor %}
+  <!--Sales Breakdown-->
 {% endblock %} 
 
     

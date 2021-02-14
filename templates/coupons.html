@@ -55,7 +55,15 @@
                                     <div class="form-group " >
                                         <input type = "number"  name="coupon_qty" autocomplete="off" placeholder="Coupon Qty" autofocus class="form-control" required>
                                     </div>
-
+                                    <div id="account"  class="form-group">
+                                        <label for="SA">Select Account for coupons:</label>
+                                        <select id="SA" class="form-control"  name="account" >
+                                            <option selected></option>
+                                            {% for account in accounts %}
+                                            <option  value="{{ account.id }}">{{ account.account_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        </div>
                                     
                                     <button class="btn btn-primary btn-block" type="submit">Add Coupon</button>
                             

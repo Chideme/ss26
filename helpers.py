@@ -182,6 +182,7 @@ def end_shift_first(f):
 
 
 
+
 def sales_before_receipts(shift_id,product_id):
     products = Product.query.get(product_id)
     product_id = products.id
@@ -809,8 +810,11 @@ def create_schema_name(company_name):
     else:
         schema = n
     tenants = Tenant.query.all()
-    
-    return schema
+    if schema not in tenants:
+        return schema
+    else:
+        schema = schema + '_1'
+        return schema
 
 def create_dict(pumps):
     """Creates a dict out of a pump query list to generate variable names"""
@@ -961,10 +965,13 @@ def post_coupon_sales_journal(shift_id):
     amt = coupon_amount(shift_id)
     sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
     details = "Shift {} coupon sales".format(shift_id)
-    coupon = Coupon.query.all()[0]
-    coupon_journal=Journal(date=shift.date,details=details,amount=amt,dr=coupon.account_id,cr=sales_acc.id,created_by=session['user_id'])
-    db.session.add(coupon_journal)
-    db.session.flush()
+    coupons = Coupon.query.all()
+    coupon = coupons[0] if coupons else 0
+    if amt:
+        if coupon:
+            coupon_journal=Journal(date=shift.date,details=details,amount=amt,dr=coupon.account_id,cr=sales_acc.id,created_by=session['user_id'])
+            db.session.add(coupon_journal)
+            db.session.flush()
     return True
 
 def post_cash_sales_journal(shift_id):
@@ -974,22 +981,26 @@ def post_cash_sales_journal(shift_id):
     sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
     details = "Shift {} sales receipts".format(shift_id)
     for receipt in sales_receipts:
-        cash_journal = Journal(date=shift.date,details=details,amount=receipt.amount,dr=receipt.account_id,cr=sales_acc.id,created_by=session['user_id'])
-        db.session.add(cash_journal)
-        db.session.flush()
+        if receipt.amount !=0:
+            cash_journal = Journal(date=shift.date,details=details,amount=receipt.amount,dr=receipt.account_id,cr=sales_acc.id,created_by=session['user_id'])
+            db.session.add(cash_journal)
+            db.session.flush()
     return True
 
 def post_lubes_sales_journal(shift_id):
     """ Post sales journal for Lube sales """
-    shift = Shift.query.get(shift_id)
-    cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
-    amount = cash_up.expected_amount
-    sales_acc = Account.query.filter_by(account_name="Lube Sales").first()
-    debtor = Account.query.filter_by(account_name="Cash").first()
-    details = "Shift {} lubricants sales".format(shift_id)
-    sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
-    db.session.add(sales_journal)
-    db.session.flush()
+    lubes = Product.query.filter_by(product_type="Lubes").first()
+    if lubes:
+        shift = Shift.query.get(shift_id)
+        cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
+        amount = cash_up.expected_amount
+        sales_acc = Account.query.filter_by(account_name="Lube Sales").first()
+        debtor = Account.query.filter_by(account_name="Cash").first()
+        details = "Shift {} lubricants sales".format(shift_id)
+        if amount != 0:
+            sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
+            db.session.add(sales_journal)
+        db.session.flush()
     return True
 
 def post_all_shift_journals(shift_id):
@@ -1086,3 +1097,13 @@ def account_code(account_category):
     if code > codes[account_category][1]:
         return False
     return code
+
+def day_sales_breakdown(dates):
+    """ Sales breakdown for modal on sales_analysis.html"""
+    report = {}
+    for date in dates:
+        customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.date==date)).all()
+        sales_per_customer = total_customer_sales(customer_sales)
+        report[date] = sales_per_customer
+    
+    return report

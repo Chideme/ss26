@@ -63,7 +63,7 @@ $(document).ready(function(){
         // Statement DataTables function
         
          $('#statement').DataTable( {
-            dom: '<Bfl<t>ip>',
+            dom: '<f<t>liBp>',
             buttons: [
                 'copy',
                 'excel',
@@ -93,7 +93,7 @@ $(document).ready(function(){
                 
             ]
             } );
-            //Trial Balance Totals
+            
             
             
             

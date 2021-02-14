@@ -76,8 +76,8 @@ Suppliers
                                                     <input id="CP" type = "text" value="{{ supplier.contact_person }}" name="contact_person" autocomplete="off" placeholder="contact_person" autofocus class="form-control" required>
                                                 </div>
                                                 <div class="form-group  ">
-                                                    <label for="PH">Phone Number:</label>
-                                                    <input id="PH" type ="text" value="{{ supplier.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
+                                                    <label for="PH">Phone Number (e.g 0812776393449):</label>
+                                                    <input id="PH" type ="tel" pattern="[0-9]{10}" value="{{ supplier.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
                                                 </div>
                                                 
                                                 <button class="btn btn-primary btn-block" type="submit">Update Supplier</button>
@@ -113,7 +113,8 @@ Suppliers
                                         <input type = "text"  name="contact_person" autocomplete="off" placeholder="contact person" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group  ">
-                                        <input type ="text"  name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
+                                        <label for="ph">Phone Number (e.g 0812776393449):</label>
+                                        <input id="ph" type ="tel" pattern="[0-9]{10}"  name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group  ">
                                         <label for="OP">Opening Balance:</label>

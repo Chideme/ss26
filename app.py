@@ -31,7 +31,7 @@ app.config.update(dict(
 ))
 mail = Mail(app)
 
-getcontext().prec = 2
+
 
 @app.route("/",methods=["GET"])
 def index():
@@ -97,7 +97,7 @@ def activate(tenant_schema):
                         tenant = Tenant.query.get(tenant_id)
                         cash = Account(code=400,account_name="Cash",account_category="Current Asset",entry="DR")
                         db.session.add(cash)
-                        accounts = [(401,"Accounts Receivables","Current Asset","DR"),(402,"Fuel Inventory","Current Asset","DR"),(403,"Lubes Inventory","Current Asset","DR"),(300,"Salaries","Expense","DR"),
+                        accounts = [(451,"Accounts Receivables","Current Asset","DR"),(452,"Fuel Inventory","Current Asset","DR"),(453,"Lubes Inventory","Current Asset","DR"),(300,"Salaries","Expense","DR"),
                         (600,"Accounts Payables","Current Liability","CR"),(200,"Fuel Shrinkages","GOGS","DR"),(900,"Capital","Equity","CR"),
                         (201,"Fuel COGS","COGS","DR"),(203,"Lubes COGS","COGS","DR"),(100,"Fuel Sales","Income","CR"),(101,"Lube Sales","Income","CR")]
                         for account in accounts:
@@ -982,7 +982,7 @@ def products():
         """Product List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 products = Product.query.filter_by(product_type="Fuels").all()
-                accounts = Account.query.filter(Account.code.between(600,699)).all()
+                accounts = Account.query.filter(Account.code.between(451,599)).all()
                 tank_product = db.session.query(Tank,Product).filter(Product.id == Tank.product_id).all()
                 qty = {}
                 for i in tank_product:
@@ -1130,7 +1130,8 @@ def coupons():
         """Coupon List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 coupons = Coupon.query.all()
-                return render_template("coupons.html",coupons=coupons)
+                accounts = Account.query.filter(Account.code.between(451,599)).all()
+                return render_template("coupons.html",coupons=coupons,accounts=accounts)
 
 @app.route("/inventory/coupons/add_coupon",methods=["POST"])
 @admin_required
@@ -1139,7 +1140,10 @@ def coupons():
 def add_coupon():
         """Add Coupons"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                coupon = Coupon(name=request.form.get("coupon_name").capitalize(),coupon_qty=request.form.get("coupon_qty"))
+                name = request.form.get("coupon_name")
+                qty=request.form.get("coupon_qty")
+                account_id = request.form.get("account")
+                coupon = Coupon(name=name,coupon_qty=qty,account_id=account_id)
                 try:
                         db.session.add(coupon)
                         db.session.commit()
@@ -1179,8 +1183,8 @@ def customers():
         """Managing Customers"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 customers= Customer.query.all()
-                cash_accountss = Account.query.filter(Account.code.between(500,800)).all()
-                paypoints = Account.query.filter(Account.code.between(500,599)).all()
+                cash_accountss = Account.query.filter(Account.code.between(400,450)).all()
+                paypoints = Account.query.filter(Account.code.between(400,450)).all()
                 # calculate balances
                 balances = {}
                 for customer in customers:
@@ -1256,7 +1260,7 @@ def add_customer():
                 date = request.form.get("date")
                 contact_person=request.form.get("contact_person")
                 phone_number=request.form.get("phone")
-                opening_balance = request.form.get("balance")
+                opening_balance = float(request.form.get("balance"))
                 account = request.form.get("acct")
                 acc_type = request.form.get("type")
                 details = "Opening Balance - {}".format(name)
@@ -1267,7 +1271,9 @@ def add_customer():
                         debtor = Account.query.get(int(account))
                         account_id =debtor.id
                 equity = Account.query.filter_by(account_name="Capital").first()
-                journal = Journal(date=date,details=details,dr=account_id,cr=equity.id,amount=opening_balance,created_by=session['user_id'])
+                if opening_balance !=0:
+                        journal = Journal(date=date,details=details,dr=account_id,cr=equity.id,amount=opening_balance,created_by=session['user_id'])
+                        db.session.add(journal)
                 customer = Customer(name=name,account_id=debtor.id,phone_number=phone_number,contact_person=contact_person,opening_balance=opening_balance)
                 customer_exists = bool(Customer.query.filter_by(name=name).first())
                 if customer_exists:
@@ -1276,8 +1282,7 @@ def add_customer():
                 else:
                 
                         try:
-                                db.session.add(customer)
-                                db.session.add(journal)
+                                db.session.add(customer) 
                                 db.session.commit()
                         except:
                                 db.session.rollback()
@@ -1391,11 +1396,13 @@ def add_supplier():
                 date = request.form.get("date")
                 phone_number=request.form.get("phone")
                 contact_person=request.form.get("contact_person")
-                opening_balance = request.form.get("balance")
+                opening_balance = float(request.form.get("balance"))
                 details = "Opening Balance - {}".format(name)
                 creditor = Account.query.filter_by(account_name="Accounts Payables").first()
                 equity = Account.query.filter_by(account_name="Capital").first()
-                journal = Journal(date=date,details=details,dr=equity.id,cr=creditor.id,amount=opening_balance,created_by=session['user_id'])
+                if opening_balance != 0:
+                        journal = Journal(date=date,details=details,dr=equity.id,cr=creditor.id,amount=opening_balance,created_by=session['user_id'])
+                        db.session.add(journal)
                 supplier = Supplier(name=name,phone_number=phone_number,contact_person=contact_person,account_id=creditor.id,opening_balance=opening_balance)
                 supplier_exists = bool(Supplier.query.filter_by(name=name).first())
                 if supplier_exists:
@@ -1404,7 +1411,6 @@ def add_supplier():
                 else:
                         try:
                                 db.session.add(supplier)
-                                db.session.add(journal)
                                 db.session.commit()
                         except:
                                 db.session.rollback()
@@ -1519,7 +1525,7 @@ def add_account():
                         flash("You have reached the number of {} accounts".format(account_category))
                         return redirect(url_for('accounts'))
                 entry = {"Income":"CR","Expense":"DR","Current Asset":"DR","Current Liability":"CR","COGS":"DR",
-                "Non Current Asset":"DR","Equity":"CR","Non Current Liability":"CR"}
+                "Non Current Asset":"DR","Equity":"CR","Non Current Liability":"CR","Bank":"DR"}
                 account = Account(code=code,account_name=name,account_category=account_category,entry=entry[account_category])
                 account_exists = bool(Account.query.filter_by(account_name=request.form.get("name")).first())
                 if account_exists:
@@ -1724,14 +1730,15 @@ def sales_analysis():
                         end_date = date.today()
                         start_date = end_date - timedelta(days=900)
                         report = daily_sales_analysis(start_date,end_date)
-
-                        return render_template("sales_analysis.html",reports=report,start_date=start_date,end_date=end_date)
+                        sales_breakdown = day_sales_breakdown([i for i in report])
+                        return render_template("sales_analysis.html",sales_breakdown=sales_breakdown,reports=report,start_date=start_date,end_date=end_date)
                         
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
                         report = daily_sales_analysis(start_date,end_date)
-                        return render_template("sales_analysis.html",reports=report,start_date=start_date,end_date=end_date)
+                        sales_breakdown = day_sales_breakdown([i for i in report])
+                        return render_template("sales_analysis.html",sales_breakdown=sales_breakdown,reports=report,start_date=start_date,end_date=end_date)
                 
 
 @app.route("/sales_breakdown/<date>/",methods=["GET","POST"])
