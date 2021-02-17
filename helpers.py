@@ -772,8 +772,8 @@ def get_driveway_data(shift_id,prev_shift_id):
     data['coupons'] = Coupon.query.all()
     data['customers'] = Customer.query.all()
     #data['cash_customers'] = Customer.query.filter_by(account_type="Cash").all()
-    data['expense_accounts'] = Account.query.filter_by(account_category="Expense").all()
-    data['cash_accounts'] = Account.query.filter_by(account_category="Cash").all()
+    data['expense_accounts'] = Account.query.filter(Account.code.between(200,399)).all()
+    data['cash_accounts'] = Account.query.filter(Account.code.between(400,450)).all()
     ######## query report data
     data['accounts'] = Account.query.all()
     data['end_date'] = current_shift.date
@@ -929,8 +929,8 @@ def post_fuel_variance_journals(shift_id):
     
 def coupon_amount(shift_id):
     """ Calculate amount for Coupon Receivables posting """
-    coupon_sales = db.session.query(CouponSale,Product).filter(and_(CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id)).all()
-    amount = sum([(i[0].coupon_qty* i[1].qty * i[2].selling_price )for i in coupon_sales ])
+    coupon_sales = db.session.query(CouponSale,Coupon,Product).filter(and_(CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id,CouponSale.coupon_id==Coupon.id)).all()
+    amount = sum([(i[0].qty* i[1].coupon_qty * i[2].selling_price )for i in coupon_sales ])
     return amount
 
 def cash_sales_amount(shift_id):
@@ -963,13 +963,12 @@ def post_coupon_sales_journal(shift_id):
     """ Post coupon sales journal"""
     shift = Shift.query.get(shift_id)
     sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
-    details = "Shift {} coupon sales".format(shift_id)
     coupons = Coupon.query.all()
     for coupon in coupons:
         customer = Customer.query.get(coupon.customer_id)
-        details = "Shift {} {} coupon sales".format(shift_id,coupon.name)
-        coupon_sales = db.session.query(CouponSale,Product).filter(and_(CouponSale.coupon_id==coupon.id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id)).all()
-        amount = sum([(i[0].coupon_qty* i[1].qty * i[2].selling_price )for i in coupon_sales ])
+        details = "Shift {}   {} coupon sales".format(shift_id,coupon.name)
+        coupon_sales = db.session.query(CouponSale,Coupon,Product).filter(and_(CouponSale.coupon_id==coupon.id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id,CouponSale.coupon_id==Coupon.id)).all()
+        amount = sum([(i[0].qty* i[1].coupon_qty * i[2].selling_price ) for i in coupon_sales ])
         if amount:
             coupon_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'])
             db.session.add(coupon_journal)

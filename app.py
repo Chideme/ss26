@@ -1142,7 +1142,7 @@ def add_coupon():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 name = request.form.get("coupon_name")
                 qty=request.form.get("coupon_qty")
-                customer_id = request.form.get("customer")
+                customer_id = request.form.get("account")
                 coupon = Coupon(name=name,coupon_qty=qty,customer_id=customer_id)
                 try:
                         db.session.add(coupon)

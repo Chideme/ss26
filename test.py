@@ -29,19 +29,12 @@ app.config.update(dict(
 ))
 mail = Mail(app)
 def main():
-    tenant = "test"
+    tenant = "test2"
     
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
         
-        end_date = date.today()
-        start_date = end_date - timedelta(days=100)
-        accounts = Account.query.filter(Account.code.between(100,399)).all()
-        report = {}
-        for account in accounts:
-            dr = Journal.query.filter(and_(account.id == Journal.dr,Journal.date.between(start_date,end_date))).all()
-            cr = db.session.query(Account,Journal).filter(and_(account.id == Journal.cr,Journal.date.between(start_date,end_date))).all()
-            print(account.account_name)
-            print(dr)
+        c = Coupon.query.all()  
+        print(c.customer_id)
 
 with app.app_context():
         main()
