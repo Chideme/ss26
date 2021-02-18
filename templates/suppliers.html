@@ -7,11 +7,18 @@ Suppliers
 {% block main %}
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#SupplierPayment">
-     Pay Vendor
-      </button>
     <div class="btn-toolbar mb-2 mb-md-0">
-      <div class="btn-group mr-2">
+    <div class="btn-group mr-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#SupplierPayment">
+     Pay Supplier
+    </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#DebitNote">
+        Create Debit Note
+    </button>
+    </div>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+    <div class="btn-group mr-2">
         <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddSupplierFormModal">Add Supplier</button>
         <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteSupplierFormModal">Delete Supplier</button>
       </div>
@@ -64,20 +71,19 @@ Suppliers
                                         <div class="modal-body">
                                             <form  action="{{ url_for('edit_supplier') }}" method="post" > 
                                                 <div class="form-group  " >
-                                                    
-                                                    <input id="PH"  type="text"  value="{{ supplier.id }}" name="id" autocomplete="off"  autofocus class="form-control" hidden>
+                                                    <input type="text"  value="{{ supplier.id }}" name="id" autocomplete="off"  autofocus class="form-control" hidden>
                                                 </div>
                                                 <div class="form-group  " >
-                                                    <label for="CN">Contact Number:</label>
-                                                    <input id="SN" type = "text"  value="{{ supplier.name }}" name="name" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
+                                                    
+                                                    <input  type = "text"  value="{{ supplier.name }}" name="name" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
                                                 </div>
                                                 <div class="form-group  ">
-                                                    <label for="CP">Contact Person:</label>
-                                                    <input id="CP" type = "text" value="{{ supplier.contact_person }}" name="contact_person" autocomplete="off" placeholder="contact_person" autofocus class="form-control" required>
+                                    
+                                                    <input  type = "text" value="{{ supplier.contact_person }}" name="contact_person" autocomplete="off" placeholder="contact_person" autofocus class="form-control" required>
                                                 </div>
                                                 <div class="form-group  ">
-                                                    <label for="PH">Phone Number (e.g 0812776393449):</label>
-                                                    <input id="PH" type ="tel" pattern="[0-9]{10}" value="{{ supplier.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
+                                                    
+                                                    <input type ="tel" pattern="[0-9]{10}" value="{{ supplier.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
                                                 </div>
                                                 
                                                 <button class="btn btn-primary btn-block" type="submit">Update Supplier</button>
@@ -121,8 +127,8 @@ Suppliers
                                         <input id="OP" type = "number" step="0.01" name="balance" autocomplete="off" placeholder="Opening Balance" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group " >
-                                        <label for="SD">Starting Date:</label>
-                                        <input id="SD" type = "date"   name="date" autocomplete="off" placeholder="Quantity" autofocus class="form-control" required>
+                                        <label for="SAD">Starting Date:</label>
+                                        <input id="SAD" type = "date"   name="date" autocomplete="off"  autofocus class="form-control" required>
                                     </div>
                                     <button class="btn btn-primary btn-block" type="submit">Add Supplier</button>
                                 
@@ -155,7 +161,7 @@ Suppliers
                                                 {% endfor %}
                                             </select>
                                         </div> 
-                                        
+                                        <div>
                                         <button class="btn btn-primary btn-block btn-group" type="submit">Remove Supplier</button>
                                         </div>
                                      </form>
@@ -166,6 +172,7 @@ Suppliers
                             </div>
                         </div>
                     </div><!--Deletes Supplier Account-->
+                    
                     <!--Supplier Payment-->
                     <div class="modal fade" id="SupplierPayment" tabindex="-1" role="dialog" aria-labelledby="SupplierPaymentFormModalLabel" aria-hidden="true">
                         <div class="modal-dialog" role="document">
@@ -184,8 +191,8 @@ Suppliers
                                                 <input id="SD" type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
                                             </div>
                                             <div class="form-group">
-                                                <label for="Supplier">Select Vendor:</label>
-                                            <select id="Supplier" class="form-control" name="suppliers">
+                                                <label for="SupplierV">Select Vendor:</label>
+                                            <select id="SupplierV" class="form-control" name="suppliers">
                                                 <option selected></option>
                                                 {% for  supplier in suppliers %}
                                                 <option  value="{{ supplier.id }}">{{ supplier.name }}</option>
@@ -218,8 +225,69 @@ Suppliers
                                     <button type="button" class="btn btn-primary btn-group" data-dismiss="modal">Close</button>
                                 </div>
                         </div>
-                        
-                    </div><!--Customer Payment-->
+                        </div>
+                    </div><!--Supplier Payment-->
+
+    <!--Debit Note Modal-->
+      
+      <div class="modal fade" id="DebitNote" tabindex="-1" role="dialog" aria-labelledby="DebitNoteFormModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="DebitNoteFormLabel">Enter Debit Note</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                          </button>
+                  </div>
+                  <div class="modal-body">
+                      <form  action="{{ url_for('debit_note') }}" method="post" > 
+                        <label for="SF">Shift Number</label>
+                        <div class="form-group">
+                          <input  id="SF" type ="number" name="shift_id" autocomplete="off"autofocus class="form-control">
+                      </div>
+                          <div class="form-group  " >
+                            <label for="TankD">Tank Name:</label>
+                            <select  id="TankD" class="form-control" name="tank">
+                                {% for tank in tanks %}
+                              <option value="{{ tank.id }}">{{ tank.name }}</option>
+                              {% endfor %}
+                          </select>
+                          </div>
+                          <label for="DNOTE">Delivery Note Number</label>
+                          <div class="form-group">
+                            <input  id="DNOTE" type ="text" name="document" placeholder="Delivery Note Number" autocomplete="off"autofocus class="form-control">
+                        </div>
+                       
+                        <label for="Quantity">Quantity</label>
+                          <div class="form-group">
+                              <input id="Quantity" type ="number" step="any"  placeholder="Quantity" name="delivery" autocomplete="off"autofocus class="form-control" required>
+                          </div>
+                          <label for="CostPrice">Cost Price:</label>
+                          <div class="form-group">
+                              <input type ="number" id="CostPrice" step="any" name="cost_price" autocomplete="off"autofocus class="form-control" required>
+                          </div>
+                          <div class="form-group">
+                            <label for="Supplier">Supplier</label>
+                          <select  id="Supplier" class="form-control" name="supplier">
+                              {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                        </div>
+                          
+                          <button class="btn btn-primary btn-block" type="submit">Process Debit Note</button>
+                  
+                       </form>
+                  </div>
+                  <div class="modal-footer">  
+                      <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                  </div>
+              </div>
+          </div>
+      </div>
+     
+      <!--Debit Note  Modal-->
+
     
 
     

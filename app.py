@@ -95,16 +95,7 @@ def activate(tenant_schema):
                         hash_password = generate_password_hash(password)
                         tenant_id = session['tenant']
                         tenant = Tenant.query.get(tenant_id)
-                        cash = Account(code=400,account_name="Cash",account_category="Bank",entry="DR")
-                        db.session.add(cash)
-                        accounts = [(451,"Accounts Receivables","Current Asset","DR"),(452,"Fuel Inventory","Current Asset","DR"),(453,"Lubes Inventory","Current Asset","DR"),(300,"Salaries","Expense","DR"),
-                        (600,"Accounts Payables","Current Liability","CR"),(200,"Fuel Shrinkages","GOGS","DR"),(900,"Capital","Equity","CR"),
-                        (201,"Fuel COGS","COGS","DR"),(203,"Lubes COGS","COGS","DR"),(100,"Fuel Sales","Income","CR"),(101,"Lube Sales","Income","CR")]
-                        for account in accounts:
-                                acc = Account(code=account[0],account_name=account[1],account_category=account[2],entry=account[3])
-                                db.session.add(acc)
-                                db.session.flush()
-                        customer = Customer(name="Cash",account_id=cash.id,opening_balance=0)
+                        create_chart_of_accounts()
                         user=User(username=super_user,password=hash_password,role_id=1,tenant_id=tenant_id,schema=session["schema"])
                         shift_underway = Shift_Underway(state=False,current_shift=0)
                         msg_body = "<h3>Please find your login details :</h3><body><p>Company Code: {}</p><p>User Name: Admin</p><p>Password: {}</p><small>Make sure to change your password once logged in</small></body>".format(tenant.id,password)
@@ -525,7 +516,7 @@ def readings_entry():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 pumps = Pump.query.all()
                 tanks= Tank.query.all()
-                products= Product.query.all()
+                products= Product.query.all(product_type="Fuels").all()
                 customers= Customer.query.all()
                 cash_customers = Customer.query.filter_by(account_type="Cash").all()
                 accounts =Account.query.all()
@@ -594,23 +585,7 @@ def tank_dips_entry():
                 return redirect(url_for('readings_entry'))
 
 
-@app.route("/driveway/edit/fuel_delivery",methods=["POST"])
-@view_only
-@admin_required
-@check_schema
-@login_required
-def fuel_delivery():
-        """Edit  Fuel Deliveries"""  
-        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}): 
-                shift_id = int(request.form.get("shift"))
-                tank_id= request.form.get("tank_name")
-                delivery =request.form.get("litres_delivered")
-                supplier = request.form.get("supplier")
-                cost_price = request.form.get("cost_price")
-                delivery = Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier,cost_price=cost_price)
-                db.session.add(delivery)
-                db.session.commit()
-                return redirect(url_for('readings_entry'))
+
 
 @app.route("/driveway/edit/update_customer_sales",methods=["POST"])
 @view_only
@@ -1183,6 +1158,7 @@ def customers():
         """Managing Customers"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 customers= Customer.query.all()
+                products = Product.query.all()
                 cash_accountss = Account.query.filter(Account.code.between(400,450)).all()
                 paypoints = Account.query.filter(Account.code.between(400,450)).all()
                 # calculate balances
@@ -1223,6 +1199,42 @@ def customer_payment():
                         
                         flash('Payment Successfully Added')
                         return redirect(url_for('customers'))
+
+@app.route("/customers/credit_note",methods=["POST"])
+@admin_required
+@check_schema
+@login_required
+def credit_note():
+        """Create Credit Note"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+
+                vehicle_number= request.form.get("vehicle_number")
+                sales_price= float(request.form.get("sales_price"))
+                product_id = request.form.get("product")
+                qty= request.form.get("qty")
+                customer_id=request.form.get("customers")
+                shift_id = request.form.get("shift")
+                shift = Shift.query.get(shift_id)
+                customer = Customer.query.get(customer_id)
+                sales_return = Account.query.filter_by(account_name="Sales Return").first()
+                product = Product.query.get(product_id)
+                cogs = Account.query.filter_by(account_name="Fuel COGS").first()
+                price = Price.query.filter(Price.shift_id ==shift_id,Price.product_id==product_id).first()
+                date = shift.date
+                inv_amt = price.cost_price*qty
+                inv_amt = round(inv_amt,2)
+                amount = qty * sales_price
+                amount = round(amount,2)
+                credit_note = CreditNote(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name)
+                db.session.flush()
+                details = "Credit note {}".format(credit_note.id)
+                sales_journal = Journal(date=shift.date,details=details,dr=sales_return.id,cr=customer.account_id,amount=amount,created_by=session['user_id'])
+                inventory_journal = Journal(date=shift.date,details=details,dr=product.account_id,cr=cogs.id,amount=inv_amt,created_by=session['user_id'])
+                db.session.add(sales_journal)
+                db.session.add(inventory_journal)
+                db.session.add(credit_note)
+                db.session.commit()
+
 
 @app.route("/customers/<int:customer_id>",methods=["GET","POST"])
 @check_schema
@@ -1342,6 +1354,7 @@ def suppliers():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 
                 suppliers = Supplier.query.all()
+                tanks = Tank.query.all()
                 paypoints = Account.query.filter(Account.code.between(500,599)).all()
                 # calculate balances
                 balances = {}
@@ -1351,7 +1364,7 @@ def suppliers():
                         net = sum([i.cost_price*i.qty for i in deliveries])-sum([i.amount for i in payments]) 
 
                         balances[supplier.name]= net + supplier.opening_balance
-                return render_template("suppliers.html",suppliers=suppliers,balances=balances,paypoints=paypoints)
+                return render_template("suppliers.html",tanks=tanks,suppliers=suppliers,balances=balances,paypoints=paypoints)
 
 
 @app.route("/suppliers/supplier_payment",methods=["POST"])
@@ -1384,6 +1397,38 @@ def supplier_payment():
                         flash('Payment Successfully Added')
                         return redirect(url_for('suppliers'))
 
+
+@app.route("/suppliers/debit_note",methods=["POST"])
+@admin_required
+@check_schema
+@login_required
+def debit_note():
+        """Debit Notes"""  
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}): 
+                shift_id = int(request.form.get("shift"))
+                shift = Shift.query.get(shift_id)
+                tank_id= request.form.get("tank")
+                tank = Tank.query.get(tank_id)
+                product = Product.query.get(tank.product_id)
+                pur_return = Account.query.filter_by(account_name="Purchase Return").first()
+                cogs=Account.query.filter_by(account_name="Fuel COGS").first()
+                qty =float(request.form.get("delivery"))
+                document = request.form.get("reference")
+                supplier_id = request.form.get("supplier")
+                supplier = Supplier.query.get(supplier_id)
+                cost_price = float(request.form.get("cost_price"))
+                amount = cost_price * qty
+                amount = round(amount,2)
+                debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier,cost_price=cost_price)
+                db.session.flush()
+                details = "Debit Note {}".format(debitnote.id)
+                journal =  Journal(date=shift.date,details=document,amount=amount,dr=supplier.account_id,cr=pur_return.id,created_by=session['user_id'])
+                inventory_journal = Journal(date=shift.date,details=details,dr=product.account_id,cr=cogs.id,amount=amount,created_by=session['user_id'])
+                db.session.add(debitnote)
+                db.session.add(journal)
+                db.session.add(inventory_journal)
+                db.session.commit()
+                return redirect(url_for('suppliers'))
 
 @app.route("/suppliers/add_supplier",methods=["POST"])
 @admin_required
@@ -1474,7 +1519,7 @@ def supplier(supplier_id):
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
                         report = supplier_statement(supplier_id,start_date,end_date)
-
+                        
                         return render_template("supplier.html",report=report,supplier=supplier,net=net,start=start_date,end=end_date)
                 else:
                         end_date = date.today()

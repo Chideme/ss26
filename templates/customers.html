@@ -10,6 +10,9 @@ Customers
     <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#CustomerPayment">
         Receive Customer Payment
       </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#CreditNote">
+        Create Credit Note
+      </button>
     <div class="btn-toolbar mb-2 mb-md-0">
       <div class="btn-group mr-2">
         <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddCustomerFormModal">Add Customer</button>
@@ -232,7 +235,69 @@ Customers
                             </div>
                         </div>
                     </div><!--Customer Payment-->
-                    
+   
+                     <!--Customer Sales Modal-->
+ <div class="modal fade" id="CreditNote" tabindex="-1" role="dialog" aria-labelledby="CreditNoteFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="CreditNoteFormLabel">Create Note</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form role="form"  action="{{ url_for('credit_note') }}" method="post" >
+                    <div class="form-row">
+                    <div class="form-group col-md-8">
+                        <label for="customer">Pick Customer:</label>
+                        <select id="customer" class="form-control" name="customers"> 
+                            <option selected></option>
+                            {% for customer in customers %}
+                            <option  value="{{ customer.id }}">{{ customer.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="salesproduct">Select Product:</label>
+                            <select id="salesproduct" class="form-control" name="product">
+                                <option selected></option>
+                                {% for product in products %}
+                                <option  value="{{ product.id }}">{{ product.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="sales_price">Selling Price:</label>
+                            <input id="sales_price" type="number" step="0.01" name="sales_price"  placeholder="Price" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="qtyltr">Quantity:</label>
+                            <input id="qtyltr" type="number"  step="any" name="qty"  placeholder="litres" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="vehicle_number">Vehicle Registration:</label>
+                            <input id="vehicle_number" type="text" name="vehicle_number"  placeholder="Vehicle Number" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="driver_name">Driver Name:</label>
+                            <input id="driver_name" type="text" name="driver_name"  placeholder="Driver Name" class="form-control">
+                        </div> 
+                    </div>
+                    <button  class="btn btn-primary btn-block" type="submit">Save</button>    
+                </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  <!--Credit Note Modal-->
    <script>
        function showDiv(divId, element){
         document.getElementById(divId).style.display = element.value == 'Cash' ? 'block' : 'none';

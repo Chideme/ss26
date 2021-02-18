@@ -847,6 +847,7 @@ def customer_statement(customer_id,start_date,end_date):
     customer = Customer.query.get(customer_id)
     invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).order_by(Invoice.date.asc()).all()
     payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).order_by(CustomerPayments.date.asc()).all()     
+    credit_notes = CreditNote.query.filter
     balance = sum([i.qty * i.price for i in total_invoices]) - sum([i.amount for i in total_payments])
     balance = balance + customer.opening_balance
     report = {"balance":round(balance,2)}
@@ -871,10 +872,12 @@ def supplier_statement(supplier_id,start_date,end_date):
   
     total_deliveries = Delivery.query.filter(and_(Delivery.supplier==supplier_id,Delivery.date < start_date)).all()
     total_payments = SupplierPayments.query.filter(and_(SupplierPayments.supplier_id==supplier_id,SupplierPayments.date < start_date)).all()
+    total_debitnotes = DebitNote.query.filter(and_(DebitNote.supplier==supplier_id,DebitNote.date < start_date)).all()
     supplier = Supplier.query.get(supplier_id)
     deliveries = db.session.query(Delivery,Product).filter(and_(Delivery.product_id == Product.id,Delivery.supplier==supplier_id,Delivery.date.between(start_date,end_date))).all()
     payments = SupplierPayments.query.filter(and_(SupplierPayments.supplier_id==supplier_id,SupplierPayments.date.between(start_date,end_date))).all()     
-    balance = sum([i.qty * i.cost_price for i in total_deliveries]) - sum([i.amount for i in total_payments])
+    debit_notes =  db.session.query(DebitNote,Product).filter(and_(DebitNote.product_id == Product.id,DebitNote.supplier==supplier_id,DebitNote.date.between(start_date,end_date))).all()
+    balance = sum([i.qty * i.cost_price for i in total_deliveries]) - sum([i.amount for i in total_payments]) - sum([i.qty * i.cost_price for i in total_debitnotes])
     balance = balance + supplier.opening_balance
     report = {"balance":balance}
     j = 1
@@ -883,6 +886,12 @@ def supplier_statement(supplier_id,start_date,end_date):
         amount = delivery[0].qty*delivery[0].cost_price
         amount = round(amount,2)
         report[j] = {"date":delivery[0].date,"details":details,"dr":0,"cr":amount}
+        j += 1
+    for note in debit_notes:
+        details = str(note[0].document_number)
+        amount = note[0].qty*note[0].cost_price
+        amount = round(amount,2)
+        report[j] = {"date":note[0].date,"details":details,"dr":amount,"cr":0}
         j += 1
     for payment in payments:
         amount = float(payment.amount)
@@ -1102,6 +1111,33 @@ def account_code(account_category):
     else:
         code = codes[account_category][0]
     return code
+
+def create_chart_of_accounts():
+    """ Create Model COA"""
+    cash = Account(code=400,account_name="Cash",account_category="Bank",entry="DR")
+    db.session.add(cash)
+    accounts = [(451,"Accounts Receivables","Current Asset","DR"),
+                (452,"Fuel Inventory","Current Asset","DR"),
+                (453,"Lubes Inventory","Current Asset","DR"),
+                (300,"Salaries","Expense","DR"),
+                (600,"Accounts Payables","Current Liability","CR"),
+                (200,"Fuel Shrinkages","GOGS","DR"),
+                (900,"Capital","Equity","CR"),
+                (201,"Fuel COGS","COGS","DR"),
+                (203,"Lubes COGS","COGS","DR"),
+                (204,"Purchases","COGS","DR"),
+                (205,"Purchases Return","COGS","CR"),
+                (100,"Fuel Sales","Income","CR"),
+                (101,"Lube Sales","Income","CR"),
+                (102,"Sales Return","Income","DR")]
+    for account in accounts:
+        acc = Account(code=account[0],account_name=account[1],account_category=account[2],entry=account[3])
+        db.session.add(acc)
+        db.session.flush()
+    customer = Customer(name="Cash",account_id=cash.id,opening_balance=0)
+    db.session.add(customer) 
+    db.session.flush()
+
 
 def day_sales_breakdown(dates):
     """ Sales breakdown for modal on sales_analysis.html"""

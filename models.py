@@ -275,8 +275,34 @@ class Delivery(db.Model):
     document_number = db.Column(db.String,nullable=True)
     supplier = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
 
+class DebitNote(db.Model):
+    __tablename__="debit_notes"
+    __table_args__={'schema':'tenant'}
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    tank_id = db.Column(db.Integer, db.ForeignKey("tanks.id"), nullable=True)
+    date= db.Column(db.Date,nullable=False)
+    qty = db.Column(db.Float,nullable=False)
+    cost_price = db.Column(db.Float,nullable=False)
+    product_id = db.Column(db.Integer,db.ForeignKey("products.id"),nullable=True)
+    document_number = db.Column(db.String,nullable=True)
+    supplier = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
+
 class Invoice(db.Model):
     __tablename__="invoices"
+    __table_args__={'schema':'tenant'}
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    qty = db.Column(db.Float,nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    price= db.Column(db.Float,nullable=False)
+    vehicle_number = db.Column(db.String,nullable=True)
+    driver_name = db.Column(db.String,nullable=True)
+
+class CreditNote(db.Model):
+    __tablename__="credit_notes"
     __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
