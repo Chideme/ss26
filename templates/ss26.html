@@ -233,8 +233,8 @@
                   <div class="modal-body">
                       <form  action="{{ url_for('update_pump_litre_readings') }}" method="post" > 
                           <div class="form-group" >
-                            <label for="PumpLtr">Pump Name:</label>
-                              <input id="PumpLtr" type = "text"  value="{{ pump.name }}" name="pump" autocomplete="off"  autofocus class="form-control" readonly>
+                            
+                              <input id="PumpLtr" type = "text"  value="{{ pump.id }}" name="pump" autocomplete="off"  autofocus class="form-control" hidden>
                           </div>
                           <div class="form-group">
                             <label for="LtrReading">Litre Reading:</label>
@@ -266,8 +266,8 @@
                   <div class="modal-body">
                       <form  action="{{ url_for('update_pump_money_readings') }}" method="post" > 
                           <div class="form-group" >
-                            <label for="PumpName">Pump Name</label>
-                              <input id="PumpName" type = "text"  value="{{ pump.name }}" name="pump" autocomplete="off"  autofocus class="form-control" readonly>
+                            
+                              <input id="PumpName" type = "text"  value="{{ pump.id }}" name="pump" autocomplete="off"  autofocus class="form-control" hidden>
                           </div>
                           
                           <div class="form-group">
@@ -301,8 +301,8 @@
                   <div class="modal-body">
                       <form  action="{{ url_for('update_fuel_deliveries') }}" method="post" > 
                           <div class="form-group  " >
-                            <label for="TankD">Tank Name:</label>
-                              <input id="TankD" type = "text"  value="{{ tank.name }}" name="tank" autocomplete="off"  autofocus class="form-control" readonly>
+                            
+                              <input id="TankD" type = "text"  value="{{ tank.id }}" name="tank" autocomplete="off"  autofocus class="form-control" hidden>
                           </div>
                           <label for="DNOTE">Delivery Note Number</label>
                           <div class="form-group">
@@ -354,8 +354,8 @@
                    <div class="modal-body">
                        <form id="form" action="{{ url_for('update_tank_dips') }}" method="post" > 
                            <div class="form-group " >
-                            <label for="tankdip">Tank Name:</label>
-                               <input id="tankdip" type = "text"  value="{{ tank.name }}" name="tank" autocomplete="off"  autofocus class="form-control" readonly>
+                            
+                               <input id="tankdip" type = "text"  value="{{ tank.id }}" name="tank" autocomplete="off"  autofocus class="form-control" hidden>
                            </div>
                            <div class="form-group">
                             <label for="tankdips">Closing Dip:</label>
@@ -389,8 +389,8 @@
                     <div class="modal-body">
                         <form  action="{{ url_for('update_cost_prices') }}" method="post" > 
                             <div class="form-group" >
-                                <label for="productname">Product Name:</label>
-                                <input type = "text"  value="{{ product.name }}" name="product" autocomplete="off"  autofocus class="form-control" readonly>
+                                
+                                <input type = "text"  value="{{ product.id }}" name="product" autocomplete="off"  autofocus class="form-control" hidden>
                             </div>
                             <div class="form-group">
                                 <label for="cost">Cost Price:</label>
@@ -424,8 +424,8 @@
                   <div class="modal-body">
                       <form  action="{{ url_for('update_selling_prices') }}" method="post" > 
                           <div class="form-group " >
-                            <label for="prices">Product Name</label>
-                              <input id="prices" type = "text"  value="{{ product.name }}" name="product" autocomplete="off"  autofocus class="form-control" readonly>
+                            
+                              <input id="prices" type = "text"  value="{{ product.id }}" name="product" autocomplete="off"  autofocus class="form-control" hidden>
                           </div>
                           <div class="form-group">
                             <label for="price">Selling Price</label>

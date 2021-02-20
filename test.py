@@ -33,9 +33,14 @@ def main():
     
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
         
-        c = Coupon.query.all()  
-        print(c.customer_id)
-
+        tank_id= 3
+        shift_id = 4
+        shift = Shift.query.get(shift_id)
+        tank = Tank.query.get(tank_id)
+        product = Product.query.get(2)
+        d= DebitNote(date=shift.date,shift_id=4,tank_id=tank.id,qty=100,product_id=product.id,document_number="test",supplier=2,cost_price=1.19)
+        db.session.add(d)
+        db.session.commit()
 with app.app_context():
         main()
 

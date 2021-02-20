@@ -516,12 +516,11 @@ def readings_entry():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 pumps = Pump.query.all()
                 tanks= Tank.query.all()
-                products= Product.query.all(product_type="Fuels").all()
+                products= Product.query.filter_by(product_type="Fuels").all()
                 customers= Customer.query.all()
-                cash_customers = Customer.query.filter_by(account_type="Cash").all()
                 accounts =Account.query.all()
                 lubes = Product.query.filter_by(product_type="Lubricants").all()
-                return render_template("readings_entry.html",lubes=lubes,tanks=tanks,pumps=pumps,products=products,customers=customers,accounts=accounts,cash_customers=cash_customers)
+                return render_template("readings_entry.html",lubes=lubes,tanks=tanks,pumps=pumps,products=products,customers=customers,accounts=accounts)
 
 @app.route("/driveway/edit/price_change",methods=["GET","POST"])
 @login_required
@@ -587,31 +586,7 @@ def tank_dips_entry():
 
 
 
-@app.route("/driveway/edit/update_customer_sales",methods=["POST"])
-@view_only
-@admin_required
-@check_schema
-@login_required
-def update_customer_sales():
-        """Sales Invoices"""
-        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                inv = int(request.form.get("invoice"))
-                current_shift = request.form.get("shift")
-                shift_id = int(current_shift)
-                vehicle_number= request.form.get("vehicle_number").capitalize()
-                driver_name= request.form.get("driver_name").capitalize()
-                sales_price= float(request.form.get("sales_price"))
-                product_id = int(request.form.get("product"))
-                qty= request.form.get("qty")
-                customer_id=request.form.get("customers")
-                invoice = Invoice.query.get(inv)
-                invoice.vehicle_number = vehicle_number
-                invoice.driver_name = driver_name
-                invoice.price = sales_price
-                invoice.product_id = product_id
-                invoice.qty = qty
-                db.session.commit()
-                return redirect(url_for('readings_entry'))
+
 
 @app.route("/driveway/edit/update_sales_receipts",methods=["POST"])
 @view_only
@@ -621,25 +596,26 @@ def update_customer_sales():
 def update_sales_receipts():
         """Invoices for cash sales"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                shift_id = int(request.form.get("shift"))
-                current_shift = Shift.query.get(shift_id)
-                date = current_shift.date
-                customer_id= int(request.form.get("account"))
-                customer = Customer.query.get(customer_id)
-                account = Account.query.filter_by(account_name=customer.name).first()
-                amount= float(request.form.get("amount"))
-                invoices = Invoice.query.filter(and_(Invoice.shift_id ==shift_id,Invoice.customer_id==customer_id)).all()
-                receipt = SaleReceipt.query.filter(and_(SaleReceipt.shift_id==shift_id,SaleReceipt.account_id==account.id)).first()
-                receipt.amount = amount
-                #delete previous invoices to start afresh
-                for invoice in invoices:
-                        db.session.delete(invoice)
                 
-
-                cash_invoices = cash_sales(amount,customer_id,shift_id,date)# add invoices to cash customer account
-                if cash_invoices:
-                        db.session.commit()
-
+                shift_id = request.form.get("shift")
+                shift = Shift.query.get(shift_id)
+                date = shift.date
+                vehicle_number= request.form.get("vehicle_number")
+                driver_name= request.form.get("driver_name")
+                details = "Adjustment on Sales"
+                sales_price= float(request.form.get("sales_price"))
+                product_id = request.form.get("product")
+                qty= float(request.form.get("qty"))
+                sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
+                amount = qty * sales_price
+                amount = round(amount,2)
+                customer_id=request.form.get("customers")
+                customer = Customer.query.get(customer_id)
+                invoice = Invoice(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name)
+                sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'])
+                db.session.add(sales_journal)
+                db.session.add(invoice)
+                db.session.commit()
                 
                 return redirect(url_for('readings_entry'))
 
@@ -788,7 +764,6 @@ def add_pump():
 
         """Add Pump"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                shift_underway = Shift_Underway.query.all()
                 ######
                 s = Shift.query.order_by(Shift.id.desc()).all()
                 name=request.form.get("pump_name").capitalize()
@@ -1166,9 +1141,10 @@ def customers():
                 for customer in customers:
                         invoices = Invoice.query.filter_by(customer_id=customer.id).all()
                         payments = CustomerPayments.query.filter_by(customer_id=customer.id).all()
-                        net =  sum([i.price*i.qty for i in invoices])-sum([i.amount for i in payments]) 
+                        c_notes = CreditNote.query.filter_by(customer_id=customer.id).all()
+                        net =  sum([i.price*i.qty for i in invoices])-sum([i.amount for i in payments]) - sum([i.price*i.qty for i in c_notes])
                         balances[customer]= net + customer.opening_balance
-                return render_template("customers.html",customers=customers,balances=balances,paypoints=paypoints,cash_accounts=cash_accountss)
+                return render_template("customers.html",products=products,customers=customers,balances=balances,paypoints=paypoints,cash_accounts=cash_accountss)
 
 @app.route("/customers/customer_payment",methods=["POST"])
 @admin_required
@@ -1216,22 +1192,18 @@ def credit_note():
                 shift_id = request.form.get("shift")
                 shift = Shift.query.get(shift_id)
                 customer = Customer.query.get(customer_id)
-                sales_return = Account.query.filter_by(account_name="Sales Return").first()
-                product = Product.query.get(product_id)
-                cogs = Account.query.filter_by(account_name="Fuel COGS").first()
+                sales_return = Account.query.filter_by(account_name="Fuel Sales").first()
                 price = Price.query.filter(Price.shift_id ==shift_id,Price.product_id==product_id).first()
                 date = shift.date
                 inv_amt = price.cost_price*qty
                 inv_amt = round(inv_amt,2)
                 amount = qty * sales_price
                 amount = round(amount,2)
-                credit_note = CreditNote(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name)
+                credit_note = CreditNote(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name="N/A")
                 db.session.flush()
                 details = "Credit note {}".format(credit_note.id)
                 sales_journal = Journal(date=shift.date,details=details,dr=sales_return.id,cr=customer.account_id,amount=amount,created_by=session['user_id'])
-                inventory_journal = Journal(date=shift.date,details=details,dr=product.account_id,cr=cogs.id,amount=inv_amt,created_by=session['user_id'])
                 db.session.add(sales_journal)
-                db.session.add(inventory_journal)
                 db.session.add(credit_note)
                 db.session.commit()
 
@@ -1361,7 +1333,8 @@ def suppliers():
                 for supplier in suppliers:
                         deliveries = Delivery.query.filter_by(supplier=supplier.id).all()
                         payments = SupplierPayments.query.filter_by(supplier_id=supplier.id).all()
-                        net = sum([i.cost_price*i.qty for i in deliveries])-sum([i.amount for i in payments]) 
+                        d_notes = DebitNote.query.filter_by(supplier=supplier.id).all()
+                        net = sum([i.cost_price*i.qty for i in deliveries])-sum([i.amount for i in payments]) - sum([i.cost_price*i.qty for i in d_notes])
 
                         balances[supplier.name]= net + supplier.opening_balance
                 return render_template("suppliers.html",tanks=tanks,suppliers=suppliers,balances=balances,paypoints=paypoints)
@@ -1410,8 +1383,6 @@ def debit_note():
                 tank_id= request.form.get("tank")
                 tank = Tank.query.get(tank_id)
                 product = Product.query.get(tank.product_id)
-                pur_return = Account.query.filter_by(account_name="Purchase Return").first()
-                cogs=Account.query.filter_by(account_name="Fuel COGS").first()
                 qty =float(request.form.get("delivery"))
                 document = request.form.get("reference")
                 supplier_id = request.form.get("supplier")
@@ -1419,14 +1390,10 @@ def debit_note():
                 cost_price = float(request.form.get("cost_price"))
                 amount = cost_price * qty
                 amount = round(amount,2)
-                debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier,cost_price=cost_price)
-                db.session.flush()
-                details = "Debit Note {}".format(debitnote.id)
-                journal =  Journal(date=shift.date,details=document,amount=amount,dr=supplier.account_id,cr=pur_return.id,created_by=session['user_id'])
-                inventory_journal = Journal(date=shift.date,details=details,dr=product.account_id,cr=cogs.id,amount=amount,created_by=session['user_id'])
+                debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=int(product.id),document_number=document,supplier=supplier.id,cost_price=cost_price)
+                journal =  Journal(date=shift.date,details=document,amount=amount,dr=supplier.account_id,cr=product.account_id,created_by=session['user_id'])
                 db.session.add(debitnote)
                 db.session.add(journal)
-                db.session.add(inventory_journal)
                 db.session.commit()
                 return redirect(url_for('suppliers'))
 
@@ -2046,15 +2013,12 @@ def update_pump_litre_readings():
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
                 shift_id = current_shift.id
-                pump = Pump.query.filter_by(name=request.form.get("pump")).first()
-                #product = db.session.query(Product,Pump,Tank).filter(and_(Product.id==Tank.product_id,Pump.tank_id==Tank.id,Pump.id==pump.id)).first()
+                pump = Pump.query.filter_by(id=request.form.get("pump")).first()
                 pump_id = pump.id
                 litre_reading = request.form.get("litre_reading")
                 reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id== shift_id)).first()
-               
                 pump.litre_reading = litre_reading
                 reading.litre_reading = litre_reading
-                
                 db.session.commit()
 
                 return redirect('ss26')
@@ -2071,10 +2035,8 @@ def update_pump_money_readings():
                 shift_underway = Shift_Underway.query.all()
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
-                
                 shift_id = current_shift.id
-        
-                pump = Pump.query.filter_by(name=request.form.get("pump")).first()# get pumpid
+                pump = Pump.query.filter_by(id=request.form.get("pump")).first()# get pumpid
                 pump_id = pump.id
                 reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id== shift_id)).first()
                 money_reading = request.form.get("money_reading")
@@ -2100,7 +2062,7 @@ def update_tank_dips():
                 current_shift = Shift.query.get(current_shift)
                 shift_daytime = current_shift.daytime
                 shift_id = current_shift.id
-                tank = Tank.query.filter_by(name=request.form.get("tank")).first()
+                tank = Tank.query.filter_by(id=request.form.get("tank")).first()
                 tank_id = tank.id
                 shift_dip = TankDip.query.filter(and_(TankDip.tank_id == tank_id,TankDip.shift_id ==shift_id)).first()
                 tank_dip = request.form.get("tank_dip")
@@ -2123,7 +2085,7 @@ def update_fuel_deliveries():
                 current_shift = Shift.query.get(current_shift)
              
                 shift_id = current_shift.id
-                tank= Tank.query.filter_by(name=request.form.get("tank")).first()
+                tank= Tank.query.filter_by(id=request.form.get("tank")).first()
                 document = request.form.get("document")
                 qty = float(request.form.get("delivery"))
                 supplier_id = request.form.get("supplier")
@@ -2157,7 +2119,7 @@ def update_cost_prices():
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
                 shift_id = current_shift.id
-                product= Product.query.filter_by(name=request.form.get("product")).first()
+                product= Product.query.filter_by(id=request.form.get("product")).first()
                 cost_price = float(request.form.get("cost_price"))
                 price= Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
                 price.cost_price = cost_price
@@ -2178,7 +2140,7 @@ def update_selling_prices():
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
                 shift_id = current_shift.id
-                product= Product.query.filter_by(name=request.form.get("product")).first()
+                product= Product.query.filter_by(id=request.form.get("product")).first()
                 selling_price = float(request.form.get("selling_price"))
                 product.selling_price = selling_price
                 db.session.query(Price).filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).update({Price.selling_price: selling_price}, synchronize_session = False)
@@ -2383,39 +2345,6 @@ def pay_outs():
                 db.session.commit()
         return redirect(url_for('ss26'))
 
-@app.route("/restart_shift",methods=["POST"])
-@login_required
-@admin_required
-@check_schema
-def restart_shift():
-        """Restart Shift"""
-        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                shift_id = request.form.get("shift")
-                invoices = Invoice.query.filter_by(shift_id=shift_id).all()
-                pay_outs = PayOut.query.filter_by(shift_id=shift_id).all()
-                sales_receipts = SaleReceipt.query.filter_by(shift_id=shift_id).all()
-                cash_ups = CashUp.query.filter_by(shift_id=shift_id).all()
-
-                for invoice in invoices:
-                        db.session.delete(invoice)    
-                        db.session.commit()
-                for pay_out in pay_outs:
-                        db.session.delete(pay_out)    
-                        db.session.commit()
-                for sales_receipt in sales_receipts:
-                        db.session.delete(sales_receipt)    
-                        db.session.commit()
-                for cash_up in cash_ups:
-                        db.session.delete(cash_up)    
-                        db.session.commit()
-
-                
-                shift_underway = Shift_Underway.query.get(1)
-                shift_underway.current_shift = int(shift_id)
-                shift_underway.state= True
-                db.session.commit()
-                flash('Shift Restarted !!')
-                return redirect(url_for('ss26'))
 
 @app.route("/shift_lube_sales",methods=["POST","GET"])
 @view_only
@@ -2517,7 +2446,6 @@ def update_lubes_deliveries():
                 req =request.form.get("shift_id")
                 if req:
                         current_shift = Shift.query.get(req)
-                        shift_daytime = current_shift.daytime
                         shift_id = current_shift.id
                         date = current_shift.date
                         try:
@@ -2536,7 +2464,6 @@ def update_lubes_deliveries():
                         shift_underway = Shift_Underway.query.all()
                         current_shift = shift_underway[0].current_shift
                         current_shift = Shift.query.get(current_shift)
-                        shift_daytime = current_shift.daytime
                         shift_id = current_shift.id
                         date = current_shift.date
 

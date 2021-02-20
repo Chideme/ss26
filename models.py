@@ -104,7 +104,7 @@ class Product(db.Model):
     __tablename__="products"
    
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name = db.Column(db.String,nullable=False)
+    name = db.Column(db.String,nullable=False,unique=True)
     product_type=db.Column(db.String,nullable=False)
     cost_price =  db.Column(db.Float,nullable=True)
     avg_price =  db.Column(db.Float,nullable=True)

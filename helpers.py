@@ -736,7 +736,10 @@ def get_tank_dips(shift_id,prev_shift_id):
             prev_shift_dip = prev_shift_dip.dip
             current_shift_dip = current_shift_dip.dip
             delivery = Delivery.query.filter(and_(Delivery.shift_id==shift_id,Delivery.tank_id==tank.id)).all()
+            debitnotes = DebitNote.query.filter(and_(Delivery.shift_id==shift_id,DebitNote.tank_id==tank.id)).all()
             deliveries = sum([i.qty for i in delivery]) if delivery else 0
+            returns = sum([i.qty for i in debitnotes]) if debitnotes else 0
+            deliveries = deliveries -returns
             tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
     return tank_dips
 
@@ -828,27 +831,17 @@ def get_random_string():
     result_str = ''.join(random.choice(letters) for i in range(8))
     return result_str
 
-def sum_entries(report):
-    """sum entries per column"""
-    dr  = 0
-    cr  = 0
-    
-    for i in report:
-        if i != "balance":
-            dr += report[i]["dr"]
-            cr += report[i]["cr"]
-    return dr,cr
-
 def customer_statement(customer_id,start_date,end_date):
     """Returns Customer statement"""
   
     total_invoices = Invoice.query.filter(and_(Invoice.customer_id==customer_id,Invoice.date < start_date)).all()
+    total_notes = CreditNote.query.filter(and_(CreditNote.customer_id==customer_id,CreditNote.date < start_date)).all()
     total_payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date < start_date)).all()
     customer = Customer.query.get(customer_id)
     invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).order_by(Invoice.date.asc()).all()
     payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).order_by(CustomerPayments.date.asc()).all()     
-    credit_notes = CreditNote.query.filter
-    balance = sum([i.qty * i.price for i in total_invoices]) - sum([i.amount for i in total_payments])
+    credit_notes = db.session.query(CreditNote,Product).filter(and_(CreditNote.product_id == Product.id,CreditNote.customer_id==customer_id,CreditNote.date.between(start_date,end_date))).order_by(CreditNote.date.asc()).all()
+    balance = sum([i.qty * i.price for i in total_invoices]) - sum([i.amount for i in total_payments])-sum([i.qty * i.price for i in total_notes])
     balance = balance + customer.opening_balance
     report = {"balance":round(balance,2)}
     j = 1
@@ -856,17 +849,24 @@ def customer_statement(customer_id,start_date,end_date):
         details = "Driver: {}, Vehicle Reg: {}, Product: {}, Qty: {}, Price: {}".format(invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price)
         amount = invoice[0].qty*invoice[0].price
         amount = round(amount,2)
-        bal  =  balance + sum_entries(report)[0]-sum_entries(report)[1]+amount
-        report[j] = {"date":invoice[0].date,"details":details,"dr":amount,"cr":0,"bal":bal}
+        report[j] = {"date":invoice[0].date,"details":details,"dr":amount,"cr":0}
         j +=1
+    
+    for invoice in credit_notes:
+        details = "Driver: {}, Vehicle Reg: {}, Product: {}, Qty: {}, Price: {}".format(invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price)
+        amount = invoice[0].qty*invoice[0].price
+        amount = round(amount,2)
+        report[j] = {"date":invoice[0].date,"details":details,"dr":0,"cr":amount}
+        j +=1
+
     for payment in payments:
         amount = float(payment.amount)
         amount = round(amount,2)
         details  = "Top up - {}".format(payment.ref)
-        bal  =  balance + sum_entries(report)[0]-sum_entries(report)[1]+amount
-        report[j] = {"date":payment.date,"details":details,"dr":0,"cr":amount,"bal":bal}
+        report[j] = {"date":payment.date,"details":details,"dr":0,"cr":amount}
         j += 1
-    return report   
+    return report
+
 def supplier_statement(supplier_id,start_date,end_date):
     """Returns Supplier statement"""
   
@@ -1126,10 +1126,8 @@ def create_chart_of_accounts():
                 (201,"Fuel COGS","COGS","DR"),
                 (203,"Lubes COGS","COGS","DR"),
                 (204,"Purchases","COGS","DR"),
-                (205,"Purchases Return","COGS","CR"),
                 (100,"Fuel Sales","Income","CR"),
-                (101,"Lube Sales","Income","CR"),
-                (102,"Sales Return","Income","DR")]
+                (101,"Lube Sales","Income","CR")]
     for account in accounts:
         acc = Account(code=account[0],account_name=account[1],account_category=account[2],entry=account[3])
         db.session.add(acc)

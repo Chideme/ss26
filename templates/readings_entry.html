@@ -13,12 +13,8 @@
         </a>
     </li>
     <li class="nav-item"><a class="nav-link" id="tankdips-tab" role="tab" aria-controls="TankDips" href="#TankDips" data-toggle="tab" aria-selected="false">Tank Dips</a></li>
-    <li class="nav-item"><a class="nav-link" id="fueldeliveries-tab" role="tab" aria-controls="FuelDeliveries" href="#FuelDeliveries" data-toggle="tab" aria-selected="false">Fuel Deliveries</a></li>
-    <li class="nav-item"><a class="nav-link" id="customersales-tab" role="tab" aria-controls="CustomerSales" href="#CustomerSales" data-toggle="tab" aria-selected="false">Customer Sales</a></li>
-    <li class="nav-item"><a class="nav-link" id="cashsales-tab" role="tab" aria-controls="CashSales" href="#CashSales" data-toggle="tab" aria-selected="false">Cash Sales</a></li>
-    <li class="nav-item"><a class="nav-link" id="lubesqty-tab" role="tab" aria-controls="LubeQty" href="#LubeQty" data-toggle="tab" aria-selected="false">Adjust Qty for Lubes</a></li>
-    <li class="nav-item"><a class="nav-link" id="restartshift-tab" role="tab" aria-controls="RestartShift" href="#RestartShift" data-toggle="tab" aria-selected="false">Restart Shift</a></li>
-    
+    <li class="nav-item"><a class="nav-link" id="invoices-tab" role="tab" aria-controls="Invoices" href="#Invoices" data-toggle="tab" aria-selected="false">Invoices</a></li>
+    <li class="nav-item"><a class="nav-link" id="lubesqty-tab" role="tab" aria-controls="LubeQty" href="#LubeQty" data-toggle="tab" aria-selected="false">Adjust Qty for Lubes</a></li>   
 </ul>
 <div class="tab-content">
     <div class="tab-pane active" id="PriceChange" role="tabpanel" aria-labelledby="pricechange-tab">
@@ -93,105 +89,59 @@
         </form>
         </div>
     </div>
-    <div class="tab-pane" id="FuelDeliveries" role="tabpanel" aria-labelledby="fueldeliveries-tab">
+    
+    <div class="tab-pane" id="Invoices" role="tabpanel" aria-labelledby="invoices-tab">
         <div class="text-center p-5">
-        <form role="form" style="display: inline-block;"  action="{{ url_for('fuel_delivery') }}" method="post" > 
-            <div class="form-group"> 
-                <input type = "number"  name="shift" autocomplete="off" placeholder="Shift" autofocus class="form-control" required>
-            </div>    
-                <div class="form-group" >
-                    <select class="form-control" name="tank_name">
-                        <option selected>Select Tank</option>
-                        {% for tank in tanks %}
-                        <option value="{{ tank.id }}">{{ tank.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group" >
-                    <select class="form-control" name="product">
-                        <option selected>Product</option>
-                        {% for product in products %}
-                        <option  value="{{ product.id }}">{{ product.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group" >
-                    <input type = "number" step="any"  name="litres_delivered" autocomplete="off" placeholder="Litres Delivered" autofocus class="form-control">
-                </div>
-            <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
-        </form>
-        </div>
-    </div>
-    <div class="tab-pane" id="CustomerSales" role="tabpanel" aria-labelledby="customersales-tab">
-        <div class="text-center p-5">
-            <form role="form" style="display: inline-block;"  action="{{ url_for('update_customer_sales') }}" method="post" >
-                <div class="form-row">
-                <div class="form-group col-md-4"> 
-                    <input type = "number"  name="shift" autocomplete="off" placeholder="Shift" autofocus class="form-control" required>
-                </div>
-                <div class="form-group col-md-4">
-                    <input type="text" name="invoice"  placeholder="Invoice Number" class="form-control" required>
-                </div> 
-                <div class="form-group col-md-4">
-
-                    <select class="form-control" name="customers">
-                        <option selected>Select Customer</option>
-                        {% for customer in customers %}
-                        <option  value="{{ customer.id }}">{{ customer.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group col-md-4">
-                        <select class="form-control" name="product">
-                            <option selected>Select Product</option>
-                            {% for product in products %}
-                            <option  value="{{ product.id }}">{{ product.name }}</option>
+            <form role="form" style="display: inline-block;"  action="{{ url_for('update_sales_receipts') }}" method="post" >
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label for="shift">Enter Shift Number:</label>
+                            <div class="form-group"> 
+                            <input id="shift" type = "number"  name="shift" autocomplete="off" placeholder="Shift" autofocus class="form-control" required>
+                        </div>
+                        </div>
+                    <div class="form-group col-md-6">
+                        <label for="customer">Pick Customer:</label>
+                        <select id="customer" class="form-control" name="customers"> <!--DataList-->
+                            <option selected></option>
+                            {% for customer in customers %}
+                            <option  value="{{ customer.id }}">{{ customer.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-group col-md-4">
-                        <input type="text" name="sales_price"  placeholder="Price" class="form-control">
                     </div>
-                    <div class="form-group col-md-4">
-                        <input type = "number" step="any" name="qty"  placeholder="litres" class="form-control" required>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="salesproduct">Select Product:</label>
+                            <select id="salesproduct" class="form-control" name="product">
+                                <option selected></option>
+                                {% for product in products %}
+                                <option  value="{{ product.id }}">{{ product.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="sales_price">Selling Price:</label>
+                            <input id="sales_price" type="number" step="0.01" name="sales_price"  placeholder="Price" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="qtyltr">Quantity:</label>
+                            <input id="qtyltr" type="number"  step="any" name="qty"  placeholder="litres" class="form-control">
+                        </div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group col-md-4">
-                        <input type="text" name="vehicle_number"  placeholder="Vehicle Number" class="form-control">
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="vehicle_number">Vehicle Registration:</label>
+                            <input id="vehicle_number" type="text" name="vehicle_number"  placeholder="Vehicle Number" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="driver_name">Driver Name:</label>
+                            <input id="driver_name" type="text" name="driver_name"  placeholder="Driver Name" class="form-control">
+                        </div> 
                     </div>
-                    <div class="form-group col-md-4">
-                        <input type="text" name="driver_name"  placeholder="Driver Name" class="form-control">
-                    </div> 
-                </div>
-                <button  class="btn btn-primary btn-block" type="submit">Enter</button>    
-            </form>
-
+                    <button  class="btn btn-primary btn-block" type="submit">Save</button>    
+            </form>     
         </div>
-    </div>
-    <div class="tab-pane" id="CashSales" role="tabpanel" aria-labelledby="cashsales-tab">
-    <div class="text-center p-5">
-        <form role="form" style="display: inline-block;"  action="{{ url_for('update_sales_receipts') }}" method="post" >
-            <div class="form-group" >
-                <input type="text" name="shift"  placeholder="Shift" autofocus class="form-control">
-            </div> 
-            <div class="form-group" >
-                <select class="form-control" name="account">
-                    <option selected>Select Customer</option>
-                    {% for customer in cash_customers %}
-                    <option value="{{ customer.id }}">{{ customer.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <input type = "number" step="0.01" name="amount"  placeholder="Amount" class="form-control">
-            </div> 
-            
-        <button  class="btn btn-info btn-block" type="submit">Update</button>      
-    </form>
-    </div>
 
     </div>
 
@@ -218,19 +168,6 @@
     </div>
 
     </div>
-    <div class="tab-pane" id="RestartShift" role="tabpanel" aria-labelledby="restartshift-tab">
-        <div class="text-center p-5">
-            <form role="form" style="display: inline-block;"  action="{{ url_for('restart_shift') }}" method="post" >
-                <div class="form-group" >
-                    <input type="number" name="shift"  placeholder="Shift" autofocus class="form-control">
-                </div> 
-                
-                
-                
-            <button  class="btn btn-warning btn-block " type="submit">Update</button>      
-        </form>
-        </div>
     
-        </div>
 </div> 
 {% endblock %}
