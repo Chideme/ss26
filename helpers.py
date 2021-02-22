@@ -248,15 +248,23 @@ def get_product_price(shift_id,product_id):
     price = product.selling_price
     return price
 
-def total_customer_sales(results):
+def total_customer_sales(invoices,credit_notes):
     d={}
-    for customer in results:
+    for customer in invoices:
         if customer[0] in d:
             amt = d[customer[0]] + (customer[1].price*customer[1].qty)
             d[customer[0]]= round(amt,2)
         else:
             amt = customer[1].price*customer[1].qty
             d[customer[0]]= round(amt,2)
+
+    for customer in credit_notes:
+        if customer[0] in d:
+            amt = d[customer[0]] -(customer[1].price*customer[1].qty)
+            d[customer[0]]= round(amt,2)
+        else:
+            amt = -customer[1].price*customer[1].qty
+            d[customer[0]]= round(amt,2)      
     return d
 
 
@@ -566,11 +574,12 @@ def daily_sales_analysis(start_date,end_date):
         prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
         if prev_shift:
             customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id)).all()
+            credit_notes= db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.shift_id==shift_id)).all()
             prev_shift_id = prev_shift.id
             product_sales = product_sales_litres(shift_id,prev_shift_id)
             total = sum([product_sales[i][0] for i in product_sales])
             expected_deposits= sum([product_sales[i][0]*product_sales[i][1][1].selling_price for i in product_sales])
-            sales_per_customer = total_customer_sales(customer_sales)
+            sales_per_customer = total_customer_sales(customer_sales,credit_notes)
             actual_deposits = sum([sales_per_customer[i] for i in sales_per_customer])
             if shift.date in daily_sales:
                 daily_sales[shift.date][0]+=total
@@ -736,7 +745,7 @@ def get_tank_dips(shift_id,prev_shift_id):
             prev_shift_dip = prev_shift_dip.dip
             current_shift_dip = current_shift_dip.dip
             delivery = Delivery.query.filter(and_(Delivery.shift_id==shift_id,Delivery.tank_id==tank.id)).all()
-            debitnotes = DebitNote.query.filter(and_(Delivery.shift_id==shift_id,DebitNote.tank_id==tank.id)).all()
+            debitnotes = DebitNote.query.filter(and_(DebitNote.shift_id==shift_id,DebitNote.tank_id==tank.id)).all()
             deliveries = sum([i.qty for i in delivery]) if delivery else 0
             returns = sum([i.qty for i in debitnotes]) if debitnotes else 0
             deliveries = deliveries -returns
@@ -756,11 +765,13 @@ def get_driveway_data(shift_id,prev_shift_id):
     data['product_sales_ltr'] = product_sales_ltr
     data['cash_account'] = Customer.query.filter_by(name="Cash").first()
     customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
-    sales_breakdown = total_customer_sales(customer_sales) # calculate total sales per customer)
+    credit_notes= db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.shift_id==shift_id,Customer.name != "Cash")).all()
+    sales_breakdown = total_customer_sales(customer_sales,credit_notes) # calculate total sales per customer)
     data['total_sales_ltr']= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
     data['total_sales_amt']= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
-    cash_sales = customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name == "Cash")).all()
-    cash_breakdown = total_customer_sales(cash_sales)
+    cash_sales =  db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name == "Cash")).all()
+    cash_sales_cnotes =  db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.shift_id==shift_id,Customer.name == "Cash")).all()
+    cash_breakdown = total_customer_sales(cash_sales,cash_sales_cnotes)
     receivable = Account.query.filter_by(account_name="Accounts Receivables").first()
     data['cash_customers'] = Customer.query.filter(Customer.account_id != receivable.id).all()
     #sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
@@ -846,24 +857,23 @@ def customer_statement(customer_id,start_date,end_date):
     report = {"balance":round(balance,2)}
     j = 1
     for invoice in invoices:
-        details = "Driver: {}, Vehicle Reg: {}, Product: {}, Qty: {}, Price: {}".format(invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price)
+        details = "Invoice {}".format(invoice[0].id)
         amount = invoice[0].qty*invoice[0].price
-        amount = round(amount,2)
-        report[j] = {"date":invoice[0].date,"details":details,"dr":amount,"cr":0}
+        
+        report[j] = {"date":invoice[0].date,"details":details,"dr":round(amount,2),"cr":0.00}
         j +=1
     
     for invoice in credit_notes:
-        details = "Driver: {}, Vehicle Reg: {}, Product: {}, Qty: {}, Price: {}".format(invoice[0].driver_name,invoice[0].vehicle_number,invoice[1].name,invoice[0].qty,invoice[0].price)
+        details = "Credit Note {}".format(invoice[0].id)
         amount = invoice[0].qty*invoice[0].price
-        amount = round(amount,2)
-        report[j] = {"date":invoice[0].date,"details":details,"dr":0,"cr":amount}
+       
+        report[j] = {"date":invoice[0].date,"details":details,"dr":0.00,"cr":round(amount,2)}
         j +=1
 
     for payment in payments:
-        amount = float(payment.amount)
-        amount = round(amount,2)
-        details  = "Top up - {}".format(payment.ref)
-        report[j] = {"date":payment.date,"details":details,"dr":0,"cr":amount}
+        amount = payment.amount
+        details  = "Payment - {}".format(payment.ref)
+        report[j] = {"date":payment.date,"details":details,"dr":0.00,"cr":round(amount,2)}
         j += 1
     return report
 
@@ -885,19 +895,19 @@ def supplier_statement(supplier_id,start_date,end_date):
         details = str(delivery[0].document_number)
         amount = delivery[0].qty*delivery[0].cost_price
         amount = round(amount,2)
-        report[j] = {"date":delivery[0].date,"details":details,"dr":0,"cr":amount}
+        report[j] = {"date":delivery[0].date,"details":details,"dr":0.00,"cr":amount}
         j += 1
     for note in debit_notes:
         details = str(note[0].document_number)
         amount = note[0].qty*note[0].cost_price
         amount = round(amount,2)
-        report[j] = {"date":note[0].date,"details":details,"dr":amount,"cr":0}
+        report[j] = {"date":note[0].date,"details":details,"dr":amount,"cr":0.00}
         j += 1
     for payment in payments:
         amount = float(payment.amount)
         amount = round(amount,2)
         details  = "Top up - {}".format(payment.ref)
-        report[j] = {"date":payment.date,"details":details,"dr":amount,"cr":0}
+        report[j] = {"date":payment.date,"details":details,"dr":amount,"cr":0.00}
         j += 1       
     return report
 
@@ -1124,8 +1134,7 @@ def create_chart_of_accounts():
                 (200,"Fuel Shrinkages","GOGS","DR"),
                 (900,"Capital","Equity","CR"),
                 (201,"Fuel COGS","COGS","DR"),
-                (203,"Lubes COGS","COGS","DR"),
-                (204,"Purchases","COGS","DR"),
+                (202,"Lubes COGS","COGS","DR"),
                 (100,"Fuel Sales","Income","CR"),
                 (101,"Lube Sales","Income","CR")]
     for account in accounts:
@@ -1142,7 +1151,8 @@ def day_sales_breakdown(dates):
     report = {}
     for date in dates:
         customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.date==date)).all()
-        sales_per_customer = total_customer_sales(customer_sales)
+        credit_notes= db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.date==date)).all()
+        sales_per_customer = total_customer_sales(customer_sales,credit_notes)
         report[date] = sales_per_customer
     
     return report

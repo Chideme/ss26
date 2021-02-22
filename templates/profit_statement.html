@@ -60,13 +60,13 @@
                         <td style="background-color: limegreen;"></td>
                         {% for product in products %}
                         <td>{{ reports[date][product][0] }}</td>
-                        <td >{{ reports[date][product][1] | round(2) }}</td>
-                        <td>{{ reports[date][product][2] | round(2) }}</td>
-                        <td>{{ (reports[date][product][0]*reports[date][product][3]) | round(2) }}</td>
+                        <td >{{ reports[date][product][1] | currencyFormat }}</td>
+                        <td>{{ reports[date][product][2] | currencyFormat }}</td>
+                        <td>{{ (reports[date][product][0]*reports[date][product][3]) | currencyFormat }}</td>
                         <td style="background-color: limegreen;"></td>
                         {% endfor %}
                         <td>{{ total_litres[date] }}</td>
-                        <td>{{ total_profit[date] | round(2) }}</td>
+                        <td>{{ total_profit[date] | currencyFormat }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

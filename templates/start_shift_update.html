@@ -9,10 +9,12 @@
 <form style="display: inline-block;" action="{{ url_for('start_shift_update') }}" method="post" > 
     <h1 class="h3 mb-3 font-weight-normal">Start Shift Update</h1>
     <div class="form-group">
-    <input type="date" name="date" class="form-control">
+    <label for="DATE">Shift Date:</label>
+    <input id="DATE" type="date" name="date" class="form-control">
     </div>
     <div class="form-group">
-    <select class="form-control" name="shift">
+    <label for="TIME">Shift Period (Day/Night)</label>
+    <select id="TIME" class="form-control" name="shift">
         <option selected>Day</option>
         <option>Night</option>
     </select>

@@ -8,50 +8,68 @@
 <a href="{{ url_for('suppliers') }}"><span style="color: royalblue;">Back</span></a>
 
 
-<h4 class="h4 text-center p3">{{ supplier }} Statement</h4>
-<div class="text-center">
-<h5>Balance: {{ net | round(2) }}</h5>
 
-    <form style="display: inline-block;" action="{{ url_for('supplier',supplier_id= supplier.id) }}"  method="post">
-    <div class="btn-toolbar mb-2 mb-md-0">
-    <div class="btn-group mr-2">
-        <input type = "date"  name="start_date" autocomplete="off"autofocus class="form-control" required>
-        <input type = "date"  name="end_date" autocomplete="off"autofocus class="form-control" required>
-        <button type="submit" class="btn btn-sm btn-outline-secondary">Enter</button>
+<div class="row">
+    <div class="col-sm-4 col-lg-3 col-md-3">
+        <div class="card">
+            <div class="card-header" style="background-color: lightseagreen;">Filter</div>
+            <div class="card-body">
+                <form style="display: inline-block;" action="{{ url_for('supplier',supplier_id= supplier.id) }}"  method="post">
+                    <div class="form-group">
+                        <label for="start_date">From:</label>
+                        <input type = "date" name="start_date" id="start_date" value="{{ start }}" autocomplete="off" autofocus class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="end_date">To:</label>
+                        <input type = "date"  name="end_date" id="end_date" value="{{ end }}" autocomplete="off"  class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit"  id="clickbutton" class="btn btn-block btn-outline-secondary">Enter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    
     </div>
-    </div>
-    </form>
-    <h6>Period: {{ start }}  TO   {{ end }}</h6>
-</div>
-<div class="p-5 text-center">
-    <table class="display" id="export">
-        <thead>
-            <th>Date</th>
-            <th>Details</th>
-            <th>Dr</th>
-            <th>Cr</th>
-            <th>Balance</th>
-         
+    <div class="col-sm-6 col-lg-8 col-md-8">
+        <div class="card text-center p3" style="background-color: whitesmoke;">
+        <h4 class="h4 ">{{ supplier }} Statement</h4>
+        <h6>Period: {{ start  }}  TO   {{ end }}</h6>
+        <h5>Balance: {{ net | currencyFormat }}</h5>
+        </div>
+        <div class="p-2"></div>
+        <table class="display" id="export">
+            <thead>
+                <th>Date</th>
+                <th>Details</th>
+                <th>Dr</th>
+                <th>Cr</th>
 
-        </thead>
-        <tbody>
-            <tr>
-                <td>{{ start }}</td>
-                <td>Opening Balance</td>
-                <td></td>
-                <td></td>
-                <td>{{ report['balance'] | round(2) }}</td>
-            </tr>
-            {% for i in report %}
-            <tr>
-                <td>{{ report[i]["date"]  }}</td>
-                <td>{{ report[i]["details"] }}</td>
-                <td>{{ report[i]['dr']  }}</td>
-                <td>{{ report[i]['cr'] }}</td>
-                <td></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ start }}</td>
+                    <td><b>Opening Balance</b></td>
+                    <td></td>
+                    <td>{{ report['balance'] | currencyFormat }}</td>
+                </tr>
+                {% for i in report %}
+                <tr>
+                    <td>{{ report[i]["date"]  }}</td>
+                    <td>{{ report[i]["details"] }}</td>
+                    <td>{{ report[i]['dr']  }}</td>
+                    <td>{{ report[i]['cr'] }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td>{{ end }}</td>
+                    <td><b>Closing Balance</b></td>
+                    <td></td>
+                    <td>{{ net | currencyFormat }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
 </div>
 {% endblock %}

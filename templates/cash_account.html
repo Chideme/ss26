@@ -7,7 +7,7 @@
 {% block sidebar %}
 <a href="{{ url_for('cash_accounts',) }}"><span style="color: royalblue;">Back</span></a>
 <h4 class="h4 text-center p3">{{ account.account_name }} Report</h4>
-<h5 class="text-center">Balance: {{ balance }}</h5>
+<h5 class="text-center">Balance: {{ balance | currencyFormat }}</h5>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <div class="row">

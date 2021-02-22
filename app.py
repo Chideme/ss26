@@ -32,6 +32,10 @@ app.config.update(dict(
 mail = Mail(app)
 
 
+@app.template_filter()
+def currencyFormat(value):
+    value = float(value)
+    return "${:,.2f}".format(value)
 
 @app.route("/",methods=["GET"])
 def index():
@@ -239,10 +243,13 @@ def dashboard(heading):
 
         start_date =  end_date- timedelta(days=30)
         h = heading
-        if h == "Sales" or h =="Profit":
+        if h == "Sales" or h =="Gross Profit":
                 return render_template("dashboard.html",h=heading,start_date=start_date,end_date=end_date)
         else:
                 return render_template("404.html")
+
+        
+        
 
 
 @app.route("/dashboard/reports",methods=["POST"])
@@ -1187,25 +1194,30 @@ def credit_note():
                 vehicle_number= request.form.get("vehicle_number")
                 sales_price= float(request.form.get("sales_price"))
                 product_id = request.form.get("product")
-                qty= request.form.get("qty")
+                qty= float(request.form.get("qty"))
                 customer_id=request.form.get("customers")
                 shift_id = request.form.get("shift")
                 shift = Shift.query.get(shift_id)
                 customer = Customer.query.get(customer_id)
+                account = Account.query.get(customer.account_id)
                 sales_return = Account.query.filter_by(account_name="Fuel Sales").first()
-                price = Price.query.filter(Price.shift_id ==shift_id,Price.product_id==product_id).first()
                 date = shift.date
-                inv_amt = price.cost_price*qty
-                inv_amt = round(inv_amt,2)
                 amount = qty * sales_price
                 amount = round(amount,2)
                 credit_note = CreditNote(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name="N/A")
                 db.session.flush()
                 details = "Credit note {}".format(credit_note.id)
+                ref = "Credit note {} set off".format(credit_note.id)
+                if account.account_name != "Accounts Receivables" :
+                        payment =  CustomerPayments(date=date,customer_id=customer_id,amount=-amount,ref=ref)
                 sales_journal = Journal(date=shift.date,details=details,dr=sales_return.id,cr=customer.account_id,amount=amount,created_by=session['user_id'])
                 db.session.add(sales_journal)
+                db.session.add(payment)
                 db.session.add(credit_note)
                 db.session.commit()
+
+                return redirect(url_for('customers'))
+                
 
 
 @app.route("/customers/<int:customer_id>",methods=["GET","POST"])
@@ -1216,8 +1228,9 @@ def customer(customer_id):
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 customer = Customer.query.filter_by(id=customer_id).first()
                 total_invoices = Invoice.query.filter_by(customer_id=customer_id).all()
+                total_c_notes = CreditNote.query.filter_by(customer_id=customer_id).all()
                 total_payments = CustomerPayments.query.filter_by(customer_id=customer_id).all()
-                net = customer.opening_balance - sum([i.amount for i in total_payments]) + sum([i.price*i.qty for i in total_invoices])
+                net = customer.opening_balance - sum([i.amount for i in total_payments])-sum([i.price*i.qty for i in total_c_notes]) + sum([i.price*i.qty for i in total_invoices])
                 
                 if request.method == "POST":
                         start_date = request.form.get("start_date")
@@ -1227,7 +1240,7 @@ def customer(customer_id):
                         return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
                 else:
                         end_date = date.today()
-                        start_date = end_date - timedelta(days=900)
+                        start_date = end_date - timedelta(days=30)
                         report = customer_statement(customer_id,start_date,end_date)
                         return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
                        
@@ -1479,8 +1492,9 @@ def supplier(supplier_id):
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 supplier = Supplier.query.filter_by(id=supplier_id).first()
                 total_deliveries = Delivery.query.filter_by(supplier=supplier_id).all()
+                total_d_notes = DebitNote.query.filter_by(supplier=supplier_id).all()
                 total_payments = SupplierPayments.query.filter_by(supplier_id=supplier_id).all()
-                net =supplier.opening_balance +  sum([i.cost_price*i.qty for i in total_deliveries])-sum([i.amount for i in total_payments])
+                net =supplier.opening_balance +  sum([i.cost_price*i.qty for i in total_deliveries])- sum([i.cost_price*i.qty for i in total_d_notes])-sum([i.amount for i in total_payments])
                 
                 if request.method == "POST":
                         start_date = request.form.get("start_date")
@@ -1490,7 +1504,7 @@ def supplier(supplier_id):
                         return render_template("supplier.html",report=report,supplier=supplier,net=net,start=start_date,end=end_date)
                 else:
                         end_date = date.today()
-                        start_date = end_date - timedelta(days=900)
+                        start_date = end_date - timedelta(days=30)
                         report = supplier_statement(supplier_id,start_date,end_date)
                         return render_template("supplier.html",report=report,supplier=supplier,net=net,start=start_date,end=end_date)
 
@@ -1622,16 +1636,17 @@ def ledger():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 accounts= Account.query.all()
                 if request.method =="GET":
-                       
-                        return render_template("ledger.html",accounts=accounts)
+                        account = Account.query.get(1)
+                        return render_template("ledger.html",accounts=accounts,ac=account)
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
                         account_id = int(request.form.get("account"))
+                        account = Account.query.get(account_id)
                         balance = opening_balance(start_date,account_id)
                         journals = Journal.query.filter(Journal.date.between(start_date,end_date)).filter(or_(Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
           
-                        return render_template("ledger.html",journals=journals,account_id=account_id,opening_balance=balance,accounts=accounts)
+                        return render_template("ledger.html",journals=journals,account_id=account_id,opening_balance=balance,accounts=accounts,start_date=start_date,end_date=end_date,entry=account.entry,ac=account)
 
 @app.route("/trial_balance",methods=["GET","POST"])
 @check_schema
@@ -1654,7 +1669,32 @@ def trial_balance():
                         r_e = retained_earnings(start_date)
                         return render_template("trial_balance.html",accounts=accounts,report=report,r_e=r_e,start_date=start_date,end_date=end_date)
 
-
+@app.route("/pnl",methods=["GET","POST"])
+@check_schema
+@login_required
+def profit_and_loss():
+        """Income Statement"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                incomes = Account.query.filter(Account.code.between(100,199)).order_by(Account.code.asc()).all()
+                expenses = Account.query.filter(Account.code.between(200,399)).order_by(Account.code.asc()).all()
+                if request.method =="GET":
+                        end_date = date.today()
+                        start_date = end_date - timedelta(days=30)
+                        report = p_n_l_balances(start_date,end_date)
+                        total_revenue = sum(report[i.id] for i in incomes)
+                        total_costs = sum(report[i.id] for i in expenses)
+                        profit = total_revenue - total_costs
+                        
+                        return render_template("pnl.html",total_costs=total_costs,total_revenue=total_revenue,profit=profit,incomes=incomes,expenses=expenses,report=report,start_date=start_date,end_date=end_date)
+                        
+                else:
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        report = p_n_l_balances(start_date,end_date)
+                        total_revenue = sum(report[i.id] for i in incomes)
+                        total_costs = sum(report[i.id] for i in expenses)
+                        profit = total_revenue - total_costs
+                        return render_template("pnl.html",total_costs=total_costs,total_revenue=total_revenue,profit=profit,incomes=incomes,expenses=expenses,report=report,start_date=start_date,end_date=end_date)
 
 
 @app.route("/cash_accounts",methods=["GET","POST"])
@@ -1760,7 +1800,8 @@ def sales_breakdown(date):
         """Expenses Report"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.date==date)).all()
-                sales_per_customer = total_customer_sales(customer_sales)
+                credit_notes= db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.date==date)).all()
+                sales_per_customer = total_customer_sales(customer_sales,credit_notes)
                 return render_template("sales_breakdown.html",date=date,sales_per_customer=sales_per_customer)
 
 
@@ -1984,7 +2025,8 @@ def ss26():
                         cash_customers = Customer.query.filter(Customer.account_id != receivable.id).all()
                         ###### Cash breakdown
                         customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
-                        sales_breakdown = total_customer_sales(customer_sales) #calculate total sales per customer)
+                        credit_notes= db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.shift_id==shift_id,Customer.name != "Cash")).all()
+                        sales_breakdown = total_customer_sales(customer_sales,credit_notes) #calculate total sales per customer)
                         sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
                         
                         return render_template("ss26.html",products=data['products'],expense_accounts=data['expense_accounts'],
@@ -2097,8 +2139,9 @@ def update_fuel_deliveries():
                 cost_price = float(request.form.get("cost_price"))
                 amount = cost_price * qty
                 new_cost = ((product.avg_price*product.qty) + amount)/(qty +product.qty)
-                product.avg_price = Decimal(new_cost)
-                price.avg_price = Decimal(new_cost)
+                product.cost_price = cost_price
+                product.avg_price = round(new_cost,2)
+                price.avg_price = round(new_cost,2)
                 delivery = Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
                 journal = Journal(date=current_shift.date,details=document,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                 db.session.add(journal)
@@ -2473,7 +2516,7 @@ def update_lubes_deliveries():
                                 cost_price = product.cost_price
                                 amount = cost_price * qty
                                 new_cost = ((product.avg_price*product.qty) + amount)/(qty +product.qty)
-                                product.avg_price = Decimal(new_cost)
+                                product.avg_price = round(new_cost,2)
                                 supplier = Supplier.query.get("supplier")
                                 document = request.form.get("document")
                                 inventory = Account.query.filter_by(account_name="Lubes Inventory").first()

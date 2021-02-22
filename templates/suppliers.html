@@ -44,7 +44,7 @@ Suppliers
                         <td>{{ supplier.name }}</td>
                         <td>{{ supplier.contact_person }}</td>
                         <td>{{ supplier.phone_number }}</td>
-                        <td><a href="{{ url_for('supplier',supplier_id=supplier.id) }}">{{ balances[supplier.name] }}</a></td>
+                        <td><a href="{{ url_for('supplier',supplier_id=supplier.id) }}">{{ balances[supplier.name] | currencyFormat }}</a></td>
                         <td>
                             <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditSupplier{{ supplier.id }}">
                                 Edit Supplier

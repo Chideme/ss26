@@ -32,7 +32,7 @@
                         <td>{{ j.details }}</td>
                         <td>{{ names[j.dr] }}</td>
                         <td>{{ names[j.cr] }}</td>
-                        <td>{{ j.amount }}</td>
+                        <td>{{ j.amount | currencyFormat }}</td>
                         <td>
                             <button type="button" class="btn btn-light" data-toggle="modal" data-target="#ActionJournal{{ j.id }}">
                                 Approve/Delete

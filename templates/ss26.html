@@ -100,14 +100,14 @@
                     </button>
                   </td>
                   <td class="driveway-table">{{ product_sales_ltr[product.name][0] }}</td>
-                  <td class="numbers driveway-table">{{ (product_sales_ltr[product.name][0]*product_sales_ltr[product.name][1][1].selling_price) |round(2) }}</td>
+                  <td class="numbers driveway-table">{{ (product_sales_ltr[product.name][0]*product_sales_ltr[product.name][1][1].selling_price) | currencyFormat }}</td>
                 </tr>
                 {% endfor %}
                 <tr class="driveway-table">
                   <th class="driveway-table" colspan="3">Total</th>
                   
-                  <td class="driveway-table">{{ total_sales_ltr |round(2) }}</td>
-                  <td class="numbers driveway-table">{{ total_sales_amt | round(2) }}</td>
+                  <td class="driveway-table">{{ total_sales_ltr | currencyFormat }}</td>
+                  <td class="driveway-table">{{ total_sales_amt | currencyFormat }}</td>
                 </tr>
               </tbody>
               </table>
@@ -168,7 +168,7 @@
                 {% for i in sales_breakdown %}
                 <tr>
                   <td>{{ i }}</td>
-                  <td>{{ sales_breakdown[i] | round(2) }}</td>
+                  <td>{{ sales_breakdown[i] | currencyFormat }}</td>
                 </tr>
                {% endfor %}
               </tbody>
@@ -186,33 +186,29 @@
     
             <tr>
               <th scope="row">Total Cash Sales:</th>
-              <td class="numbers">{{ sales_breakdown["Cash"] | round(2) }}</td>
+              <td class="numbers">{{ sales_breakdown["Cash"] | currencyFormat }}</td>
             </tr>
             <th  colspan="2">Expenses:</th>
             {% if expenses %}
             {% for expense in expenses %}
             <tr>
               <td>{{ expense[1].account_name }}</td>
-              <td class="numbers">{{ expense[0].amount }}</td>
+              <td class="numbers">{{ expense[0].amount | currencyFormat }}</td>
             </tr>
             {% endfor %}
-            {% else %}
-            <tr>
-              <td>--</td>
-              <td>--</td>
-            </tr>
+        
             {% endif %}
             <tr>
                 <th  scope="row">Expected Cash</th>
           
-                <td class="numbers">{{ (sales_breakdown["Cash"]-total_cash_expenses) | round(2) }}</td>
+                <td class="numbers">{{ (sales_breakdown["Cash"]-total_cash_expenses) |  currencyFormat }}</td>
   
             </tr>
             <tr>
               <th  scope="row"> Actual Cash Banked</th>
-        
-              <td class="numbers">{{ cash_up.actual_amount }}</td>
-
+              {% if cash_up %}
+              <td class="numbers">{{ cash_up.actual_amount | currencyFormat }}</td>
+              {% endif %}
             </tr>
         </table>
     </div>

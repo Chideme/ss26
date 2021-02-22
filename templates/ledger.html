@@ -16,6 +16,7 @@ From:{{ start_date }} To: {{ end_date }}
               <div class="form-group">
                 <label for="account">Select Account:</label>
                   <select class="form-control"  id="account" name="account">
+                    <option value="{{ ac.id }}" selected>{{ ac.account_name }}</option>
                       {% for account in accounts %}
                     <option value="{{ account.id }}">{{ account.account_name }}</option>
                     {% endfor %}
@@ -50,22 +51,29 @@ From:{{ start_date }} To: {{ end_date }}
                         <th>Details</th>
                         <th>Debit</th>
                         <th>Credit</th>
-                        <th>Balance</th>
                     </tr>
                 </thead>
                 <tbody>
+                  <tr>
+                    <td>{{ start_date }}</td>
+                    <td>Opening Balance</td>
+                    {% if entry == "DR" %}
+                    <td>{{ opening_balance }}</td>
+                    {% else %}
+                    <td>{{ opening_balance }}</td>
+                    {% endif %}
+                  </tr>
                     {% for j in journals %}
                     <tr>
                         <td>{{ j.date }}</td>
                         <td>{{ j.details }}</td>
                         {% if j.dr == account_id %}
-                        <td>{{ j.amount| round(2) }}</td>
+                        <td>{{ j.amount | currencyFormat }}</td>
                         <td></td>
                         {% else %}
                         <td>0</td>
-                        <td>{{ j.amount| round(2)  }}</td>
+                        <td>{{ j.amount | currencyFormat  }}</td>
                         {% endif %}
-                        <td>00</td>
                     </tr>
                     {% endfor %}
                 </tbody>

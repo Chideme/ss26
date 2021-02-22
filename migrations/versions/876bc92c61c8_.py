@@ -1,17 +1,16 @@
 """empty message
 
-Revision ID: 5989646a4b50
+Revision ID: 876bc92c61c8
 Revises: 
-Create Date: 2021-01-30 05:06:19.550833
+Create Date: 2021-02-22 22:12:51.615660
 
 """
 from alembic import op
 import sqlalchemy as sa
 from werkzeug.security import check_password_hash, generate_password_hash
 
-
 # revision identifiers, used by Alembic.
-revision = '5989646a4b50'
+revision = '876bc92c61c8'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -28,7 +27,7 @@ def upgrade():
     sa.UniqueConstraint('name'),
     schema='public'
     )
-    roles_table= op.create_table('roles',
+    roles_table=op.create_table('roles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
@@ -65,13 +64,7 @@ def upgrade():
     sa.Column('account_category', sa.String(), nullable=False),
     sa.Column('entry', sa.String(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
-    schema='tenant'
-    )
-    op.create_table('coupons',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(), nullable=False),
-    sa.Column('coupon_qty', sa.Float(), nullable=False),
-    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('account_name'),
     schema='tenant'
     )
     op.create_table('shift',
@@ -122,6 +115,7 @@ def upgrade():
     sa.Column('opening_balance', sa.Float(), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['tenant.accounts.id'], ),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name'),
     schema='tenant'
     )
     op.create_table('lubes_cash_up',
@@ -161,6 +155,7 @@ def upgrade():
     sa.Column('account_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['tenant.accounts.id'], ),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name'),
     schema='tenant'
     )
     op.create_table('sales_receipts',
@@ -183,6 +178,7 @@ def upgrade():
     sa.Column('opening_balance', sa.Float(), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['tenant.accounts.id'], ),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name'),
     schema='tenant'
     )
     op.create_table('users',
@@ -198,14 +194,26 @@ def upgrade():
     sa.UniqueConstraint('username'),
     schema='tenant'
     )
-    op.create_table('coupon_sales',
+    op.create_table('coupons',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('coupon_qty', sa.Float(), nullable=False),
+    sa.Column('customer_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['customer_id'], ['tenant.customers.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    schema='tenant'
+    )
+    op.create_table('credit_notes',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('date', sa.Date(), nullable=False),
     sa.Column('shift_id', sa.Integer(), nullable=False),
+    sa.Column('customer_id', sa.Integer(), nullable=False),
+    sa.Column('qty', sa.Float(), nullable=False),
     sa.Column('product_id', sa.Integer(), nullable=False),
-    sa.Column('coupon_id', sa.Integer(), nullable=False),
-    sa.Column('qty', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['coupon_id'], ['tenant.coupons.id'], ),
+    sa.Column('price', sa.Float(), nullable=False),
+    sa.Column('vehicle_number', sa.String(), nullable=True),
+    sa.Column('driver_name', sa.String(), nullable=True),
+    sa.ForeignKeyConstraint(['customer_id'], ['tenant.customers.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['tenant.products.id'], ),
     sa.ForeignKeyConstraint(['shift_id'], ['tenant.shift.id'], ),
     sa.PrimaryKeyConstraint('id'),
@@ -239,7 +247,7 @@ def upgrade():
     )
     op.create_table('journals',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('date', sa.DateTime(), nullable=False),
+    sa.Column('date', sa.Date(), nullable=False),
     sa.Column('details', sa.String(), nullable=True),
     sa.Column('dr', sa.Integer(), nullable=False),
     sa.Column('cr', sa.Integer(), nullable=False),
@@ -254,7 +262,7 @@ def upgrade():
     )
     op.create_table('journals_pending',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('date', sa.DateTime(), nullable=False),
+    sa.Column('date', sa.Date(), nullable=False),
     sa.Column('details', sa.String(), nullable=True),
     sa.Column('dr', sa.Integer(), nullable=False),
     sa.Column('cr', sa.Integer(), nullable=False),
@@ -311,6 +319,36 @@ def upgrade():
     sa.UniqueConstraint('name'),
     schema='tenant'
     )
+    op.create_table('coupon_sales',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('date', sa.Date(), nullable=False),
+    sa.Column('shift_id', sa.Integer(), nullable=False),
+    sa.Column('product_id', sa.Integer(), nullable=False),
+    sa.Column('coupon_id', sa.Integer(), nullable=False),
+    sa.Column('qty', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['coupon_id'], ['tenant.coupons.id'], ),
+    sa.ForeignKeyConstraint(['product_id'], ['tenant.products.id'], ),
+    sa.ForeignKeyConstraint(['shift_id'], ['tenant.shift.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    schema='tenant'
+    )
+    op.create_table('debit_notes',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('shift_id', sa.Integer(), nullable=False),
+    sa.Column('tank_id', sa.Integer(), nullable=True),
+    sa.Column('date', sa.Date(), nullable=False),
+    sa.Column('qty', sa.Float(), nullable=False),
+    sa.Column('cost_price', sa.Float(), nullable=False),
+    sa.Column('product_id', sa.Integer(), nullable=True),
+    sa.Column('document_number', sa.String(), nullable=True),
+    sa.Column('supplier', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['product_id'], ['tenant.products.id'], ),
+    sa.ForeignKeyConstraint(['shift_id'], ['tenant.shift.id'], ),
+    sa.ForeignKeyConstraint(['supplier'], ['tenant.supplier.id'], ),
+    sa.ForeignKeyConstraint(['tank_id'], ['tenant.tanks.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    schema='tenant'
+    )
     op.create_table('delivery',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('shift_id', sa.Integer(), nullable=False),
@@ -364,7 +402,7 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     schema='tenant'
     )
-
+    ##### Populate init data
     password = generate_password_hash("Kud@94")
     op.bulk_insert(system_table,
     [
@@ -389,6 +427,7 @@ def upgrade():
         {'name':'view-only'}
     ],
      multiinsert=False)
+    # 
     # ### end Alembic commands ###
 
 
@@ -398,6 +437,8 @@ def downgrade():
     op.drop_table('tank_dips', schema='tenant')
     op.drop_table('pumps', schema='tenant')
     op.drop_table('delivery', schema='tenant')
+    op.drop_table('debit_notes', schema='tenant')
+    op.drop_table('coupon_sales', schema='tenant')
     op.drop_table('tanks', schema='tenant')
     op.drop_table('supplier_payments', schema='tenant')
     op.drop_table('prices', schema='tenant')
@@ -406,7 +447,8 @@ def downgrade():
     op.drop_table('journals', schema='tenant')
     op.drop_table('invoices', schema='tenant')
     op.drop_table('customer_payments', schema='tenant')
-    op.drop_table('coupon_sales', schema='tenant')
+    op.drop_table('credit_notes', schema='tenant')
+    op.drop_table('coupons', schema='tenant')
     op.drop_table('users', schema='tenant')
     op.drop_table('supplier', schema='tenant')
     op.drop_table('sales_receipts', schema='tenant')
@@ -418,7 +460,6 @@ def downgrade():
     op.drop_table('subscriptions', schema='public')
     op.drop_table('shift_underway', schema='tenant')
     op.drop_table('shift', schema='tenant')
-    op.drop_table('coupons', schema='tenant')
     op.drop_table('accounts', schema='tenant')
     op.drop_table('tenants', schema='public')
     op.drop_table('system_admin', schema='public')

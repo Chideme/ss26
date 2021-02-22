@@ -9,7 +9,7 @@
 
 <div class="text-center">
     <h4>Cash Accounts</h4>
-    <table class="table table-sm table-hover">
+    <table class="display" id="export">
         <thead>
             <th>Account</th>
             <th>Balance</th>
@@ -18,7 +18,7 @@
             {% for account in accounts %}
             <tr>
                 <td><a href="{{ url_for('cash_account',account_id=account.id) }}">{{ account }}</a></td>
-                <td>{{ balances[account] }}</td>
+                <td>{{ balances[account] | currencyFormat }}</td>
             </tr>
             {% endfor %}
         </tbody>

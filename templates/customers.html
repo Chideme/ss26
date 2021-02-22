@@ -44,7 +44,7 @@ Customers
                         <td>{{ customer.name }}</td>
                         <td>{{ customer.contact_person }}</td>
                         <td>{{ customer.phone_number }}</td>
-                        <td><a href="{{ url_for('customer',customer_id=customer.id) }}">{{ balances[customer] | round(2)}}</a></td>
+                        <td><a href="{{ url_for('customer',customer_id=customer.id) }}">{{ balances[customer] | currencyFormat }}</a></td>
                         <td>
                             <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditCustomer{{ customer.id }}">
                                 Edit Customer
@@ -240,7 +240,7 @@ Customers
                         </div>
                     </div><!--Customer Payment-->
    
-                     <!--Customer Sales Modal-->
+                     <!--Credit Note Modal-->
  <div class="modal fade" id="CreditNote" tabindex="-1" role="dialog" aria-labelledby="CreditNoteFormModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -253,6 +253,12 @@ Customers
             <div class="modal-body">
                 <form role="form"  action="{{ url_for('credit_note') }}" method="post" >
                     <div class="form-row">
+                        <div class="form-group col-md-4">
+                        <label for="SF">Shift Number</label>
+                        <div class="form-group">
+                          <input  id="SF" type ="number" name="shift" autocomplete="off"autofocus class="form-control">
+                      </div>
+                    </div>
                     <div class="form-group col-md-8">
                         <label for="customer">Pick Customer:</label>
                         <select id="customer" class="form-control" name="customers"> 

@@ -197,7 +197,7 @@ class Customer(db.Model):
     __tablename__="customers"
     
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name= db.Column(db.String,nullable=False)
+    name= db.Column(db.String,nullable=False,unique=True)
     contact_person =db.Column(db.String,nullable=True)
     phone_number = db.Column(db.String,nullable=True)
     account_id= db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
@@ -227,7 +227,7 @@ class Supplier(db.Model):
     __tablename__="supplier"
     
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name= db.Column(db.String,nullable=False)
+    name= db.Column(db.String,nullable=False,unique=True)
     contact_person =db.Column(db.String,nullable=True)
     phone_number = db.Column(db.String,nullable=True)
     account_id=db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
@@ -319,7 +319,7 @@ class Account(db.Model):
     __table_args__={'schema':'tenant'}
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     code = db.Column(db.Integer,nullable=False)
-    account_name= db.Column(db.String,nullable=False)
+    account_name= db.Column(db.String,nullable=False,unique=True)
     account_category =db.Column(db.String,nullable=False)
     entry = db.Column(db.String,nullable=False)
     
@@ -410,7 +410,7 @@ class Journal(db.Model):
     __table_args__={'schema':'tenant'}
 
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    date= db.Column(db.DateTime, nullable=False)
+    date= db.Column(db.Date, nullable=False)
     details = db.Column(db.String,nullable=True)
     dr = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
     cr = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
@@ -423,7 +423,7 @@ class Journal_Pending(db.Model):
     __table_args__={'schema':'tenant'}
 
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    date= db.Column(db.DateTime, nullable=False)
+    date= db.Column(db.Date, nullable=False)
     details = db.Column(db.String,nullable=True)
     dr = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
     cr = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
