@@ -493,6 +493,7 @@ def tank_variance_daily_report(start_date,end_date,tank_id):
     return report
 
 
+
 def cash_sales(amount,customer_id,shift_id,date):
     """ Calculates invoices as per amount, as cash sales usually lack product information"""
     amount =  amount

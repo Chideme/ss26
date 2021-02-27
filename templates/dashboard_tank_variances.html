@@ -68,9 +68,10 @@
               const report = JSON.parse(request.responseText);
               var dates = report.Date;
               var data = report.Data;
-  
+              
 
               var ctx = document.getElementById("myChart");
+              
                   var myChart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -96,12 +97,12 @@
                         display: false,
                       },
                       title: {
-                        display:true,
+                        display:false,
                         text:'Tank'.concat(' ',tank,' Shrinkage Report ( % )')
                       }
                     }
                   });
-
+                  
             }
 
             const data = new FormData();

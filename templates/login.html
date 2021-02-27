@@ -35,32 +35,31 @@
     </nav>
     <main role="main" class="col-md-12 ml-sm-auto col-lg-12 px-4">
       
-    {% if get_flashed_messages() %}
-    <header>
-        <div class="alert alert-info border text-center" role="alert">
-            {{ get_flashed_messages() | join(" ") }}
+      {% if get_flashed_messages() %}
+      <header>
+          <div class="alert alert-info border text-center" role="alert">
+              {{ get_flashed_messages() | join(" ") }}
+          </div>
+      </header>
+    {% endif %}
+    
+    
+      <form class="form-signin" action="{{ url_for('login') }}" method="post">
+        <div class="card shadow-lg  mb-5 bg-white rounded">
+          <div class="card-header" style="background-color:grey; color: white;">Please enter your company code</div>
+          <div class="card-body">
+          <div class="form-group">
+          <label for="inputCompany">Enter Company Code</label>
+          <input type="text" id="inputCompany" name="tenant_id" class="form-control" placeholder="Company Code" required autofocus>
+          </div>
+          </div>
+          <div class="card-footer">
+          <button class="btn btn-lg btn-primary btn-block" type="submit">Enter</button>
+          <small class="text-muted"> <a href="{{ url_for('forgot_password') }}">Forgot Password?</a></small>
+          </div>
         </div>
-    </header>
-  {% endif %}
-  
-   
-    <form class="form-signin" action="{{ url_for('login') }}" method="post">
-      <div class="card shadow-lg  mb-5 bg-white rounded">
-      <div class="card-header" style="background-color:black; color: white;">Please enter your company code</div>
-      <div class="card-body">
-      <div class="form-group">
-      <label for="inputCompany">Enter Company Code</label>
-      <input type="text" id="inputCompany" name="tenant_id" class="form-control" placeholder="Company Code" required autofocus>
-      </div>
-      </div>
-      <div class="card-footer">
-      <button class="btn btn-lg btn-primary btn-block" type="submit">Enter</button>
-      
-      <small class="text-muted"> <a href="{{ url_for('forgot_password') }}">Forgot Password?</a></small>
-      </div>
-      </div>
-    </form>
-    <p class="mt-5 mb-3 text-muted">&copy; 2020</p>
+      </form>
+      <p class="mt-5 mb-3 text-muted">&copy; 2021</p>
     </main>
    
   </body>

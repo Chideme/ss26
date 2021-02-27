@@ -16,30 +16,19 @@
             <a class="d-flex align-items-center text-muted" href="#">
               <span data-feather="bar-chart"></span>
             </a>
+            
           </h6>
           
           <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('dashboard',heading='Sales') }}">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
                   <span data-feather="bar-chart-2"></span>
                   <span style="color: lightseagreen;">
-                   Sales
+                   Forecourt Dashboard
                 </a>
               </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('dashboard',heading='Gross Profit') }}">
-                <span data-feather="bar-chart-2"></span>
-                <span style="color: lightseagreen;">
-                 Gross Profit
-              </a>
-            </li>
-            <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('dashboard_tank_variance') }}">
-                <span data-feather="bar-chart-2"></span>
-                <span style="color: lightseagreen;">
-                Tank Variances
-              </a>
-            </li>
+          
+          
           </ul>
           </nav>
 

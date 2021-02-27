@@ -1,139 +1,94 @@
 {% extends "dashboard_layout.html" %}
-
+{% block html_head %}
+<link rel="stylesheet"  type="text/css" href="/static/dashboard.css">
+{% endblock %}
 
 
 {% block main %}
-      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-left pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2" id="heading" value="{{ h }}">{{ h }}</h1>
+      
         
-      </div>
-
-      <div class="row">
-        <div class="col-sm-6 col-lg-3 col-md-6 ">
-          <div class="card">
-            <div class="card-header" style="background-color: lightseagreen;">Filter</div>
-            <div class="card-body">
-            <form  action="{{ url_for('dashboard_reports') }}" id="form" method="post">
-              <div class="form-group">
-                <label for="product">Select Product:</label>
-                  <select class="form-control"  id="product">
-                    <option selected >Fuel</option>
-                    <option>Lubricants</option>
-                  </select>
-              </div>
-              <div class="form-group">
-                <label for="frequency">Select Graph:</label>
-                  <select class="form-control"  id="frequency">
-                    <option selected >Day-to-day</option>
-                    <option>Month-to-month</option>
-                  </select>
-              </div>
-              <div class="form-group">
-                <label for="start_date">From:</label>
-                  <input type = "date"  value="{{ start_date }}" id="start_date" autocomplete="off" autofocus class="form-control" required>
-              </div>
-              <div class="form-group">
-                <label for="end_date">To:</label>
-                  <input type = "date"  value="{{ end_date }}" id="end_date" autocomplete="off"  class="form-control" required>
-              </div>
-              <div class="form-group">
-                  <button type="submit"  id="clickbutton" class="btn btn-block btn-outline-secondary">Enter</button>
-              </div>
+        <div class="card" style="background-color: #333;">
+              <form  action="{{ url_for('dashboard_reports') }}" id="form" method="post">
+                <div class="form-row align-items-center">
+                  <div class="form-group col-sm-3">
+                    <label for="product">Select Product:</label>
+                      <select class="form-control-sm" autofocus id="product" style="background-color: #333;color: lightseagreen;">
+                        <option selected >Fuel</option>
+                        <option>Lubricants</option>
+                      </select>
+                  </div>
+                  <div class="form-group col-sm-2">
+                    <label for="frequency">Time Period:</label>
+                      <select class="form-control-sm"  id="frequency" style="background-color: #333;color: lightseagreen;">
+                        <option selected >Day-to-day</option>
+                        <option>Month-to-month</option>
+                      </select>
+                  </div>
+                  <div class="form-group col-sm-2">
+                    <label for="start_date">From:</label>
+                      <input type = "date"  value="{{ start_date }}" id="start_date" autocomplete="off" class="form-control-sm" style="background-color: #333;color: lightseagreen;" required >
+                  </div>
+                  <div class="form-group col-sm-2">
+                    <label for="end_date">To:</label>
+                      <input type = "date"  value="{{ end_date }}" id="end_date" autocomplete="off"  class="form-control-sm" style="background-color: #333; color: lightseagreen;" required>
+                  </div>
+                  <div class="form-group col-sm-2">
+                      <label for="clickbutton">Filter:</label>
+                      <button type="submit"  id="clickbutton" class="btn btn-block btn-sm  btn-outline-primary">Enter</button>
+                  </div>
+                </div>
               </form>
-              </div>
-              </div>
-        </div>
-        <div class="col-sm-6 col-lg-9 col-md-6 shadow-lg  mb-5 bg-white rounded">
-            <canvas class="my-4 w-100" id="myChart" width="900" height="500"></canvas>
+              
+          </div>
+          
+        
+
+
+      <div class="row p-3">
+        <div class="col-lg-12" style="box-shadow: 5px 5px 5px 5px white;">
+            <canvas class="my-4 w-100" id="Sales" width="900" height="250"></canvas>
         </div>
       </div>
+      <div class="row p-3">
+        <div class="col-lg-6 col-md-12" style="box-shadow: 5px 5px 5px 5px white;">
+          <canvas class="my-4 w-100" id="GrossProfit" width="900" height="500"></canvas>
+        </div>
+        <div class="col-lg-1">
+          
+        </div>
+        <div class="col-lg-5 col-md-12" style="box-shadow: 5px 5px 5px 5px white;">
+          
+            <div class="card" style="background-color: #333;">
+              <form style="display: inline-block;" action="{{ url_for('dashboard_variance') }}" id="form" method="post">
+                <div class="form-group">
+                  <label for="tank">Select Tank:</label>
+                    <select class="form-control-sm"  style="background-color: #333;color: lightseagreen;" id="tank" required>
+                      {% if tanks %}
+                      <option  value="{{ tanks[0].id }}" selected >{{ tanks[0].name }}</option>
+                      {% for tank in tanks[1:] %}
+                      <option value="{{ tank.id }}">{{ tank.name }}</option>
+                      {% endfor %}
+                      {% else %}
+                      <option selected>Add Tank </option>
+                      {% endif %}
+                    </select>
+                </div>
+            </div>
+            <div>
+              <canvas class="my-4 w-100" id="TankVariance" width="900" height="500"></canvas>
+            </div>
+          
+        </div>
+      </div>
+     
       
       
       
       
       <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
-      
+      <script src="/static/dashboard.js" type="text/javascript" ></script>
   
-      <script>
-        window.onload = function(){
-          document.getElementById('clickbutton').click()
-        }
-        document.addEventListener('DOMContentLoaded',() => {
-          document.querySelector('#form').onsubmit = () => {
-            const request = new XMLHttpRequest()
-            const start_date = document.querySelector('#start_date').value;
-            const end_date = document.querySelector('#end_date').value;
-            const product = document.querySelector('#product').value;
-            const frequency = document.querySelector('#frequency').value;
-            const heading = document.querySelector('#heading').innerHTML;
-            var measurement = (() => {
-              if(heading=='Sales'){
-                return '( Litres )';
-              }
-              else{
-                return '( $ )';
-              }
-
-            })()
-            request.open('POST','/dashboard/reports');
-            
-            // when request finishes
-            request.onload = () => {
-
-              const report = JSON.parse(request.responseText);
-              var dates = report.Date;
-              var data = report.Data;
-  
-
-              var ctx = document.getElementById("myChart");
-                  var myChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                      labels: dates,
-                      datasets: [{
-                        data: data,
-                        lineTension: 0,
-                        backgroundColor: 'transparent',
-                        borderColor: '#007bff',
-                        borderWidth: 4,
-                        pointBackgroundColor: '#007bff'
-                      }]
-                    },
-                    options: {
-                      scales: {
-                        yAxes: [{
-                          ticks: {
-                            beginAtZero: true
-                          }
-                        }]
-                      },
-                      legend: {
-                        display: false,
-                      },
-                      title: {
-                        display:true,
-                        text:frequency.concat(' ',heading,' Report ',measurement)
-                      }
-                    }
-                  });
-
-            }
-
-            const data = new FormData();
-            data.append('start_date',start_date);
-            data.append('end_date',end_date);
-            data.append('frequency',frequency);
-            data.append('product',product);
-            data.append('heading',heading);
-            //send request
-            request.send(data);
-
-            return false;  
-
-            }
-            
-            });
-      </script>
+     
 
      
 {% endblock %}

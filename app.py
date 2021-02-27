@@ -103,8 +103,7 @@ def activate(tenant_schema):
                         user=User(username=super_user,password=hash_password,role_id=1,tenant_id=tenant_id,schema=session["schema"])
                         shift_underway = Shift_Underway(state=False,current_shift=0)
                         msg_body = "<h3>Please find your login details :</h3><body><p>Company Code: {}</p><p>User Name: Admin</p><p>Password: {}</p><small>Make sure to change your password once logged in</small></body>".format(tenant.id,password)
-                        db.session.add(shift_underway)
-                        db.session.add(customer)  
+                        db.session.add(shift_underway) 
                         db.session.add(user)
                         db.session.flush()
                         expiration= today + timedelta(days=7)
@@ -205,8 +204,8 @@ def user_login():
                                                 flash("Please finish setting up your account")
                                                 return redirect(url_for('activate',tenant_schema= org.schema))
                                         else:     
-                                                flash("Login details not correct,check your details and try again !!")
-                                                return render_template("login2.html")
+                                                flash("Login details not correct check your details and try again")
+                                                return redirect(url_for('user_login'))
                                 else:
                                         session["user_id"] = user.id
                                         session["user"] = user.username
@@ -216,10 +215,10 @@ def user_login():
                                         session["org_name"]= org.name
                                         
                                         flash("Welcome")
-                                        return redirect(url_for('dashboard',heading='Sales'))
+                                        return redirect(url_for('dashboard'))
                         else:
-                                flash("Login details not correct,check your details and try again !!")
-                                return render_template("login2.html")
+                                flash("Login details not correct check your details and try again")
+                                return redirect(url_for('user_login'))
                 else:
                         return render_template("login2.html")
 
@@ -233,23 +232,17 @@ def logout():
         
         return render_template("login.html")
 
-@app.route("/dashboard/<heading>",methods=["GET","POST"])
+@app.route("/dashboard/",methods=["GET","POST"])
 @login_required
 @check_schema
-def dashboard(heading):
-    """ Dashboard for Sales and Profit, to choose either, it is defined in the heading"""
+def dashboard():
+    """ Dashboard for Forecourt Dashboard"""
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
         end_date = date.today()
-
         start_date =  end_date- timedelta(days=30)
-        h = heading
-        if h == "Sales" or h =="Gross Profit":
-                return render_template("dashboard.html",h=heading,start_date=start_date,end_date=end_date)
-        else:
-                return render_template("404.html")
-
-        
-        
+        tanks = Tank.query.all()
+        return render_template("dashboard.html",start_date=start_date,end_date=end_date,tanks=tanks)
+       
 
 
 @app.route("/dashboard/reports",methods=["POST"])
@@ -258,74 +251,71 @@ def dashboard(heading):
 def dashboard_reports():
         """ Returns JSON Dashboard Reports"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                heading = request.form.get("heading") #check whether the report is for profit or sales
                 product = request.form.get("product")
                 frequency = request.form.get("frequency")
                 start_date = request.form.get("start_date")
                 end_date = request.form.get("end_date")
                 start_date = datetime.strptime(start_date,"%Y-%m-%d")
                 end_date = datetime.strptime(end_date,"%Y-%m-%d")
+                ###### Tank Variance %
+                tank_id = int(request.form.get("tank"))
+                if tank_id != "Add Tank":
+                        tank_data = tank_variance_daily_report(start_date,end_date,tank_id)
+                        t_sorted_date= sorted_dates([i for i in tank_data])
+                        tank_info = [tank_data[i] for i in t_sorted_date]
+                        tank_dates = [i.strftime('%d-%b-%y')  for i in t_sorted_date]
                 
                 if frequency == "Day-to-day":
                         if product=="Fuel":
-                                if heading == "Sales":
-                                        data = fuel_daily_sales(start_date,end_date)
-                                        sorted_date= sorted_dates([i for i in data])
-                                        data_info = [data[i] for i in sorted_date]
-                                        data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
-                                        report = jsonify({'Date':data_dates,'Data':data_info})
-                                else:
-                                        data = fuel_daily_profit_report(start_date,end_date)
-                                        sorted_date= sorted_dates([i for i in data])
-                                        data_info = [data[i] for i in sorted_date]
-                                        data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
-                                        report = jsonify({'Date':data_dates,'Data':data_info})
+                               
+                                data = fuel_daily_sales(start_date,end_date)
+                                sorted_date= sorted_dates([i for i in data])
+                                sales_info = [data[i] for i in sorted_date]
+                                sales_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
+                                data = fuel_daily_profit_report(start_date,end_date)
+                                p_sorted_date= sorted_dates([i for i in data])
+                                profit_info = [data[i] for i in p_sorted_date]
+                                profit_dates = [i.strftime('%d-%b-%y')  for i in p_sorted_date]
+                                report = jsonify({'SalesDate':sales_dates,'SalesData':sales_info,'ProfitDate':profit_dates,'ProfitData':profit_info,'TankDate':tank_dates,'TankData':tank_info})
                         else:
-                                if heading == "Sales":
-                                        data = lubes_daily_sales(start_date,end_date)
-                                        sorted_date= sorted_dates([i for i in data])
-                                        data_info = [data[i] for i in sorted_date]
-                                        data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
-                                        report = jsonify({'Date':data_dates,'Data':data_info})
-                                else:
-                                        data = lubes_daily_profit_report(start_date,end_date)
-                                        sorted_date= sorted_dates([i for i in data])
-                                        data_info = [data[i] for i in sorted_date]
-                                        data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
-                                        report = jsonify({'Date':data_dates,'Data':data_info})
+                                
+                                data = lubes_daily_sales(start_date,end_date)
+                                sorted_date= sorted_dates([i for i in data])
+                                sales_info = [data[i] for i in sorted_date]
+                                sales_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
+                                data = lubes_daily_profit_report(start_date,end_date)
+                                p_sorted_date= sorted_dates([i for i in data])
+                                profit_info = [data[i] for i in p_sorted_date]
+                                profit_dates = [i.strftime('%d-%b-%y')  for i in p_sorted_date]
+                                report = jsonify({'SalesDate':sales_dates,'SalesData':sales_info,'ProfitDate':profit_dates,'ProfitData':profit_info,'TankDate':tank_dates,'TankData':tank_info})
                 if frequency == "Month-to-month":
                         if product =="Fuel":
-                                if heading == "Sales":
-                                        data = fuel_mnth_sales(start_date,end_date)
-                                        data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
-                                        sorted_date= sorted_dates([i for i in data])
-                                        data_info = [data[i] for i in sorted_date]
-                                        data_dates = [i.strftime('%b-%y')  for i in sorted_date]
-                                        report = jsonify({'Date':data_dates,'Data':data_info})
-                                        
-                                else:
-                                        data = fuel_mnth_profit_report(start_date,end_date)
-                                        data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
-                                        sorted_date= sorted_dates([i for i in data])
-                                        data_info = [data[i] for i in sorted_date]
-                                        data_dates = [i.strftime('%b-%y')  for i in sorted_date]
-                                        report = jsonify({'Date':data_dates,'Data':data_info})
+                               
+                                data = fuel_mnth_sales(start_date,end_date)
+                                data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
+                                sorted_date= sorted_dates([i for i in data])
+                                sales_info = [data[i] for i in sorted_date]
+                                sales_dates = [i.strftime('%b-%y')  for i in sorted_date]
+                                data = fuel_mnth_profit_report(start_date,end_date)
+                                data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
+                                p_sorted_date= sorted_dates([i for i in data])
+                                profit_info = [data[i] for i in p_sorted_date]
+                                profit_dates = [i.strftime('%b-%y')  for i in p_sorted_date]
+                                report = jsonify({'SalesDate':sales_dates,'SalesData':sales_info,'ProfitDate':profit_dates,'ProfitData':profit_info,'TankDate':tank_dates,'TankData':tank_info})
                         else:
-                                if heading == "Sales":
-                                        data = lubes_mnth_sales(start_date,end_date)
-                                        data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
-                                        sorted_date= sorted_dates([i for i in data])
-                                        data_info = [data[i] for i in sorted_date]
-                                        data_dates = [i.strftime('%b-%y')  for i in sorted_date]
-                                        report = jsonify({'Date':data_dates,'Data':data_info})
-                                        
-                                else:
-                                        data = lubes_mnth_profit_report(start_date,end_date)
-                                        data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
-                                        sorted_date= sorted_dates([i for i in data])
-                                        data_info = [data[i] for i in sorted_date]
-                                        data_dates = [i.strftime('%b-%y')  for i in sorted_date]
-                                        report = jsonify({'Date':data_dates,'Data':data_info})
+                               
+                                data = lubes_mnth_sales(start_date,end_date)
+                                data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
+                                sorted_date= sorted_dates([i for i in data])
+                                sales_info = [data[i] for i in sorted_date]
+                                sales_dates = [i.strftime('%b-%y')  for i in sorted_date]
+                                data = lubes_mnth_profit_report(start_date,end_date)
+                                data = {datetime.strptime(i,"%b-%y").date():data[i] for i in data}
+                                p_sorted_date= sorted_dates([i for i in data])
+                                profit_info = [data[i] for i in p_sorted_date]
+                                profit_dates = [i.strftime('%b-%y')  for i in p_sorted_date]
+                                report = jsonify({'SalesDate':sales_dates,'SalesData':sales_info,'ProfitDate':profit_dates,'ProfitData':profit_info,'TankDate':tank_dates,'TankData':tank_info})
+                                
                 return report
 
 @app.route("/dashboard/tank_variance",methods=["POST","GET"])
@@ -356,14 +346,19 @@ def dashboard_variance():
                 start_date = datetime.strptime(start_date,"%Y-%m-%d")
                 end_date = datetime.strptime(end_date,"%Y-%m-%d")
                 tank_id = int(request.form.get("tank"))
-                data = tank_variance_daily_report(start_date,end_date,tank_id)
-                sorted_date= sorted_dates([i for i in data])
-                data_info = [data[i] for i in sorted_date]
-                data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
-               
+                if tank_id != "Add Tank":
+                        data = tank_variance_daily_report(start_date,end_date,tank_id)
+                        sorted_date= sorted_dates([i for i in data])
+                        data_info = [data[i] for i in sorted_date]
+                        data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
                 
+                        
 
-                return jsonify({'Date':data_dates,'Data':data_info})
+                        return jsonify({'Date':data_dates,'Data':data_info})
+                else:
+                        flash("Finish Configurations first")
+                        return redirect(url_for('tanks'))
+
 
         
 
