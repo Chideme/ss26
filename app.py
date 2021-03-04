@@ -1632,16 +1632,20 @@ def ledger():
                 accounts= Account.query.all()
                 if request.method =="GET":
                         account = Account.query.get(1)
-                        return render_template("ledger.html",accounts=accounts,ac=account)
+                        accounts = Account.query.all()
+                        names = {i.id:i.account_name for i in accounts}
+                        return render_template("ledger.html",accounts=accounts,ac=account,names=names)
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
                         account_id = int(request.form.get("account"))
                         account = Account.query.get(account_id)
+                        accounts = Account.query.all()
+                        names = {i.id:i.account_name for i in accounts}
                         balance = opening_balance(start_date,account_id)
                         journals = Journal.query.filter(Journal.date.between(start_date,end_date)).filter(or_(Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
           
-                        return render_template("ledger.html",journals=journals,account_id=account_id,opening_balance=balance,accounts=accounts,start_date=start_date,end_date=end_date,entry=account.entry,ac=account)
+                        return render_template("ledger.html",journals=journals,account_id=account_id,opening_balance=balance,accounts=accounts,start_date=start_date,end_date=end_date,entry=account.entry,ac=account,names=names)
 
 @app.route("/trial_balance",methods=["GET","POST"])
 @check_schema

@@ -51,6 +51,7 @@ From:{{ start_date }} To: {{ end_date }}
                         <th>Details</th>
                         <th>Debit</th>
                         <th>Credit</th>
+                        <th>View</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -74,13 +75,68 @@ From:{{ start_date }} To: {{ end_date }}
                         <td>0</td>
                         <td>{{ j.amount | currencyFormat  }}</td>
                         {% endif %}
+                        <td>
+                          <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#Journal{{ j.id }}">
+                            View
+                        </button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
 </div>               
                             
-    
+     <!--Journal Modal -->
+     {% for j in journals %}
+     <div class="modal fade" id="Journal{{ j.id }}" tabindex="-1" role="dialog" aria-labelledby="Journal{{ j.id }}FormModalLabel" aria-hidden="true">
+         <div class="modal-dialog" role="document">
+             <div class="modal-content">
+                 <div class="modal-header">
+                     <h5 class="modal-title" id="Journal{{ j.id }}FormLabel">Journal</h5>
+                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                             <span aria-hidden="true">&times;</span>
+                         </button>
+                 </div>
+                 <div class="modal-body">
+                     <table class="table table-sm">
+                       <thead>
+                         <th>Date</th>
+                         <th>Account</th>
+                         <th>DR</th>
+                         <th>CR</th>
+                       </thead>
+                       <tbody>
+                         <tr>
+                           <td>{{ j.date }}</td>
+                           <td>{{ names[j.dr] }}</td>
+                           <td>{{ j.amount | currencyFormat }}</td>
+                           <td>0</td>
+                         </tr>
+                         <tr>
+                          <td>{{ j.date }}</td>
+                          <td>{{ names[j.cr] }}</td>
+                          <td>0</td>
+                          <td>{{ j.amount | currencyFormat }}</td>
+                        </tr>
+                         <tr>
+                           <td colspan="4">
+                             {{ j.details }}
+                           </td>
+                         </tr>
+                       </tbody>
+                     </table>
+                    </div>
+                 
+                 <div class="modal-footer">  
+                     <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                 </div>
+                 </div>
+             </div>
+         </div>
+     
+     {% endfor %}
+<!--Journal Modal-->
+
 
     
 {% endblock %}
