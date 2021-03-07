@@ -37,8 +37,8 @@
                         <td>{{ pump[1].litre_reading }}</td>
                         <td>{{ pump[1].money_reading }}</td>
                         <td>
-                            <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditPump{{ pump[1].name }}">
-                                Edit Pump
+                            <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditPump{{ pump[1].id }}">
+                                Edit Pump  <span data-feather="edit-2"></span>
                             </button>
                         </td>
                     </tr>
@@ -72,8 +72,8 @@
                                     
                                     <label for="tank_id">Link to Tank:</label>
                                     <div class="form-group">
-                                        <select  id="tank_id" class="form-control" name="tank" type="text">
-                                            <option selected>Choose tank</option>
+                                        <select  id="tank_id" class="form-control" name="tank" type="text" required>
+                                            <option selected></option>
                                             {% for  tank in tanks %}
                                             <option  value="{{ tank.id }}">{{ tank.name }}</option>
                                             {% endfor %}
@@ -104,8 +104,8 @@
                                 <div class="modal-body">
                                     <form action="{{ url_for('delete_pump') }}" method="post" > 
                                         <div class="form-group">
-                                            <select class="form-control" name="pumps">
-                                                <option selected>Choose..</option>
+                                            <select class="form-control" name="pumps" required>
+                                                <option selected></option>
                                                 {% for  pump in pumps %}
                                                 <option  value="{{ pump.id }}">{{ pump.name }}</option>
                                                 {% endfor %}
@@ -124,7 +124,7 @@
                     </div><!--Deletes Pump-->
                     <!--Edit Pump-->
                     {% for pump in pump_tank %}
-                            <div class="modal fade" id="EditPump{{ pump[1].name }}" tabindex="-1" role="dialog" aria-labelledby="EditPumpFormModalLabel" aria-hidden="true">
+                            <div class="modal fade" id="EditPump{{ pump[1].id }}" tabindex="-1" role="dialog" aria-labelledby="EditPumpFormModalLabel" aria-hidden="true">
                                 <div class="modal-dialog" role="document">
                                     <div class="modal-content">
                                         <div class="modal-header">
@@ -136,7 +136,7 @@
                                         <div class="modal-body">
                                             <form  action="{{ url_for('edit_pump') }}" method="post" > 
                                                 <div class="form-group" >
-                                                    <input type = "text"  value="{{ pump[1].id }}" name="pump_id" autocomplete="off"  autofocus class="form-control" readonly>
+                                                    <input type = "text"  value="{{ pump[1].id }}" name="pump_id" autocomplete="off"  autofocus class="form-control" hidden>
                                                 </div>
                                                 <div class="form-group" >
                                                     <input type = "text"  value="{{ pump[1].name }}" name="name" autocomplete="off"  autofocus class="form-control" required>
@@ -144,8 +144,8 @@
                                     
                                                 <div class="form-group">
                                                     <label for="tank">Link to Tank:</label>
-                                                    <select id="tank" class="form-control" name="tank" type="number">
-                                                        <option selected>Choose...</option>
+                                                    <select id="tank" class="form-control" name="tank" type="number" required>
+                                                        <option selected></option>
                                                         {% for  tank in tanks %}
                                                         <option  value="{{ tank.id }}">{{ tank.name }}</option>
                                                         {% endfor %}

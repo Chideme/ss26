@@ -13,8 +13,8 @@ Chart of Accounts
   <h4>Chart of Accounts
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group mr-2">
-          <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddAccountFormModal">Add Account</button>
-          <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteAccountFormModal">Delete Account</button>
+          <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddAccountFormModal">Add Account <span data-feather="plus"></span></button>
+          <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteAccountFormModal">Delete Account <span data-feather="edit-2"></span></button>
         </div>
       </div>
   </h4>
@@ -26,6 +26,7 @@ Chart of Accounts
             <th>Code</th>
             <th>Account</th>
             <th>Category</th>
+            <th>Modify</th>
         </tr>
     </thead>
     <tbody>
@@ -34,6 +35,11 @@ Chart of Accounts
             <td>{{ account.code }}</td>
             <td>{{ account.account_name }}</td>
             <td>{{ account.account_category }}</td>
+            <td>
+                <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditAccount{{ account.id }}">
+                    Edit Account <span data-feather="edit-2"></span>
+                </button>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -108,7 +114,8 @@ Chart of Accounts
                                                 <option  value="{{ account.id }}">{{ account.account_name }}</option>
                                                 {% endfor %}
                                             </select>
-                                        </div> 
+                                        </div>
+                                        
                                         
                                         <button class="btn btn-primary btn-block btn-group" type="submit">Remove Account</button>
                                     
@@ -119,7 +126,61 @@ Chart of Accounts
                                 </div>
                             </div>
                         </div>
-                    </div><!--Deletes  Account-->
+                    </div>
+                    <!--Deletes  Account-->
+
+                     <!--Edit Account-->
+                     {% for account in accounts %}
+                     <div class="modal fade" id="EditAccount{{ account.id }}" tabindex="-1" role="dialog" aria-labelledby="EditAccountFormModalLabel" aria-hidden="true">
+                         <div class="modal-dialog" role="document">
+                             <div class="modal-content">
+                                 <div class="modal-header">
+                                     <h5 class="modal-title" id="EditAccountFormLabel">Edit {{ account.account_name }}</h5>
+                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                             <span aria-hidden="true">&times;</span>
+                                         </button>
+                                 </div>
+                                 <div class="modal-body">
+                                     <form  action="{{ url_for('edit_account') }}" method="post" > 
+                                         <div class="form-group" >
+                                             <input type = "text"  value="{{ account.id }}" name="account_id" autocomplete="off"  autofocus class="form-control" hidden>
+                                         </div>
+                                         <div class="form-group" >
+                                             <input type = "text"  value="{{ account.account_name }}" name="name" autocomplete="off"  autofocus class="form-control" required>
+                                         </div>
+                             
+                                         <div class="form-group">
+                                            <label for="category">Select Category:</label>
+                                            <select id="category" class="form-control" name="category"required>
+                                                <option selected></option>
+                                                <option  value="Income">Income</option>
+                                                <option  value="Expense">Expense</option>
+                                                <option  value="Bank">Bank</option>
+                                                <option  value="Inventory">Inventory</option>
+                                                <option  value="Prepayment">Prepayment</option>
+                                                <option  value="Current Asset">Current Asset</option>
+                                                <option  value="Current Liability">Current Liability</option>
+                                                <option  value="COGS">Cost of Sales</option> 
+                                                <option  value="Equity">Equity</option>
+                                                <option  value="Non Current Asset">Non Current Asset</option>
+                                                <option  value="Non Current Liability">Non Current Liability</option>
+                                                
+                                            </select>
+                                        </div>
+                                       
+                                         <div> 
+                                         <button class="btn btn-primary btn-block" type="submit">Modify Account</button>
+                                         </div>
+                                      </form>
+                                 </div>
+                                 <div class="modal-footer">  
+                                     <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                     {% endfor %}
+             <!--Edit Account-->
     
    
     

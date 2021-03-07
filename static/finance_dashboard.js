@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded',() => {
               scales: {
                 yAxes: [{
                   ticks: {
-                    beginAtZero: true
+                    beginAtZero: true 
                   }
                 }]
               },

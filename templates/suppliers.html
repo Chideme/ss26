@@ -10,7 +10,7 @@ Suppliers
     <div class="btn-toolbar mb-2 mb-md-0">
     <div class="btn-group mr-2">
     <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#SupplierPayment">
-     Pay Supplier
+     Pay Supplier <span data-feather="credit-card"></span>
     </button>
       <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#DebitNote">
         Create Debit Note
@@ -19,8 +19,8 @@ Suppliers
     </div>
     <div class="btn-toolbar mb-2 mb-md-0">
     <div class="btn-group mr-2">
-        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddSupplierFormModal">Add Supplier</button>
-        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteSupplierFormModal">Delete Supplier</button>
+        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddSupplierFormModal">Add Supplier  <span data-feather="user-plus"></span></button>
+        <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteSupplierFormModal">Delete Supplier <span data-feather="user-minus"></span></button>
       </div>
     </div>
   </div>
@@ -35,7 +35,7 @@ Suppliers
                         <th>Contact Person</th>
                         <th>Phone Number</th>
                         <th>Balance</th>
-                        <th>Modify</th>
+                        <th>Modify <span data-feather="edit-2"></span></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,7 +47,7 @@ Suppliers
                         <td><a href="{{ url_for('supplier',supplier_id=supplier.id) }}">{{ balances[supplier.name] | currencyFormat }}</a></td>
                         <td>
                             <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditSupplier{{ supplier.id }}">
-                                Edit Supplier
+                                Edit Details <span data-feather="edit-2"></span>
                             </button>
                         </td>
                     

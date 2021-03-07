@@ -302,7 +302,7 @@
                           </div>
                           <label for="DNOTE">Delivery Note Number</label>
                           <div class="form-group">
-                            <input  id="DNOTE" type ="text" name="document" placeholder="Delivery Note Number" autocomplete="off"autofocus class="form-control">
+                            <input  id="DNOTE" type ="text" name="document" placeholder="Delivery Note Number" autocomplete="off"autofocus class="form-control" required>
                         </div>
                        
                         <label for="Quantity">Quantity</label>
@@ -311,12 +311,12 @@
                           </div>
                           <label for="CostPrice">Cost Price:</label>
                           <div class="form-group">
-                              <input type ="number" id="CostPrice" step="any" name="cost_price" autocomplete="off"autofocus class="form-control" required>
+                              <input type ="number" id="CostPrice" step="0.01" name="cost_price" autocomplete="off"autofocus class="form-control" required>
                           </div>
 
                           <label for="Supplier">Supplier</label>
                           <div class="form-group">
-                          <select  id="Supplier" class="form-control" name="supplier">
+                          <select  id="Supplier" class="form-control" name="supplier" placeholder="Supplier'" required>
                               {% for supplier in suppliers %}
                             <option value="{{ supplier.id }}">{{ supplier.name }}</option>
                             {% endfor %}
@@ -483,7 +483,7 @@
           <div class="modal-body">
               <form  action="{{ url_for('update_shift_daytime') }}" method="post" > 
                   <div class="form-group">
-                    <select class="form-control" name="shift">
+                    <select class="form-control" name="shift" required>
                         <option selected>Day</option>
                         <option>Night</option>
                     </select>
@@ -515,7 +515,7 @@
                     <div class="form-row">
                     <div class="form-group col-md-8">
                         <label for="customer">Pick Customer:</label>
-                        <select id="customer" class="form-control" name="customers"> <!--DataList-->
+                        <select id="customer" class="form-control" name="customers" required> <!--DataList-->
                             <option selected></option>
                             {% for customer in customers %}
                             <option  value="{{ customer.id }}">{{ customer.name }}</option>
@@ -526,7 +526,7 @@
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label for="salesproduct">Select Product:</label>
-                            <select id="salesproduct" class="form-control" name="product">
+                            <select id="salesproduct" class="form-control" name="product" required>
                                 <option selected></option>
                                 {% for product in products %}
                                 <option  value="{{ product.id }}">{{ product.name }}</option>
@@ -535,11 +535,11 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label for="sales_price">Selling Price:</label>
-                            <input id="sales_price" type="number" step="0.01" name="sales_price"  placeholder="Price" class="form-control">
+                            <input id="sales_price" type="number" step="0.01" name="sales_price"  placeholder="Price" class="form-control" required>
                         </div>
                         <div class="form-group col-md-4">
                             <label for="qtyltr">Quantity:</label>
-                            <input id="qtyltr" type="number"  step="any" name="qty"  placeholder="litres" class="form-control">
+                            <input id="qtyltr" type="number"  step="any" name="qty"  placeholder="litres" class="form-control" required>
                         </div>
                     </div>
                     <div class="form-row">
@@ -576,7 +576,7 @@
                 <form role="form"  action="{{ url_for('sales_receipts') }}" method="post" > 
                     <div class="form-group" >
                         <label for="cash_account">Cash Account:</label>
-                        <select id="cash_account" class="form-control" name="account">
+                        <select id="cash_account" class="form-control" name="account" required>
                             <option selected></option>
                             {% for account in cash_customers %}
                             <option  value="{{ account.id }}">{{ account.name }}</option>
@@ -585,7 +585,7 @@
                     </div>
                     <div class="form-group">
                         <label for="amount">Amount:</label>
-                        <input id="amount" type = "number"  step="0.01" name="amount" autocomplete="off" placeholder="Amount" autofocus class="form-control">
+                        <input id="amount" type = "number"  step="0.01" name="amount" autocomplete="off"  autofocus class="form-control" required>
                     </div>
                 <button  class="btn btn-primary btn-block" type="submit">Save</button>      
             </form>
@@ -612,7 +612,7 @@
                 <form role="form"  action="{{ url_for('coupon_sales') }}" method="post" >
                     <div class="form-group" >
                         <label for="coupon">Select Coupon:</label>
-                        <select id="coupon" class="form-control" name="coupon_id">
+                        <select id="coupon" class="form-control" name="coupon_id" required>
                             <option selected></option>
                             {% for coupon in coupons %}
                             <option  value="{{ coupon.id }}">{{ coupon.name }}</option>
@@ -621,7 +621,7 @@
                     </div>
                     <div class="form-group" >
                         <label for="product">Select Product:</label>
-                        <select id="product" class="form-control" name="product_id">
+                        <select id="product" class="form-control" name="product_id" required>
                             <option selected></option>
                             {% for product in products %}
                             <option  value="{{ product.id }}">{{ product.name }}</option>
@@ -629,7 +629,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <input type = "number"  name="number_of_coupons" autocomplete="off" placeholder="Number of Coupons" autofocus class="form-control">
+                        <input type = "number"  name="number_of_coupons" autocomplete="off" placeholder="Number of Coupons" autofocus class="form-control" required>
                     </div>
                 <button  class="btn btn-primary btn-block" type="submit">Save</button>      
             </form>
@@ -672,7 +672,7 @@
                         </select>
                     </div>
                     <div class="form-group" >
-                        <input type = "number" step="0.01"  name="amount" autocomplete="off" placeholder="Amount" autofocus class="form-control">
+                        <input type = "number" step="0.01"  name="amount" autocomplete="off"  autofocus class="form-control" required>
                     </div>
                 <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
             </form>
@@ -708,7 +708,7 @@
                         
                         <div class="form-group" >
                             <label for="ActualAmount">Actual Amount</label>
-                            <input  id="ActualAmount" type = "number" step="0.01"  name="actual_amount" autocomplete="off" placeholder="Actual Amount" autofocus class="form-control">
+                            <input  id="ActualAmount" type = "number" step="0.01"  name="actual_amount" autocomplete="off" placeholder="Actual Amount" autofocus class="form-control" required>
                         </div>
                         <div class="form-group" >
                             <label for="Variance">Variance</label>

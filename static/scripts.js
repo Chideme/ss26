@@ -55,7 +55,7 @@ $('#download').on('click',function(){
     filename:     document.getElementById('name').innerHTML+'.pdf',
     html2canvas:  { scale: 2, bottom: 0 },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' ,compressPDF: true},
-    pagebreak: { before: "tr"}
+    pagebreak: { before: "table"}
     };
 
   

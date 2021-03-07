@@ -28,9 +28,13 @@
       <div class="collapse navbar-collapse justify-content-md-end" id="navbarsExampleDefault">
         <ul class="navbar-nav ">
           <li class="nav-item">
+            <li class="nav-item">
+              <a class="nav-link" href="#"><span style="color:whitesmoke">Pricing</span></a>
+            </li>
             <a class="nav-link" href="{{ url_for('login') }}"><span style="color:whitesmoke">Sign In</span></a>
           
           </li>
+          
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('signup') }}"><span style="color:whitesmoke">Sign Up</span></a>
           </li>
@@ -44,9 +48,10 @@
       <div class="starter-template" style="color: whitesmoke;">
         <h1>Welcome</h1>
         
-        <p class="lead">Dont Guess,
-          <br>Make Data Driven Decisions</p>
-          
+        <p class="lead">Automate your reporting,
+          <br>Make data driven decisions</p>
+          <br>
+          <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg" role="button" >Sign up</a>
         <footer class="mt-5 mb-5 " style="color: whitesmoke;"><small>Version Beta</small></footer>
       </div>
       

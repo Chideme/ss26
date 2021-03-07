@@ -10,19 +10,20 @@
   <h2>Lubricant Products Table
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group mr-2">
-          <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddProductFormModal">Add Product</button>
-          <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteProductFormModal">Delete Product</button>
+          <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#AddProductFormModal">Add Product <span data-feather="plus-square"></span></button>
+          <button class="btn btn-sm btn-outline-secondary"data-toggle="modal" data-target="#DeleteProductFormModal">Delete Product <span data-feather="trash"></span></button>
         </div>
       </div>
   </h2>
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-9">
             <table class="display" id="export">
                 <thead>
                     <tr>
                         <th>Product Name</th>
                         <th>Product Cost Price</th>
                         <th>Product Selling Price</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -31,6 +32,11 @@
                         <td>{{ product.name }}</td>
                         <td>{{ product.cost_price }}</td>
                         <td>{{ product.selling_price }}</td>
+                        <td>
+                            <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditProduct{{ product.id }}">
+                                Edit  <span data-feather="edit-2"></span>
+                            </button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -57,7 +63,7 @@
                                     </div>
                                     <div class="form-group  col-md-4">
                                         <label for="PT">Product Type:</label>
-                                        <select id="PT" class="form-control" name="product_type">
+                                        <select id="PT" class="form-control" name="product_type" required>
                                             <option value="Fuels" >Fuels</option>
                                             <option value="Lubricants" selected>Lubricants</option>
                                         </select>
@@ -90,14 +96,14 @@
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label for="Account">Inventory Account:</label>
-                                        <select id="Account" class="form-control" name="account">
+                                        <select id="Account" class="form-control" name="account" required> 
                                             {% for account in accounts %}
                                             <option value="{{ account.id }}" selected>{{ account.account_name }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
                                 </div>
-                                    <button class="btn btn-primary btn-block" type="submit">Add Product</button>
+                                    <button class="btn btn-primary btn-block" type="submit">Add Product <span data-feather="plus-square"></span></button>
                             
                                  </form>
                             </div>
@@ -121,15 +127,15 @@
                                 <div class="modal-body">
                                     <form action="{{ url_for('delete_lube_product') }}" method="post" > 
                                         <div class="form-group">
-                                            <select class="form-control" name="products">
-                                                <option selected>Product</option>
+                                            <select class="form-control" name="products" required>
+                                                <option selected></option>
                                                 {% for  product in products %}
                                                 <option  value="{{ product.id }}">{{ product.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div> 
                                         <div class="p-2">
-                                        <button class="btn btn-primary btn-block" type="submit">Delete Product</button>
+                                        <button class="btn btn-primary btn-block" type="submit">Delete Product<span data-feather="trash"></span></button>
                                         </div>
                                      </form>
                                 </div>
@@ -139,6 +145,62 @@
                             </div>
                         </div>
                     </div><!--Deletes Product-->
+
+                     <!--Edit Product-->
+                     {% for product in products %}
+                     <div class="modal fade" id="EditProduct{{ product.id }}" tabindex="-1" role="dialog" aria-labelledby="EditProductFormModalLabel" aria-hidden="true">
+                         <div class="modal-dialog" role="document">
+                             <div class="modal-content">
+                                 <div class="modal-header">
+                                     <h5 class="modal-title" id="EditProductFormLabel">Edit {{ product.name }}</h5>
+                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                             <span aria-hidden="true">&times;</span>
+                                         </button>
+                                 </div>
+                                 <div class="modal-body">
+                                     <form  action="{{ url_for('edit_lube_product') }}" method="post" >
+                                         
+                                             <div class="form-group" >
+                                                 <input type = "text"  value="{{ product.id }}" name="product_id" autocomplete="off"  autofocus class="form-control" hidden>
+                                             </div>
+                                             <div class="form-group" >
+                                                 <input type = "text"  value="{{ product.name }}" name="name" autocomplete="off"  autofocus class="form-control" required>
+                                             </div>
+                                             <div class="form-group">
+                                             <label for="PT">Product Type:</label>
+                                             <select id="PT" class="form-control" name="product_type" required>
+                                                 <option value="Fuels" selected>Fuels</option>
+                                                 <option value="Lubricants">Lubricants</option>
+                                             </select>
+                                         </div>
+                                        
+                 
+                                         <div class="form-group">
+                                             <label for="Account">Inventory Account:</label>
+                                             <select id="Account" class="form-control" name="account" required>
+                                                 {% for account in accounts %}
+                                                 <option value="{{ account.id }}" selected>{{ account.account_name }}</option>
+                                                 {% endfor %}
+                                             </select>
+                                         </div>
+                                         <div class="form-group" >
+                                            <label for="MU">Millitres/Unit:</label>
+                                            <input id="MU" type = "text"  value="{{ product.unit }}" name="unit" autocomplete="off"  autofocus class="form-control" required>
+                                         </div>
+                                         
+             
+                                         <button class="btn btn-primary btn-block" type="submit">Modify <span data-feather="edit-2"></span></button>
+                                 
+                                      </form>
+                                 </div>
+                                 <div class="modal-footer">  
+                                     <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                     {% endfor %}
+             <!--Edit Product-->
         </div>
     </div>
 

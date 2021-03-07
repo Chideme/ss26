@@ -45,7 +45,7 @@
                         <td>{{ reports[date][2] }}</td>
                         <td>
                             <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#SalesBreakdown{{ date }}">
-                                View Breakdown
+                                View Breakdown <span data-feather="eye"></span>
                             </button>
                         </td> 
                            
@@ -67,7 +67,7 @@
                     </button>
             </div>
             <div class="modal-body">
-                <table class="display" id="export">
+                <table class="table table-sm">
                     <thead>
                         <th>Account</th>
                         <th>Amount</th>

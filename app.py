@@ -3,7 +3,7 @@ import os
 from flask import Flask, session, render_template,flash,request,redirect,url_for,jsonify,make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
-from sqlalchemy import and_, or_,MetaData,Table
+from sqlalchemy import and_, or_,  MetaData,Table
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import *
 from models import *
@@ -215,7 +215,7 @@ def user_login():
                                         session["org_name"]= org.name
                                         
                                         flash("Welcome")
-                                        return redirect(url_for('dashboard'))
+                                        return redirect(url_for('finance_dashboard'))
                         else:
                                 flash("Login details not correct check your details and try again")
                                 return redirect(url_for('user_login'))
@@ -792,11 +792,11 @@ def add_pump():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 ######
                 s = Shift.query.order_by(Shift.id.desc()).all()
-                name=request.form.get("pump_name").capitalize()
+                name=request.form.get("pump_name")
                 name = name.strip()
                 tank_id=request.form.get("tank")
-                litre_reading = request.form.get("litre_reading").strip() # opening readings
-                money_reading = request.form.get("money_reading").strip()
+                litre_reading = request.form.get("litre_reading") # opening readings
+                money_reading = request.form.get("money_reading")
                 try:
                         tank = Tank.query.get(tank_id)
                 except:
@@ -930,7 +930,7 @@ def edit_tank():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 tank_id = request.form.get("tank_id")
                 tank = Tank.query.get(tank_id)
-                name =request.form.get("tank")
+                name =request.form.get("name")
                 product_id = request.form.get("product")
                 tank.name=  name
                 tank.product_id = product_id
@@ -975,7 +975,7 @@ def products():
 def add_product():
         """Add Product"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                name=request.form.get("product_name").capitalize()
+                name=request.form.get("product_name")
                 price=request.form.get("price")
                 cost = request.form.get("cost")
                 product_type=request.form.get("product_type")
@@ -1001,6 +1001,25 @@ def add_product():
                         flash("Product Added !!")
                         return redirect(url_for('products'))
 
+@app.route("/inventory/fuel_products/edit_product",methods=["POST"])
+@admin_required
+@check_schema
+@login_required
+def edit_product():
+        """Edit Product"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                name=request.form.get("name")
+                product_type=request.form.get("product_type")
+                account = int(request.form.get("account"))
+                product_id = int(request.form.get("product_id"))
+                product = Product.query.get(product_id)
+                product.name = name
+                product.product_type = product_type
+                product.account_id = account
+                db.session.commit()
+                
+                flash("Product Modified")
+                return redirect(url_for('products'))
 
 @app.route("/inventory/fuel_products/delete_product",methods=["POST"])
 @admin_required
@@ -1078,7 +1097,27 @@ def add_lube_product():
                         return redirect(url_for('lube_products'))
                 #check if there is a current shift going on and make the update to the correct previous shift
                 
-
+@app.route("/inventory/lube_products/edit_product",methods=["POST"])
+@admin_required
+@check_schema
+@login_required
+def edit_lube_product():
+        """Edit Lube Product"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                name=request.form.get("name")
+                product_type=request.form.get("product_type")
+                account = int(request.form.get("account"))
+                product_id = int(request.form.get("product_id"))
+                unit = float(request.form.get("unit"))
+                product = Product.query.get(product_id)
+                product.name = name
+                product.product_type = product_type
+                product.account_id = account
+                product.unit = float(unit)
+                db.session.commit()
+                
+                flash("Product Modified")
+                return redirect(url_for('lube_products'))
 
 @app.route("/inventory/lubes/delete_lube_product/",methods=["POST"])
 @admin_required
@@ -1132,6 +1171,24 @@ def add_coupon():
                         flash("Coupon Added !!")
                         return redirect(url_for('coupons'))
 
+@app.route("/inventory/coupons/edit_coupon",methods=["POST"])
+@admin_required
+@check_schema
+@login_required
+def edit_coupon():
+        """Edit Coupons"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                name = request.form.get("coupon_name")
+                coupon_id = request.form.get("coupon_id")
+                qty=request.form.get("coupon_qty")
+                customer_id = request.form.get("account")
+                coupon = Coupon.query.get(coupon_id)
+                coupon.customer_id = customer_id
+                coupon.coupon_qty = qty
+                coupon.name = name
+                db.session.commit()
+                flash("Done")
+                return redirect(url_for('coupons'))
 
 @app.route("/coupons/delete_coupon",methods=["POST"])
 @admin_required
@@ -1163,6 +1220,8 @@ def customers():
                 products = Product.query.all()
                 cash_accountss = Account.query.filter(Account.code.between(400,450)).all()
                 paypoints = Account.query.filter(Account.code.between(400,450)).all()
+                cash_ids = [i.id for i in cash_accountss]
+                non_cash_customers= Customer.query.filter(Customer.account_id.notin_(cash_ids)).all()
                 # calculate balances
                 balances = {}
                 for customer in customers:
@@ -1171,7 +1230,7 @@ def customers():
                         c_notes = CreditNote.query.filter_by(customer_id=customer.id).all()
                         net =  sum([i.price*i.qty for i in invoices])-sum([i.amount for i in payments]) - sum([i.price*i.qty for i in c_notes])
                         balances[customer]= net + customer.opening_balance
-                return render_template("customers.html",products=products,customers=customers,balances=balances,paypoints=paypoints,cash_accounts=cash_accountss)
+                return render_template("customers.html",products=products,customers=customers,balances=balances,paypoints=paypoints,cash_accounts=cash_accountss,non_cash_customers=non_cash_customers)
 
 @app.route("/customers/customer_payment",methods=["POST"])
 @admin_required
@@ -1590,6 +1649,31 @@ def add_account():
                                 flash('Account Successfully Added')
                                 return redirect(url_for('accounts'))
 
+@app.route("/accounts/edit_accounts",methods=["POST"])
+@admin_required
+@check_schema
+@login_required
+def edit_account():
+        """Edit Account"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                account_id = request.form.get("account_id")
+                name=request.form.get("name")
+                account_category=request.form.get("category")
+                account = Account.query.get(account_id)
+                code = account_code(account_category)
+                if code == False:
+                        flash("You have reached the number of {} accounts".format(account_category))
+                        return redirect(url_for('accounts'))
+                entry = {"Income":"CR","Expense":"DR","Current Asset":"DR","Current Liability":"CR","COGS":"DR",
+                "Non Current Asset":"DR","Equity":"CR","Non Current Liability":"CR","Bank":"DR"}
+
+                account.name = name
+                account.entry = entry[account_category]
+                account.code= code
+                account.account_category= account_category
+                db.session.commit()   
+                flash('Account Successfully Modified')
+                return redirect(url_for('accounts'))
 
 
 @app.route("/create_journal",methods=["POST"])
