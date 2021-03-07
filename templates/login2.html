@@ -35,14 +35,18 @@
     </nav>
     <main role="main" class="col-md-12 ml-sm-auto col-lg-12 px-4">
       
-      {% if get_flashed_messages() %}
-      <header>
-          <div class="alert alert-info border text-center" role="alert">
-              {{ get_flashed_messages() | join(" ") }}
-          </div>
-      </header>
-    {% endif %}
-      
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+          <header>
+            <div class="alert alert-{{ category }} " role="alert">
+              
+                  {{ message }}
+              </div>
+          </header>
+          {% endfor %}
+      {% endif %}
+    {% endwith %}
 
 
       <form class="form-signin" action="{{ url_for('user_login') }}" method="post">

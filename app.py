@@ -148,7 +148,7 @@ def login():
                         active =  company.active
 
                 except:
-                        flash('Company does not exist, check your code and try again or contact support')
+                        flash('Company does not exist, check your code and try again or contact support','danger')
                         return render_template("login.html")
 
                 if company:
@@ -163,17 +163,17 @@ def login():
                                 if sub:
                                         session["schema"] = company.schema
                                         session['tenant'] = company.id
-                                        flash('Subscription has Expired, contact support +263776393449')
+                                        flash('Subscription has Expired, contact support +263776393449','warning')
                                         return render_template("login.html")
                                 else:
                                         session["schema"] = company.schema
                                         session['tenant'] = company.id
-                                        flash('Company is not active. Please activate your company profile')
+                                        flash('Company is not active. Please activate your company profile','warning')
                                         return redirect(url_for('activate',tenant_schema=session['schema']))
                                         
 
                 else:
-                        flash('Company does not exist, check your code and try again or contact support')
+                        flash('Company does not exist, check your code and try again or contact support','warning')
                         return render_template("login.html")
         else:
                 
@@ -201,10 +201,10 @@ def user_login():
                                 if  not check_password_hash(user.password,password) or session['tenant'] != user.tenant_id:
                                         if org.active <= date.today() and User.query.filter_by(session["tenant"]).all() == None:
 
-                                                flash("Please finish setting up your account")
+                                                flash("Please finish setting up your account",'warning')
                                                 return redirect(url_for('activate',tenant_schema= org.schema))
                                         else:     
-                                                flash("Login details not correct check your details and try again")
+                                                flash("Login details not correct check your details and try again",'warning')
                                                 return redirect(url_for('user_login'))
                                 else:
                                         session["user_id"] = user.id
@@ -214,10 +214,10 @@ def user_login():
                                         session["shift_underway"] = shift_underway[0].state
                                         session["org_name"]= org.name
                                         
-                                        flash("Welcome")
+                                        flash("Welcome",'info')
                                         return redirect(url_for('finance_dashboard'))
                         else:
-                                flash("Login details not correct check your details and try again")
+                                flash("Login details not correct check your details and try again",'warning')
                                 return redirect(url_for('user_login'))
                 else:
                         return render_template("login2.html")
@@ -1255,11 +1255,11 @@ def customer_payment():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash('There was error adding payment')
+                        flash('There was error adding payment','warning')
                         return redirect(url_for('customers'))
                 else:
                         
-                        flash('Payment Successfully Added')
+                        flash('Payment Successfully Added','info')
                         return redirect(url_for('customers'))
 
 @app.route("/customers/credit_note",methods=["POST"])
@@ -1353,7 +1353,7 @@ def add_customer():
                 customer = Customer(name=name,account_id=debtor.id,phone_number=phone_number,contact_person=contact_person,opening_balance=opening_balance)
                 customer_exists = bool(Customer.query.filter_by(name=name).first())
                 if customer_exists:
-                        flash("User already exists, Try using another  user name!!")
+                        flash("User already exists, Try using another  user name",'warning')
                         return redirect(url_for('customers'))
                 else:
                 
@@ -1362,11 +1362,11 @@ def add_customer():
                                 db.session.commit()
                         except:
                                 db.session.rollback()
-                                flash('There was an error')
+                                flash('There was an error','warning')
                                 return redirect(url_for('customers'))
                         else:
                                 
-                                flash('Customer Successfully Added')
+                                flash('Customer Successfully Added','info')
                                 return redirect(url_for('customers'))
                         
 
@@ -1382,7 +1382,7 @@ def edit_customer():
                 db.session.query(Customer).filter(Customer.name == name).update({Customer.phone_number: request.form.get("phone")}, synchronize_session = False)
                 db.session.query(Customer).filter(Customer.name == request.form.get("name")).update({Customer.contact_person: request.form.get("contact_person")}, synchronize_session = False)
                 db.session.commit()
-                flash('Customer Successfully Updated')
+                flash('Customer Successfully Updated','info')
                 return redirect(url_for('customers'))
 
 @app.route("/customers/delete_customer",methods=["POST"])
@@ -1397,15 +1397,15 @@ def delete_customer():
                 try:
                         db.session.delete(customer)   
                         db.session.commit()
-                        flash("Can not delete record")
+                        flash("Can not delete record",'warning')
                         return redirect(url_for('customers'))
                 except:
                         db.session.rollback()
-                        flash("Can not delete record")
+                        flash("Can not delete record",'warning')
                         return redirect(url_for('customers'))
                 else:
                         
-                        flash('Customer Successfully Removed!!')
+                        flash('Customer Successfully Removed!!','info')
                         return redirect(url_for('customers'))
 
 #########

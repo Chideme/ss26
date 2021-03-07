@@ -39,13 +39,17 @@
          
   
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
-          {% if get_flashed_messages() %}
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
             <header>
-                <div class="alert alert-info border text-center" role="alert">
-                    {{ get_flashed_messages() | join(" ") }}
+              <div class="alert alert-{{ category }} " role="alert">
+                    {{ message }}
                 </div>
-            </header>
-        {% endif %}
+              </header>
+              {% endfor %}
+          {% endif %}
+          {% endwith %}
             {% block main %}{% endblock %}
             <footer class="text-center text-muted">
               &copy; 2020
