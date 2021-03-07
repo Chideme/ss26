@@ -1105,14 +1105,16 @@ def trial_balance_report(start_date,end_date):
 def account_code(account_category):
     """ Create code for new ledger account """
     codes = {"Income":(100,199),
+            "COGS":(200,250),
             "Expense":(251,399),
             "Bank":(400,450),
-            "Current Asset":(451,599),
-            "Current Liability":(600,699),
-            "COGS":(200,250),
-            "Equity":(900,999),
-            "Non Current Asset":(700,799),
-            "Non Current Liability":(800,899)}
+            "Inventory":(451,460),
+            "Prepayment":(461,500),
+            "Current Asset":(501,599),
+            "Non Current Asset":(600,699),
+            "Current Liability":(700,799),
+            "Non Current Liability":(800,899),
+            "Equity":(900,999)}
     last_account = Account.query.order_by(Account.code.desc()).filter(Account.code.between(codes[account_category][0],codes[account_category][1])).first()
     if last_account:
         code = last_account.code  + 1 
@@ -1127,11 +1129,11 @@ def create_chart_of_accounts():
     """ Create Model COA"""
     cash = Account(code=400,account_name="Cash",account_category="Bank",entry="DR")
     db.session.add(cash)
-    accounts = [(451,"Accounts Receivables","Current Asset","DR"),
-                (452,"Fuel Inventory","Current Asset","DR"),
-                (453,"Lubes Inventory","Current Asset","DR"),
+    accounts = [(501,"Accounts Receivables","Current Asset","DR"),
+                (452,"Fuel Inventory","Inventory","DR"),
+                (453,"Lubes Inventory","Inventory","DR"),
                 (300,"Salaries","Expense","DR"),
-                (600,"Accounts Payables","Current Liability","CR"),
+                (700,"Accounts Payables","Current Liability","CR"),
                 (200,"Fuel Shrinkages","GOGS","DR"),
                 (900,"Capital","Equity","CR"),
                 (201,"Fuel COGS","COGS","DR"),
@@ -1156,4 +1158,87 @@ def day_sales_breakdown(dates):
         sales_per_customer = total_customer_sales(customer_sales,credit_notes)
         report[date] = sales_per_customer
     
+    return 
+
+def daterange(start_date, end_date):
+    for n in range(int((end_date - start_date).days)):
+        yield start_date + timedelta(n)
+
+def last_day_of_month(any_day):
+    # this will never fail
+    # get close to the end of the month for any day, and add 4 days 'over'
+    next_month = any_day.replace(day=28) + timedelta(days=4)
+    # subtract the number of remaining 'overage' days to get last day of current month, or said programattically said, the previous day of the first of next month
+    return next_month - timedelta(days=next_month.day)
+  
+def daily_cash_balances(start_date,end_date):
+    """ Cash Balances for Finance Dashboard (Daily Frequency) """
+    accounts= Account.query.filter(Account.code.between(400,450)).all()
+    dates = [i for i in daterange(start_date,end_date)]
+    report = {}
+    for date in dates:
+        balance=0
+        for account in accounts:
+            receipts = Journal.query.filter(and_(Journal.dr==account.id,Journal.date <= date)).all()
+            payouts = Journal.query.filter(and_(Journal.cr==account.id,Journal.date <= date)).all()
+            balance += sum([i.amount for i in receipts])- sum([i.amount for i in payouts])
+        report[date.strftime('%d %b %Y')]=balance
+        #report[date]=balance
+        
     return report
+
+def monthly_cash_balances(start_date,end_date):
+    """ Cash Balances for Finance Dashboard (Monthly Frequency) """
+    accounts= Account.query.filter(Account.code.between(400,450)).all()
+    dates = [i for i in daterange(start_date,end_date)]
+    month_end_dates = set([last_day_of_month(i) for i in dates if last_day_of_month(i)])
+    month_end_dates = list(month_end_dates)
+    report = {}
+    for date in month_end_dates:
+        balance=0
+        for account in accounts:
+            receipts = Journal.query.filter(and_(Journal.dr==account.id,Journal.date <= date)).all()
+            payouts = Journal.query.filter(and_(Journal.cr==account.id,Journal.date <= date)).all()
+            balance += sum([i.amount for i in receipts])- sum([i.amount for i in payouts])
+        report[date.strftime('%b %Y')]=balance
+    return report
+
+def current_cash_balance():
+    """ Cash Balance for Dashboard"""
+    accounts= Account.query.filter(Account.code.between(400,450)).all()
+    balances= 0
+    for account in accounts:
+        receipts = Journal.query.filter_by(dr=account.id).all()
+        payouts = Journal.query.filter_by(cr=account.id).all()
+        balance = sum([i.amount for i in receipts])- sum([i.amount for i in payouts])
+        balances +=balance
+    return balances
+
+def liquidity_ratios(end_date):
+    """ Current Ratio for Financial Dashboard """
+    current_assets = Account.query.filter(Account.code.between(400,599)).all()
+    current_liabilities = Account.query.filter(Account.code.between(700,899)).all()
+    balances = s_o_p_balances(end_date)
+    asset_balances = sum([balances[account.id] for account in current_assets])
+    liabilities_balances = sum([balances[account.id] for account in current_liabilities])
+    try:
+        current_ratio = asset_balances/liabilities_balances
+    except ZeroDivisionError:
+        current_ratio = asset_balances
+    not_quick_assets = Account.query.filter(Account.code.between(451,500)).all()
+    not_quick_assets_bal = sum([balances[account.id] for account in current_assets])-sum([balances[account.id] for account in not_quick_assets])
+    try:
+        quick_ratio = not_quick_assets_bal/liabilities_balances
+    except ZeroDivisionError:
+        quick_ratio = not_quick_assets_bal
+    return round(current_ratio,3), round(quick_ratio,3)
+
+def  asset_liabilities(end_date):
+    """ Asset  for Financial Dashboard Graph """
+    assets = Account.query.filter(Account.code.between(400,699)).all()
+    liabilities = Account.query.filter(Account.code.between(700,899)).all()
+    balances = s_o_p_balances(end_date)
+    asset_balances = sum([balances[account.id] for account in assets])
+    liabilities_balances = sum([balances[account.id] for account in liabilities])
+
+    return asset_balances,liabilities_balances

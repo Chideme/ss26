@@ -6,32 +6,28 @@ document.addEventListener('DOMContentLoaded',() => {
     const request = new XMLHttpRequest()
     const start_date = document.querySelector('#start_date').value;
     const end_date = document.querySelector('#end_date').value;
-    const product = document.querySelector('#product').value;
     const frequency = document.querySelector('#frequency').value;
-    const tank = document.querySelector('#tank').value;
-    request.open('POST','/dashboard/reports');
+    request.open('POST','/dashboard/finance_reports');
 
     
     // when request finishes
     request.onload = () => {
 
       const report = JSON.parse(request.responseText);
-      var sales_dates = report.SalesDate;
-      var sales_data = report.SalesData;
-      var profit_dates = report.ProfitDate;
-      var profit_data = report.ProfitData;
-      var tank_dates = report.TankDate;
-      var tank_data = report.TankData;
+      var cash_dates = report.CashDate;
+      var cash_data = report.CashData;
+      var assets = report.Assets;
+      var liabilities= report.Liabilities;
+      
+      
 
-
-
-          var ctx = document.getElementById("Sales");
-          var sChart = new Chart(ctx, {
+          var ctx = document.getElementById("CashBalances");
+          var cChart = new Chart(ctx, {
             type: 'line',
             data: {
-              labels: sales_dates,
+              labels: cash_dates,
               datasets: [{
-                data: sales_data,
+                data: cash_data,
                 lineTension: 0,
                 backgroundColor: '#333',
                 borderColor: 'rgba(0,0,255,1)',
@@ -54,17 +50,17 @@ document.addEventListener('DOMContentLoaded',() => {
                 display:true,
                 fontColor: 'rgba(255,255,255,255)',
                 fontStyle: 'bold',
-                text:frequency.concat(' ','Sales',' Report ','(Litres)')
+                text:frequency.concat(' ','Cash ','Balances')
               }
             }
           });
-          var p_ctx = document.getElementById("GrossProfit");
-          var pChart = new Chart(p_ctx, {
-            type: 'bar',
+          var r_ctx = document.getElementById("Revenue");
+          var rChart = new Chart(r_ctx, {
+            type: 'line',
             data: {
-              labels: profit_dates,
+              labels: cash_dates,
               datasets: [{
-                data: profit_data,
+                data: cash_data,
                 lineTension: 0,
                 backgroundColor: '#333',
                 borderColor: 'rgba(11,156,49,1)',
@@ -87,17 +83,17 @@ document.addEventListener('DOMContentLoaded',() => {
                 display:true,
                 fontColor: 'rgba(255,255,255,255)',
                 fontStyle: 'bold',
-                text:frequency.concat(' ','Gross Profit',' Report ','$')
+                text:'Revenue'
               }
             }
           });
-          var t_ctx = document.getElementById("TankVariance");
-          var tankChart = new Chart(t_ctx, {
+          var p_ctx = document.getElementById("NetProfit");
+          var pChart = new Chart(p_ctx, {
             type: 'line',
             data: {
-              labels: tank_dates,
+              labels: cash_dates,
               datasets: [{
-                data: tank_data,
+                data: cash_data,
                 lineTension: 0,
                 backgroundColor: '#333',
                 borderColor: 'rgba(255,0,0,255)',
@@ -119,8 +115,56 @@ document.addEventListener('DOMContentLoaded',() => {
               title: {
                 display:true,
                 fontColor: 'rgba(255,255,255,255)',
-                fontStyle: '#bold',
-                text:'Tank Variance Analysis'
+                fontStyle: 'bold',
+                text:'Net Profit'
+              }
+            }
+          });
+
+          var a_ctx = document.getElementById("AssetsVsLiabilities");
+          var aChart = new Chart(a_ctx, {
+            type: 'bar',
+            data: {
+            
+              datasets: [{
+                label:'Assets',
+                data: assets,
+                lineTension: 0,
+                backgroundColor: 'rgba(11,156,49,1)',
+                borderColor: 'rgba(11,156,49,1)',
+                borderWidth: 4,
+                pointBackgroundColor: '#007bff'
+              },
+              {
+                label:'Liabilities',
+                data: liabilities,
+                lineTension: 0,
+                backgroundColor: 'rgba(255,0,0,255)',
+                borderColor: 'rgba(255,0,0,255)',
+                borderWidth: 4,
+                pointBackgroundColor: '#007bff'
+              }]
+            },
+            options: {
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    beginAtZero: true
+                  }
+                }]
+              },
+              legend: {
+                display: true,
+                labels: {
+                  fontColor: 'rgba(255,255,255,255)',
+                },
+              position:'bottom'
+              },
+              title: {
+                display:true,
+                fontColor: 'rgba(255,255,255,255)',
+                fontStyle: 'bold',
+                text:'Assets Vs Liabilities'
               }
             }
           });
@@ -131,8 +175,7 @@ document.addEventListener('DOMContentLoaded',() => {
     data.append('start_date',start_date);
     data.append('end_date',end_date);
     data.append('frequency',frequency);
-    data.append('product',product);
-    data.append('tank',tank);
+    
     //send request
     request.send(data);
 

@@ -318,50 +318,51 @@ def dashboard_reports():
                                 
                 return report
 
-@app.route("/dashboard/tank_variance",methods=["POST","GET"])
+@app.route("/dashboard/finance",methods=["POST","GET"])
 @login_required
 @check_schema
-def dashboard_tank_variance():
+def finance_dashboard():
         """ Returns JSON Dashboard Reports"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                tanks = Tank.query.all()
-                if tanks:
-                        end_date = date.today()
-                        start_date =  end_date- timedelta(days=30)
-                        return render_template("dashboard_tank_variances.html",tanks=tanks,start_date=start_date,end_date=end_date)
-                else:
-                        flash("Finish Configurations first")
-                        return redirect(url_for('tanks'))
+                end_date = date.today()
+                start_date =  end_date- timedelta(days=30)
+                cash = current_cash_balance()
+                ratios = liquidity_ratios(end_date)
+                return render_template("finance_dashboard.html",start_date=start_date,end_date=end_date,cash=cash,ratios=ratios)
+                
 
-@app.route("/dashboard/variance",methods=["POST"])
+@app.route("/dashboard/finance_reports",methods=["POST"])
 @login_required
 @check_schema
-def dashboard_variance():
-        """ Returns JSON Dashboard Reports for tank variances"""
+def dashboard_finance():
+        """ Returns JSON Dashboard Reports for finance dashboard"""
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-        
+
                 start_date = request.form.get("start_date")
                 end_date = request.form.get("end_date")
+                frequency = request.form.get("frequency")
                 start_date = datetime.strptime(start_date,"%Y-%m-%d")
                 end_date = datetime.strptime(end_date,"%Y-%m-%d")
-                tank_id = int(request.form.get("tank"))
-                if tank_id != "Add Tank":
-                        data = tank_variance_daily_report(start_date,end_date,tank_id)
-                        sorted_date= sorted_dates([i for i in data])
-                        data_info = [data[i] for i in sorted_date]
-                        data_dates = [i.strftime('%d-%b-%y')  for i in sorted_date]
-                
+                assets = asset_liabilities(date.today())
+                if frequency == "Day-to-day":
+                        info = daily_cash_balances(start_date,end_date)
+                        dates = [ i for i in info]
+                        dates.sort(key = lambda date: datetime.strptime(date, '%d %b %Y'))
+                        #sorted_date = sorted_dates(dates)
+                        cash_dates =  dates
+                        cash_info = [info[i] for i in dates]
                         
-
-                        return jsonify({'Date':data_dates,'Data':data_info})
                 else:
-                        flash("Finish Configurations first")
-                        return redirect(url_for('tanks'))
-
-
-        
-
+                        info = monthly_cash_balances(start_date,end_date)
+                        dates = [ i for i in info]
+                        dates.sort(key = lambda date: datetime.strptime(date, '%b %Y'))
+                        #sorted_date = sorted_dates(dates)
+                        cash_dates =  dates
+                        cash_info = [info[i] for i in dates]
+                              
+                return jsonify({'CashDate':cash_dates,'CashData':cash_info,'Assets':[assets[0]],'Liabilities':[assets[1]]})
+                
 
 
 @app.route("/driveway/start_shift_update",methods=["GET","POST"])

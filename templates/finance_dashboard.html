@@ -1,0 +1,86 @@
+{% extends "dashboard_layout.html" %}
+{% block html_head %}
+<link rel="stylesheet"  type="text/css" href="/static/dashboard.css">
+{% endblock %}
+
+
+{% block main %}
+      
+        
+        <div class="card" style="background-color: #333;">
+              <form  action="{{ url_for('dashboard_finance') }}" id="form" method="post">
+                <div class="form-row align-items-center">
+                  
+                  <div class="form-group col-sm-2">
+                    <label for="frequency">Frequency:</label>
+                      <select class="form-control-sm"  id="frequency" style="background-color: #333;color: lightseagreen;padding: 2px;">
+                        <option selected >Day-to-day</option>
+                        <option>Month-to-month</option>
+                      </select>
+                  </div>
+                  <div class="form-group col-sm-2">
+                    <label for="start_date">From:</label>
+                      <input type = "date"  value="{{ start_date }}" id="start_date" autocomplete="off" class="form-control-sm" style="background-color: #333;color: lightseagreen; padding: 2px;" required >
+                  </div>
+                  <div class="form-group col-sm-2">
+                    <label for="end_date">To:</label>
+                      <input type = "date"  value="{{ end_date }}" id="end_date" autocomplete="off"  class="form-control-sm" style="background-color: #333; color: lightseagreen;padding: 2px;" required>
+                  </div>
+                  <div class="form-group col-sm-2">
+                      <label for="clickbutton">Filter:</label>
+                      <button type="submit"  id="clickbutton" class="btn btn-block btn-sm  btn-outline-primary" style="padding: 2px;">Enter</button>
+                  </div>
+                </div>
+              </form>
+              
+        </div>
+                
+      <div class="row p-3">
+        <div class="card col-md-3 piece" style="max-height: 85px;">
+          <div class="card-title h6" style="color:white;">Quick Ratio</div>
+          <div class="text-center">
+            <div class="ratio">{{ ratios[1] }}</div>
+            <p class="card-text" style="color: lightgray;">Target 0.5 or higher</p>
+          </div>
+        </div>
+        <div class="card col-md-3 offset-md-1 piece">
+          <div class="card-title h6" style="color:white;">Current Ratio</div>
+          <div class="text-center">
+            <div class="ratio">{{ ratios[0] }}</div>
+            <p class="card-text" style="color: lightgray;">Target 1.5 or higher</p>
+          </div>
+        </div>
+        <div class="card col-md-4 offset-md-1 piece" style="max-height:min-content;">
+            <div class="card-title h6" style="color:white;">Cash Balance</div>
+            <div class="ratio text-center">{{ cash }}</div>
+        </div>
+      </div>
+
+      <div class="row p-3">
+       <div class="col-lg-7 piece">
+            <canvas class="my-4 w-100" id="CashBalances" width="900" height="450"></canvas>
+        </div>
+        <div class="col-lg-4 offset-md-1  piece">
+            <canvas class="my-4 w-100" id="AssetsVsLiabilities" width="900" height="700"></canvas>
+        </div>
+      </div>
+      <div class="row p-3">
+        <div class="col-lg-6 col-md-6 piece" >
+          <canvas class="my-4 w-100" id="NetProfit" width="900" height="450"></canvas>
+        </div>
+        <div class="col-lg-5 offset-md-1  piece">
+            <canvas class="my-4 w-100" id="Revenue" width="900" height="450"></canvas>
+        </div> 
+      </div>
+     
+      
+      
+      
+      <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+      <script src="/static/finance_dashboard.js" type="text/javascript" ></script>
+  
+     
+
+     
+{% endblock %}
+  
