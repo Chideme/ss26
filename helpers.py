@@ -1182,9 +1182,54 @@ def daily_cash_balances(start_date,end_date):
             receipts = Journal.query.filter(and_(Journal.dr==account.id,Journal.date <= date)).all()
             payouts = Journal.query.filter(and_(Journal.cr==account.id,Journal.date <= date)).all()
             balance += sum([i.amount for i in receipts])- sum([i.amount for i in payouts])
-        report[date.strftime('%d %b %Y')]=balance
+        if balance != 0:
+            report[date.strftime('%d %b %Y')]=balance
         #report[date]=balance
         
+    return report
+
+def daily_revenue(start_date,end_date):
+    """Daily Revenue for Finance Dashboard """
+    accounts = Account.query.filter(Account.code.between(100,199)).all()
+    dates = [i for i in daterange(start_date,end_date)]
+    report = {}
+    
+    for date in dates:
+        balance = 0
+        for account in accounts:
+            dr = Journal.query.filter(and_(account.id == Journal.dr,Journal.date==date)).all()
+            cr = Journal.query.filter(and_(account.id == Journal.cr,Journal.date==date)).all()
+            balance += sum([i.amount for i in cr]) - sum([i.amount for i in dr])
+        if balance != 0:
+            report[date.strftime('%d %b %Y')]=balance
+    return report
+
+def daily_margin(start_date,end_date):
+    """Daily Profit Margin for Finance Dashboard """
+    revenue_accounts = Account.query.filter(Account.code.between(100,199)).all()
+    expense_accounts = Account.query.filter(Account.code.between(200,399)).all()
+    dates = [i for i in daterange(start_date,end_date)]
+    report = {}
+    
+    for date in dates:
+        revenue = 0
+        expenses = 0
+        for account in revenue_accounts:
+            dr = Journal.query.filter(and_(account.id == Journal.dr,Journal.date==date)).all()
+            cr = Journal.query.filter(and_(account.id == Journal.cr,Journal.date==date)).all()
+            revenue += sum([i.amount for i in cr]) - sum([i.amount for i in dr])
+        for account in expense_accounts:
+            dr = Journal.query.filter(and_(account.id == Journal.dr,Journal.date==date)).all()
+            cr = Journal.query.filter(and_(account.id == Journal.cr,Journal.date==date)).all()
+            expenses += sum([i.amount for i in dr]) - sum([i.amount for i in cr])
+        net_profit = revenue- expenses
+        try:
+            margin = (net_profit/revenue) *100
+        except ZeroDivisionError:
+            margin = revenue *100 if revenue else net_profit*-100
+        if margin != 0:
+            report[date.strftime('%d %b %Y')]=round(margin,3)
+    
     return report
 
 def monthly_cash_balances(start_date,end_date):
@@ -1200,7 +1245,57 @@ def monthly_cash_balances(start_date,end_date):
             receipts = Journal.query.filter(and_(Journal.dr==account.id,Journal.date <= date)).all()
             payouts = Journal.query.filter(and_(Journal.cr==account.id,Journal.date <= date)).all()
             balance += sum([i.amount for i in receipts])- sum([i.amount for i in payouts])
-        report[date.strftime('%b %Y')]=balance
+        if balance != 0:
+            report[date.strftime('%b %Y')]=balance
+    return report
+
+def monthly_revenue(start_date,end_date):
+    """ Monthly for Finance Dashboard (Monthly Frequency) """
+    accounts= Account.query.filter(Account.code.between(100,199)).all()
+    dates = [i for i in daterange(start_date,end_date)]
+    month_end_dates = set([last_day_of_month(i) for i in dates if last_day_of_month(i)])
+    month_end_dates = list(month_end_dates)
+    report = {}
+    for date in month_end_dates:
+        first_day = get_month_day1(date)
+        balance=0
+        for account in accounts:
+            dr = Journal.query.filter(and_(account.id == Journal.dr,Journal.date.between(first_day,date))).all()
+            cr = Journal.query.filter(and_(account.id == Journal.cr,Journal.date.between(first_day,date))).all()
+            balance += sum([i.amount for i in cr]) - sum([i.amount for i in dr])
+        if balance !=0:  
+            report[date.strftime('%b %Y')]=balance
+    return report
+
+def monthly_margin(start_date,end_date):
+    """Monthly Profit Margin for Finance Dashboard """
+    revenue_accounts = Account.query.filter(Account.code.between(100,199)).all()
+    expense_accounts = Account.query.filter(Account.code.between(200,399)).all()
+    dates = [i for i in daterange(start_date,end_date)]
+    month_end_dates = set([last_day_of_month(i) for i in dates if last_day_of_month(i)])
+    month_end_dates = list(month_end_dates)
+    report = {}
+    
+    for date in month_end_dates:
+        first_day = get_month_day1(date)
+        revenue = 0
+        expenses = 0
+        for account in revenue_accounts:
+            dr = Journal.query.filter(and_(account.id == Journal.dr,Journal.date.between(first_day,date))).all()
+            cr = Journal.query.filter(and_(account.id == Journal.cr,Journal.date.between(first_day,date))).all()
+            revenue += sum([i.amount for i in cr]) - sum([i.amount for i in dr])
+        for account in expense_accounts:
+            dr = Journal.query.filter(and_(account.id == Journal.dr,Journal.date.between(first_day,date))).all()
+            cr = Journal.query.filter(and_(account.id == Journal.cr,Journal.date.between(first_day,date))).all()
+            expenses += sum([i.amount for i in dr]) - sum([i.amount for i in cr])
+        net_profit = revenue- expenses
+        try:
+            margin = (net_profit/revenue) *100
+        except ZeroDivisionError:
+            margin = revenue *100 if revenue else net_profit*-100
+        if margin != 0:
+            report[date.strftime('%b %Y')]=round(margin,3)
+    
     return report
 
 def current_cash_balance():

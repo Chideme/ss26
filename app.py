@@ -352,7 +352,16 @@ def dashboard_finance():
                         #sorted_date = sorted_dates(dates)
                         cash_dates =  dates
                         cash_info = [info[i] for i in dates]
-                        
+                        ######## Revenue
+                        sales_data = daily_revenue(start_date,end_date)
+                        sales_dates = [i for i in sales_data]
+                        sales_dates.sort(key = lambda date: datetime.strptime(date, '%d %b %Y'))
+                        sales_info = [sales_data[i] for i in sales_dates]
+                         ######## Net Profit Margin
+                        margin_data = daily_margin(start_date,end_date)
+                        margin_dates = [i for i in margin_data]
+                        margin_dates.sort(key = lambda date: datetime.strptime(date, '%d %b %Y'))
+                        margin_info = [margin_data[i] for i in margin_dates]
                 else:
                         info = monthly_cash_balances(start_date,end_date)
                         dates = [ i for i in info]
@@ -360,8 +369,22 @@ def dashboard_finance():
                         #sorted_date = sorted_dates(dates)
                         cash_dates =  dates
                         cash_info = [info[i] for i in dates]
+                        ######## Revenue
+                        sales_data = monthly_revenue(start_date,end_date)
+                        sales_dates = [i for i in sales_data]
+                        sales_dates.sort(key = lambda date: datetime.strptime(date, '%b %Y'))
+                        sales_info = [sales_data[i] for i in sales_dates]
+                        ######## Net Profit Margin
+                        margin_data = monthly_margin(start_date,end_date)
+                        margin_dates = [i for i in margin_data]
+                        margin_dates.sort(key = lambda date: datetime.strptime(date, '%b %Y'))
+                        margin_info = [margin_data[i] for i in margin_dates]
+                       
                               
-                return jsonify({'CashDate':cash_dates,'CashData':cash_info,'Assets':[assets[0]],'Liabilities':[assets[1]]})
+                return jsonify({'CashDate':cash_dates,'CashData':cash_info,
+                                'Assets':[assets[0]],'Liabilities':[assets[1]],
+                                'SalesDates':sales_dates,'SalesData':sales_info,
+                                'MarginDates':margin_dates,'MarginData':margin_info})
                 
 
 
@@ -935,7 +958,7 @@ def products():
         """Product List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 products = Product.query.filter_by(product_type="Fuels").all()
-                accounts = Account.query.filter(Account.code.between(451,599)).all()
+                accounts = Account.query.filter(Account.code.between(451,460)).all()
                 tank_product = db.session.query(Tank,Product).filter(Product.id == Tank.product_id).all()
                 qty = {}
                 for i in tank_product:
@@ -1009,8 +1032,9 @@ def lube_products():
         """Lubes Product List"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 shift = Shift.query.order_by(Shift.id.desc()).first()
+                accounts = Account.query.filter(Account.code.between(451,460)).all()
                 products = Product.query.filter_by(product_type="Lubricants").all()
-                return render_template("lube_products.html",products=products,shift=shift)
+                return render_template("lube_products.html",products=products,shift=shift,accounts=accounts)
 
 @app.route("/inventory/lubes/add_lube_product/",methods=["POST"])
 @admin_required
@@ -1027,13 +1051,13 @@ def add_lube_product():
                 mls =float(request.form.get("unit"))
                 open_qty = float(request.form.get("open_qty"))
                 date = request.form.get("date")
-                product_type = "Lubricants"
+                product_type = request.form.get("product_type")
                 amt = open_qty * cost_price
                 equity = Account.query.filter_by(account_name="Capital").first()
-                account =Account.query.filter_by(account_name="Lubes Inventory").first()
+                account_id =int(request.form.get("account"))
                 s = Shift.query.order_by(Shift.id.desc()).all()
-                product = Product(name=name,selling_price=selling_price,qty=open_qty,product_type=product_type,cost_price=cost_price,avg_price=cost_price,unit=mls,account_id=account.id)
-                journal = Journal(date=date,details="Opening Balance",dr=account.id,cr=equity.id,amount=amt,created_by=session['user_id'])
+                product = Product(name=name,selling_price=selling_price,qty=open_qty,product_type=product_type,cost_price=cost_price,avg_price=cost_price,unit=mls,account_id=account_id)
+                journal = Journal(date=date,details="Opening Balance",dr=account_id,cr=equity.id,amount=amt,created_by=session['user_id'])
                
                 
                 try:

@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded',() => {
       const report = JSON.parse(request.responseText);
       var cash_dates = report.CashDate;
       var cash_data = report.CashData;
+      var sales_dates = report.SalesDates;
+      var sales_data = report.SalesData;
+      var margin_dates = report.MarginDates;
+      var margin_data = report.MarginData;
       var assets = report.Assets;
       var liabilities= report.Liabilities;
       
@@ -50,7 +54,7 @@ document.addEventListener('DOMContentLoaded',() => {
                 display:true,
                 fontColor: 'rgba(255,255,255,255)',
                 fontStyle: 'bold',
-                text:frequency.concat(' ','Cash ','Balances')
+                text:frequency.concat(' ','Cash ','Balances ($)')
               }
             }
           });
@@ -58,9 +62,9 @@ document.addEventListener('DOMContentLoaded',() => {
           var rChart = new Chart(r_ctx, {
             type: 'line',
             data: {
-              labels: cash_dates,
+              labels: sales_dates,
               datasets: [{
-                data: cash_data,
+                data: sales_data,
                 lineTension: 0,
                 backgroundColor: '#333',
                 borderColor: 'rgba(11,156,49,1)',
@@ -83,7 +87,7 @@ document.addEventListener('DOMContentLoaded',() => {
                 display:true,
                 fontColor: 'rgba(255,255,255,255)',
                 fontStyle: 'bold',
-                text:'Revenue'
+                text:'Revenue ($)'
               }
             }
           });
@@ -91,9 +95,9 @@ document.addEventListener('DOMContentLoaded',() => {
           var pChart = new Chart(p_ctx, {
             type: 'line',
             data: {
-              labels: cash_dates,
+              labels: margin_dates,
               datasets: [{
-                data: cash_data,
+                data: margin_data,
                 lineTension: 0,
                 backgroundColor: '#333',
                 borderColor: 'rgba(255,0,0,255)',
@@ -116,7 +120,7 @@ document.addEventListener('DOMContentLoaded',() => {
                 display:true,
                 fontColor: 'rgba(255,255,255,255)',
                 fontStyle: 'bold',
-                text:'Net Profit'
+                text:'Net Profit Margin (%)'
               }
             }
           });
@@ -164,7 +168,7 @@ document.addEventListener('DOMContentLoaded',() => {
                 display:true,
                 fontColor: 'rgba(255,255,255,255)',
                 fontStyle: 'bold',
-                text:'Assets Vs Liabilities'
+                text:'Assets Vs Liabilities  ($)'
               }
             }
           });
