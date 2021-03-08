@@ -58,14 +58,14 @@ def signup():
                         db.session.add(tenant)
                         db.session.flush
                 except:
-                        flash("Account already created use login in page, or contact support")
+                        flash("Account already created use login in page, or contact support",'warning')
                         return redirect(url_for('login'))
                 try:
                 
                         db.session.execute('CREATE SCHEMA IF NOT EXISTS {}'.format(schema))
                         db.session.commit()
                 except:
-                        flash("Account already created use login in page or contact support")
+                        flash("Account already created use login in page or contact support",'warning')
                         return redirect(url_for('login'))
                 
                 #####
@@ -122,13 +122,13 @@ def activate(tenant_schema):
                                 mail.send(msg)
                                 db.session.add(sub)
                                 db.session.commit()
-                                flash('Account Successfully activated. Please use details sent to your email to login.')
+                                flash('Account Successfully activated. Please use details sent to your email to login.','info')
                                 return render_template("login.html")
                                         
                         except:
            
                              
-                                flash("Activation Failed")
+                                flash("Activation Failed",'warning')
                                 return render_template("login.html")
 
 
@@ -148,7 +148,7 @@ def login():
                         active =  company.active
 
                 except:
-                        flash('Company does not exist, check your code and try again or contact support','danger')
+                        flash('Company does not exist, check your code and try again or contact support','warning')
                         return render_template("login.html")
 
                 if company:
@@ -473,13 +473,13 @@ def start_shift_update():
                                 session["shift_underway"]=shift_underway[0].state
                                 shift_underway[0].current_shift = shift_id
                                 db.session.commit()
-                                flash("Shift Started")
+                                flash("Shift Started",'info')
                                 return redirect(url_for('ss26'))
                                         
                         
                         #Unfinished set up of products              
                         else:
-                                flash("Please finish set up")
+                                flash("Please finish set up",'warning')
                                 return redirect(url_for('products'))
 
                                         
@@ -510,13 +510,13 @@ def end_shift_update():
                                         session["shift_underway"]=False
                                         shift_underway[0].state = False
                                         db.session.commit()
-                                        flash('Shift Ended')
+                                        flash('Shift Ended','info')
                                         return redirect(url_for('get_driveway'))
                                 else:
-                                        flash('Something is wrong')
+                                        flash('Something is wrong','warning')
                                         return redirect(url_for('ss26'))
                         else:
-                                flash('Do cash up on lubes')
+                                flash('Do cash up on lubes','warning')
                                 return redirect(url_for('shift_lube_sales'))
                 else:
                         if check_cash_up:
@@ -525,10 +525,10 @@ def end_shift_update():
                                 shift_underway[0].state = False
                                 db.session.commit()
                                 session["shift_underway"]=False
-                                flash('Shift Ended')
+                                flash('Shift Ended','info')
                                 return redirect(url_for('get_driveway'))
                         else:
-                                flash('Do cash up !')
+                                flash('Do cash up ','warning')
                                 return redirect(url_for('ss26')) 
 
         
@@ -566,6 +566,7 @@ def price_change():
                 product.selling_price = selling_price
                 product.cost_price = cost_price
                 db.session.commit()
+                flash('Done','info')
                 return redirect(url_for('readings_entry'))
 
 @app.route("/driveway/edit/pump_readings_entry",methods=["GET","POST"])
@@ -587,6 +588,7 @@ def pump_readings_entry():
                 pump.money_reading = money_reading
                 pump.litre_reading = litre_reading
                 db.session.commit()
+                flash('Done','info')
                 return redirect(url_for('readings_entry'))
 
 
@@ -607,6 +609,7 @@ def tank_dips_entry():
                 tank.dip = tank_dip
                 #db.session.query(TankDip).filter(and_(TankDip.tank_id == tank_id,TankDip.shift_id ==shift_id)).update({TankDip.dip: tank_dip}, synchronize_session = False)
                 db.session.commit()
+                flash('Done','info')
                 return redirect(url_for('readings_entry'))
 
 
@@ -675,7 +678,7 @@ def edit_company_details():
                 tenant.contact_person= request.form.get("contact_person")
                 tenant.phone_number = request.form.get("phone")
                 db.session.commit()
-               
+                flash('Done','info')
                 return redirect(url_for('company_details'))
 
 
@@ -709,7 +712,7 @@ def add_user():
                 user = User(username=username,password=password,role_id=role_id,tenant_id=tenant.id,schema=session['schema'])
                 user_exists = bool(User.query.filter_by(username=username).first())
                 if user_exists:
-                        flash("User already exists, Try using another username!!")
+                        flash("User already exists, Try using another username",'warning')
                         return redirect(url_for('manage_users'))
                 else:
                         try:
@@ -717,11 +720,11 @@ def add_user():
                                 db.session.commit()
                         except:
                                 db.session.rollback()
-                                flash("There was an error")
+                                flash("There was an error",'warning')
                                 return redirect(url_for('manage_users'))
                         else:
                         
-                                flash('User Successfully Added')
+                                flash('User Successfully Added','info')
                                 return redirect(url_for('manage_users'))
 
 @app.route("/company_information/users/edit_user",methods=["POST"])
@@ -740,10 +743,10 @@ def edit_user():
                         user.password = generate_password_hash(password)
                         user.role_id =  request.form.get("role")
                         db.session.commit()
-                        flash('User Successfully Updated')
+                        flash('User Successfully Updated','info')
                         return redirect(url_for('manage_users'))
                 else:
-                        flash('Passwords Must be the same')
+                        flash('Passwords Must be the same','warning')
                         return redirect(url_for('manage_users')) 
 
 @app.route("/company_information/users/delete_user",methods=["POST"])
@@ -760,11 +763,11 @@ def delete_user():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash("Could not delete user")
+                        flash("Could not delete user",'warning')
                         return redirect(url_for('manage_users'))
                 else:
 
-                        flash('User Successfully Removed!!')
+                        flash('User Successfully Removed','info')
                         return redirect(url_for('manage_users'))
 
 
@@ -800,7 +803,7 @@ def add_pump():
                 try:
                         tank = Tank.query.get(tank_id)
                 except:
-                        flash("Add tank to associate pump with")
+                        flash("Add tank to associate pump with",'warning')
                         return redirect(url_for('tanks'))
                 pump = Pump(name=name,tank_id=tank_id,litre_reading=litre_reading,money_reading=money_reading)
                 
@@ -817,10 +820,10 @@ def add_pump():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash("There was an error adding pump to database")
+                        flash("There was an error adding pump",'warning')
                         return redirect(url_for('pumps'))
                 else:
-                        flash('Pump Successfully Added !!')
+                        flash('Pump Successfully Added','info')
                         return redirect(url_for('pumps'))
 
                                         
@@ -839,10 +842,10 @@ def delete_pump():
                                
                 except:
                         db.session.rollback()
-                        flash("Can not delete record !!")
+                        flash("Can not delete record",'danger')
                         return redirect(url_for('pumps'))
                 else:
-                        flash('Pump Successfully Removed!!')
+                        flash('Pump Successfully Removed','info')
                         return redirect(url_for('pumps'))
 
 @app.route("/inventory/pumps/edit_pump",methods=["POST"])
@@ -860,10 +863,10 @@ def edit_pump():
                         pump.tank_id = tank_id
                         pump.name=  name
                         db.session.commit()
-                        flash('Pump Successfully Updated')
+                        flash('Pump Successfully Updated','info')
                         return redirect(url_for('pumps'))
                 else:
-                        flash('Please select tank')
+                        flash('Please select tank','warning')
                         return redirect(url_for('pumps'))
 
 
@@ -890,10 +893,10 @@ def add_tank():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash("There was a problem whilst adding tank")
+                        flash("There was a problem whilst adding tank",'warning')
                         return redirect(url_for('tanks'))
                 else:
-                        flash("Tank Added Successfully !!")
+                        flash("Tank Added Successfully",'info')
                         return redirect(url_for('tanks'))
                 #check if there is a current shift going on and make the update to the correct previous shift
                
@@ -913,11 +916,11 @@ def delete_tank():
                         
                 except:
                         db.session.rollback()
-                        flash("Can not Delete Record")
+                        flash("Can not Delete Record",'warning')
                         return redirect(url_for('tanks'))
                 else:
                         
-                        flash('Tank Successfully Removed!!')
+                        flash('Tank Successfully Removed','info')
                         return redirect(url_for('tanks'))
 
 
@@ -935,7 +938,7 @@ def edit_tank():
                 tank.name=  name
                 tank.product_id = product_id
                 db.session.commit()
-                flash('Tank Successfully Updated')
+                flash('Tank Successfully Updated','info')
                 return redirect(url_for('tanks'))
 
 
@@ -994,11 +997,11 @@ def add_product():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash("There was an error")
+                        flash("There was an error",'warning')
                         return redirect(url_for('products'))
                 
                 else:
-                        flash("Product Added !!")
+                        flash("Product Added",'info')
                         return redirect(url_for('products'))
 
 @app.route("/inventory/fuel_products/edit_product",methods=["POST"])
@@ -1018,7 +1021,7 @@ def edit_product():
                 product.account_id = account
                 db.session.commit()
                 
-                flash("Product Modified")
+                flash("Product Modified",'info')
                 return redirect(url_for('products'))
 
 @app.route("/inventory/fuel_products/delete_product",methods=["POST"])
@@ -1036,11 +1039,11 @@ def delete_product():
                         
                 except:
                         db.session.rollback()
-                        flash("Can not delete Record")
+                        flash("Can not delete Record",'warning')
                         return redirect(url_for('products'))
                 else:
                         
-                        flash('Product Successfully Removed!!')
+                        flash('Product Successfully Removed','info')
                         return redirect(url_for('products'))
 
 
@@ -1090,10 +1093,10 @@ def add_lube_product():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash("There was an error adding product to database")
+                        flash("There was an error adding product",'warning')
                         return redirect(url_for('lube_products'))
                 else:
-                        flash("Product Added !!")
+                        flash("Product Added",'info')
                         return redirect(url_for('lube_products'))
                 #check if there is a current shift going on and make the update to the correct previous shift
                 
@@ -1116,7 +1119,7 @@ def edit_lube_product():
                 product.unit = float(unit)
                 db.session.commit()
                 
-                flash("Product Modified")
+                flash("Product Modified",'info')
                 return redirect(url_for('lube_products'))
 
 @app.route("/inventory/lubes/delete_lube_product/",methods=["POST"])
@@ -1132,10 +1135,10 @@ def delete_lube_product():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash("There was en error")
+                        flash("There was en error",'warning')
                         return redirect(url_for('lube_products'))
                 else:
-                        flash('Product Successfully Removed!!')
+                        flash('Product Successfully Removed','info')
                         return redirect(url_for('lube_products'))
 
 
@@ -1165,10 +1168,10 @@ def add_coupon():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash("Can not add record")
+                        flash("Can not add record",'warning')
                         return redirect(url_for('coupons'))
                 else:
-                        flash("Coupon Added !!")
+                        flash("Coupon Added",'info')
                         return redirect(url_for('coupons'))
 
 @app.route("/inventory/coupons/edit_coupon",methods=["POST"])
@@ -1187,7 +1190,7 @@ def edit_coupon():
                 coupon.coupon_qty = qty
                 coupon.name = name
                 db.session.commit()
-                flash("Done")
+                flash("Done",'info')
                 return redirect(url_for('coupons'))
 
 @app.route("/coupons/delete_coupon",methods=["POST"])
@@ -1203,11 +1206,11 @@ def delete_coupon():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash('Can not delete record')
+                        flash('Can not delete record','warning')
                         return redirect(url_for('coupons'))
                 else:
                         
-                        flash('Coupon Successfully Removed!!')
+                        flash('Coupon Successfully Removed','info')
                         return redirect(url_for('coupons'))
 
 @app.route("/customers",methods=["GET","POST"])
@@ -1294,7 +1297,7 @@ def credit_note():
                 db.session.add(payment)
                 db.session.add(credit_note)
                 db.session.commit()
-
+                flash('Credit note created','info')
                 return redirect(url_for('customers'))
                 
 
@@ -1455,11 +1458,11 @@ def supplier_payment():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash('There was error adding payment')
+                        flash('There was error adding payment','warning')
                         return redirect(url_for('suppliers'))
                 else:
                         
-                        flash('Payment Successfully Added')
+                        flash('Payment Successfully Added','info')
                         return redirect(url_for('suppliers'))
 
 
@@ -1487,6 +1490,7 @@ def debit_note():
                 db.session.add(debitnote)
                 db.session.add(journal)
                 db.session.commit()
+                flash('Debit note created','info')
                 return redirect(url_for('suppliers'))
 
 @app.route("/suppliers/add_supplier",methods=["POST"])
@@ -1510,7 +1514,7 @@ def add_supplier():
                 supplier = Supplier(name=name,phone_number=phone_number,contact_person=contact_person,account_id=creditor.id,opening_balance=opening_balance)
                 supplier_exists = bool(Supplier.query.filter_by(name=name).first())
                 if supplier_exists:
-                        flash("Supplier already exists, Try using another  account name !!")
+                        flash("Supplier already exists, Try using another  account name",'warning')
                         return redirect(url_for('suppliers'))
                 else:
                         try:
@@ -1518,11 +1522,11 @@ def add_supplier():
                                 db.session.commit()
                         except:
                                 db.session.rollback()
-                                flash('There was an error')
+                                flash('There was an error','warning')
                                 return redirect(url_for('suppliers'))
                         else:
                                 
-                                flash('Supplier Successfully Added')
+                                flash('Supplier Successfully Added','info')
                                 return redirect(url_for('suppliers'))
                        
 
@@ -1538,7 +1542,7 @@ def edit_supplier():
                 supplier.phone_number=  request.form.get("phone")
                 supplier.contact_person= request.form.get("contact_person")
                 db.session.commit()
-                flash('Supplier Successfully Updated')
+                flash('Supplier Successfully Updated','info')
                 return redirect(url_for('suppliers'))
 
 @app.route("/suppliers/delete_suppliers",methods=["POST"])
@@ -1556,11 +1560,11 @@ def delete_supplier():
                         
                 except:
                         db.session.rollback()
-                        flash("Can not delete record")
+                        flash("Can not delete record",'warning')
                         return redirect(url_for('suppliers'))
                 else:
                         
-                        flash('Supplier Successfully Removed!!')
+                        flash('Supplier Successfully Removed','info')
                         return redirect(url_for('suppliers'))
 
 @app.route("/suppliers/<int:supplier_id>",methods=["GET","POST"])
@@ -1609,11 +1613,11 @@ def delete_account():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash("There was an error")
+                        flash("There was an error",'warning')
                         return redirect(url_for('accounts'))
                 else:
                         
-                        flash('Account Successfully Removed!!')
+                        flash('Account Successfully Removed','info')
                         return redirect(url_for('accounts'))
 
 @app.route("/accounts/add_accounts",methods=["POST"])
@@ -1634,7 +1638,7 @@ def add_account():
                 account = Account(code=code,account_name=name,account_category=account_category,entry=entry[account_category])
                 account_exists = bool(Account.query.filter_by(account_name=request.form.get("name")).first())
                 if account_exists:
-                        flash("Account already exists, Try using another username!!")
+                        flash("Account already exists, Try using another username",'warning')
                         return redirect(url_for('accounts'))
                 else:
                         try:
@@ -1642,11 +1646,11 @@ def add_account():
                                 db.session.commit()
                         except:
                                 db.session.rollback()
-                                flash("There was an error")
+                                flash("There was an error",'warning')
                                 return redirect(url_for('accounts'))
                         else:
                                 
-                                flash('Account Successfully Added')
+                                flash('Account Successfully Added','info')
                                 return redirect(url_for('accounts'))
 
 @app.route("/accounts/edit_accounts",methods=["POST"])
@@ -1672,7 +1676,7 @@ def edit_account():
                 account.code= code
                 account.account_category= account_category
                 db.session.commit()   
-                flash('Account Successfully Modified')
+                flash('Account Successfully Modified','info')
                 return redirect(url_for('accounts'))
 
 
@@ -1690,6 +1694,7 @@ def create_journal():
                 journal = Journal_Pending(date=date,details=details,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                 db.session.add(journal)
                 db.session.commit()
+                flash('Journal created','info')
                 return redirect(url_for('journal_pending'))
 
 
@@ -1706,6 +1711,7 @@ def post_journal():
                 db.session.add(journal)
                 db.session.delete(j)
                 db.session.commit()
+                flash('Journal posted','info')
                 return redirect(url_for('journal_pending'))
 
 @app.route("/delete_journal",methods=["POST"])
@@ -1718,6 +1724,7 @@ def delete_journal():
                 j = Journal_Pending.query.get(i)
                 db.session.delete(j)
                 db.session.commit()
+                flash('Deleted','info')
                 return redirect(url_for('journal_pending'))
 
 @app.route("/journal_pending",methods=["GET","POST"])
@@ -2037,7 +2044,7 @@ def get_driveway():
                         if shift_daytime != "Total":
                                 current_shift= Shift.query.filter(and_(Shift.date == date,Shift.daytime == shift_daytime)).first()
                                 if not current_shift:
-                                        flash("No Such Shift exists")
+                                        flash("No Such Shift exists",'warning')
                                         return redirect(url_for('get_driveway'))
                                 shift_id = current_shift.id
                                 #####
@@ -2056,7 +2063,7 @@ def get_driveway():
                                 #Driveway for the day
                                 current_shift= Shift.query.filter_by(date=date).order_by(Shift.id.desc()).first()
                                 if not current_shift:
-                                        flash('No such shift exists')
+                                        flash('No such shift exists','warning')
                                         return redirect(url_for('get_driveway'))
                                 shift_id = current_shift.id
                                 prev_date = current_shift.date -timedelta(days=1)
@@ -2102,7 +2109,7 @@ def get_driveway():
                                 pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
                                 
                         else:
-                                flash("No shift updated yet")
+                                flash("No shift updated yet",'warning')
                                 return redirect(url_for('start_shift_update'))
                                 
 
@@ -2144,7 +2151,7 @@ def ss26():
                         shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],suppliers=data['suppliers'],
                         pumps=data['pumps'],tanks=data['tanks'],product_sales_ltr=data['product_sales_ltr'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'])
                 else:
-                        flash("NO SHIFT STARTED YET")
+                        flash("No shift started yet",'warning')
                         return redirect ('start_shift_update')
 
 
@@ -2384,7 +2391,7 @@ def sales_receipts():
                         payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id))
                         receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
                 except:
-                        flash("Create Customer with the same name as cash account!")
+                        flash("Create Customer with the same name as cash account",'warning')
                         return redirect(url_for('ss26'))
                 else:
                         db.session.add(receipt)
@@ -2459,15 +2466,15 @@ def cash_up():
                         if len(shifts) > 1:
                                 cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
                                 db.session.commit()
-                                flash("Cash up done")
+                                flash("Cash up done",'info')
                                 return redirect(url_for('ss26'))
                         else:
                                 db.session.commit()
-                                flash("Cash up done")
+                                flash("Cash up done",'info')
                                 return redirect(url_for('ss26'))
                 except Exception as e:
                         db.session.rollback()
-                        flash(str(e))
+                        flash(str(e),'warning')
                         return redirect(url_for('ss26'))
                 
 
@@ -2546,7 +2553,7 @@ def update_lube_qty():
                                         return redirect(url_for('readings_entry'))
                                 except:
                                         db.session.rollback()
-                                        flash("There was an error")
+                                        flash("There was an error",'warning')
                                         return redirect(url_for('readings_entry'))
                                         
                                         
@@ -2559,7 +2566,7 @@ def update_lube_qty():
                                         return redirect(url_for('readings_entry'))
                                 except:
                                         db.session.rollback()
-                                        flash("There was an error")
+                                        flash("There was an error",'warning')
                                         return redirect(url_for('readings_entry'))
                                         
                                         
@@ -2579,10 +2586,10 @@ def update_lube_qty():
                                
                         except:
                                 db.session.rollback()
-                                flash("There was an error updating qty")
+                                flash("There was an error updating qty",'warning')
                                 return redirect('shift_lube_sales')
                         else:
-                                flash('Done')
+                                flash('Done','info')
                                 return redirect('shift_lube_sales')
                                
 
@@ -2607,7 +2614,7 @@ def update_lubes_deliveries():
                                 return redirect('readings_entry')
                         except:
                                 db.session.rollback()
-                                flash("There was an error")
+                                flash("There was an error",'warning')
                                 return redirect('readings_entry')
                                 
                 else:
@@ -2635,7 +2642,7 @@ def update_lubes_deliveries():
                                 db.session.commit()
                         except:
                                 db.session.rollback()
-                                flash("There was an error")
+                                flash("There was an error",'warning')
                                 return redirect('shift_lube_sales')
                         else:
                                 
@@ -2665,7 +2672,7 @@ def update_lubes_cost_prices():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash("There was an error")
+                        flash("There was an error",'warning')
                 else:
                         return redirect('shift_lube_sales')
 
@@ -2691,8 +2698,9 @@ def update_lubes_selling_prices():
                         db.session.commit()
                 except:
                         db.session.rollback()
-                        flash("There was an error")
+                        
                 else:
+                        flash('There was an error','warning')
                         return redirect('shift_lube_sales')
                 
 
@@ -2722,15 +2730,15 @@ def lubes_cash_up():
                                 db.session.commit()
                         except:
                                 db.session.rollback()
-                                flash("There was an error")
+                                flash("There was an error",'warning')
                                 return redirect(url_for('shift_lube_sales'))
 
                         else:
                                 
-                                flash("Cash up for Lubricants done!!")
+                                flash("Cash up for Lubricants done",'info')
                                 return redirect(url_for('ss26'))
                 else:
-                        flash("Cash up for Lubricants already done!!")
+                        flash("Cash up for Lubricants already done",'info')
                         return redirect(url_for('ss26'))
 
 
@@ -2745,14 +2753,14 @@ def forgot_password():
                 username=request.form.get("name")
                 code = int(request.form.get("code"))
                 tenant = Tenant.query.get(code)
-                session["schema"]= tenant.schema
-                session["username"] =username
+                
 
                 if tenant:
-                        
+                        session["schema"]= tenant.schema
+                        session["username"] =username
                         return redirect(url_for('send_password',tenant=tenant.schema,username=username))
                 else:
-                        flash("Check your details and try again")
+                        flash("Check your details and try again",'warning')
                         return redirect(url_for('login'))
 
 
@@ -2778,7 +2786,7 @@ def send_password(tenant,username):
                         mail.send(msg)
                         
                         db.session.commit()
-                        flash("Check you email inbox")
+                        flash("Check your admin's email inbox",'info')
                         return redirect(url_for('login'))
 
 @app.errorhandler(500)

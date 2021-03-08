@@ -81,7 +81,7 @@ def check_schema(f):
             
 
         if session['user_tenant'] != session['tenant']:
-            flash("Not Authorised to view company data")
+            flash("Not Authorised to view company data",'danger')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
 
@@ -107,8 +107,8 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
 
         if session.get("role_id") != 1:
-            flash("Access not allowed, Log in as the Admin !!")
-            return redirect(url_for('dashboard',heading='Sales'))
+            flash("Access not allowed, Log in as the Admin",'danger')
+            return redirect(url_for('dashboard'))
 
         return f(*args, **kwargs)
 
@@ -129,8 +129,8 @@ def view_only(f):
     def decorated_function(*args, **kwargs):
 
         if session.get("role_id") == 3:
-            flash("You can only view data !!")
-            return redirect(url_for('dashboard',heading='Sales'))
+            flash("You can only view data",'danger')
+            return redirect(url_for('dashboard'))
 
         return f(*args, **kwargs)
 
@@ -149,7 +149,7 @@ def start_shift_first(f):
 
     def decorated_function(*args, **kwargs):
         if session["shift_underway"] == False:
-            flash("Start shift first!!")
+            flash("Start shift first",'warning')
             return redirect(url_for('start_shift_update'))
 
 
@@ -171,7 +171,7 @@ def end_shift_first(f):
     def decorated_function(*args, **kwargs):
         
         if session["shift_underway"] == True:
-            flash("End shift first!!")
+            flash("End shift first",'warning')
             return redirect(url_for('ss26'))
 
 
