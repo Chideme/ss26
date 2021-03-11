@@ -32,8 +32,12 @@ def main():
     tenant = "test_service_station"
     
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
-        a = asset_liabilities(date.today())
-        print(a)
+        end_date = date.today()
+        start_date = end_date - timedelta(days=90)
+        report = daily_sales_analysis(start_date,end_date)
+        dates = [i for i in report]
+        report = day_sales_breakdown(dates)
+        print(report)
 with app.app_context():
         main()
 

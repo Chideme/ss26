@@ -1152,13 +1152,14 @@ def create_chart_of_accounts():
 def day_sales_breakdown(dates):
     """ Sales breakdown for modal on sales_analysis.html"""
     report = {}
-    for date in dates:
-        customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.date==date)).all()
-        credit_notes= db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.date==date)).all()
+    for day in dates:
+        #print(day)
+        customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.date==day)).all()
+        credit_notes= db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.date==day)).all()
         sales_per_customer = total_customer_sales(customer_sales,credit_notes)
-        report[date] = sales_per_customer
+        report[day] = sales_per_customer
     
-    return 
+    return report
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):

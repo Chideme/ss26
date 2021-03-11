@@ -1901,7 +1901,7 @@ def profit_statement():
 
                         return render_template("profit_statement.html",reports=report,start_date=start_date,end_date=end_date,products=products,total_profit=total_profit,total_litres=total_litres)
                 
-@app.route("/sales_analysis",methods=["GET","POST"])
+@app.route("/drivewaysummaries",methods=["GET","POST"])
 @check_schema
 @login_required
 def sales_analysis():
@@ -1911,7 +1911,7 @@ def sales_analysis():
                 if request.method =="GET":
 
                         end_date = date.today()
-                        start_date = end_date - timedelta(days=900)
+                        start_date = end_date - timedelta(days=30)
                         report = daily_sales_analysis(start_date,end_date)
                         sales_breakdown = day_sales_breakdown([i for i in report])
                         return render_template("sales_analysis.html",sales_breakdown=sales_breakdown,reports=report,start_date=start_date,end_date=end_date)
@@ -1921,19 +1921,10 @@ def sales_analysis():
                         end_date = request.form.get("end_date")
                         report = daily_sales_analysis(start_date,end_date)
                         sales_breakdown = day_sales_breakdown([i for i in report])
+                        start_date = datetime.strptime(start_date,"%Y-%m-%d")
+                        end_date = datetime.strptime(end_date,"%Y-%m-%d")
                         return render_template("sales_analysis.html",sales_breakdown=sales_breakdown,reports=report,start_date=start_date,end_date=end_date)
-                
-
-@app.route("/sales_breakdown/<date>/",methods=["GET","POST"])
-@check_schema
-@login_required
-def sales_breakdown(date):
-        """Expenses Report"""
-        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.date==date)).all()
-                credit_notes= db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.date==date)).all()
-                sales_per_customer = total_customer_sales(customer_sales,credit_notes)
-                return render_template("sales_breakdown.html",date=date,sales_per_customer=sales_per_customer)
+  
 
 
 
