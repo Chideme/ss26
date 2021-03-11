@@ -8,7 +8,7 @@
 
 <div class="text-center">
 <h4>Cash Up Report</h4>
-<h6>Period: {{ start_date }}  TO   {{ end_date }}</h6>
+<h6>Period: {{ start_date |dateFormat  }}  to   {{ end_date |dateFormat  }}</h6>
 
     <form style="display: inline-block;" action="{{ url_for('cash_up_reports') }}"  method="post">
     <div class="btn-toolbar mb-2 mb-md-0">

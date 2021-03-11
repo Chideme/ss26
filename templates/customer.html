@@ -61,7 +61,11 @@
             {% for i in report %}
             <tr>
                 <td>{{ report[i]["date"]  }}</td>
-                <td>{{ report[i]["details"] }}</td>
+                {% if report[i]["invoice_id"] %}
+                    <td><a href="{{ url_for('invoice',invoice_id=report[i]['invoice_id']) }}">{{ report[i]["details"] }}</a></td>
+                {% else %}
+                    <td>{{ report[i]["details"] }}</td>
+                {% endif %}
                 <td>{{ report[i]['dr'] }}</td>
                 <td>{{ report[i]["cr"]  }}</td>
                 

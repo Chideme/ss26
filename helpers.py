@@ -861,7 +861,7 @@ def customer_statement(customer_id,start_date,end_date):
         details = "Invoice {}".format(invoice[0].id)
         amount = invoice[0].qty*invoice[0].price
         
-        report[j] = {"date":invoice[0].date,"details":details,"dr":round(amount,2),"cr":0.00}
+        report[j] = {"date":invoice[0].date,"details":details,"dr":round(amount,2),"cr":0.00,"invoice_id":int(invoice[0].id)}
         j +=1
     
     for invoice in credit_notes:

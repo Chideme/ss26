@@ -26,7 +26,7 @@
         <h4  >Forecourt Driveway</h4>
         <div class="text-left">
         <h6>Prepared by: {{ shift.prepared_by }}</h6>
-        <h6>Date : {{ date }}</h6>
+        <h6>Date : {{ date | dateFormat }}</h6>
         <h6>Shift: {{ shift_daytime }}</h6>
         <h6 id="name">Driveway No. : {{ shift.id }}</h6>
         </div>

@@ -37,6 +37,11 @@ def currencyFormat(value):
     value = float(value)
     return "${:,.2f}".format(value)
 
+@app.template_filter()
+def dateFormat(value):
+    
+    return value.strftime('%d-%b-%y')
+
 @app.route("/",methods=["GET"])
 def index():
         """App Landing page"""
@@ -1326,7 +1331,18 @@ def customer(customer_id):
                         report = customer_statement(customer_id,start_date,end_date)
                         return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
                        
-                        
+@app.route("/<int:invoice_id>",methods=["GET","POST"])
+@check_schema
+@login_required
+def invoice(invoice_id):
+        """Invoice Details"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                invoice = Invoice.query.get(invoice_id)
+                customer = Customer.query.get(invoice.customer_id)
+                tenant = Tenant.query.get(session['tenant'])
+                product = Product.query.get(invoice.product_id)
+                return render_template("invoice.html",customer=customer,invoice=invoice,tenant=tenant,product=product)
+
 
 @app.route("/customers/add_customer",methods=["POST"])
 @admin_required
@@ -2742,7 +2758,7 @@ def lubes_cash_up():
                         return redirect(url_for('ss26'))
 
 
-@app.route("/forgot_password",methods=['GET','POST'])
+@app.route("/forgotpassword/",methods=['GET','POST'])
 def forgot_password():
         """ Reset Password for Admin"""
         session.clear()
