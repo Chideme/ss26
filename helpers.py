@@ -924,7 +924,7 @@ def fuel_variance_amt(shift_id):
         avg_price = i[0].avg_price
         sale = (tanks[tank][0]+tanks[tank][3])-tanks[tank][1]
         sales += sale*avg_price
-        variance += (tanks[tank][2]-sale)*avg_price
+        #variance += (tanks[tank][2]-sale)*avg_price
 # tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
     return sales,variance
 
@@ -932,15 +932,15 @@ def post_fuel_variance_journals(shift_id):
     """Post amount for fuel shrinkages to journals """
     amount = fuel_variance_amt(shift_id)
     shift = Shift.query.get(shift_id)
-    variance_acc = Account.query.filter_by(account_name="Fuel Shrinkages").first()
+    #variance_acc = Account.query.filter_by(account_name="Fuel Shrinkages").first()
     inventory = Account.query.filter_by(account_name="Fuel Inventory").first()
     cogs = Account.query.filter_by(account_name="Fuel COGS").first()
-    detail_variance = "Shift {} variance".format(shift_id)
+    #detail_variance = "Shift {} variance".format(shift_id)
     detail_cogs = "Shift {} cost of goods sold".format(shift_id)
-    if amount[1]:
-        variance_journal = Journal(date=shift.date,details=detail_variance,amount=-amount[1],dr=variance_acc.id,cr=inventory.id,created_by=session['user_id'])
-        db.session.add(variance_journal)
-        db.session.flush()
+    #if amount[1]:
+    #    variance_journal = Journal(date=shift.date,details=detail_variance,amount=-amount[1],dr=variance_acc.id,cr=inventory.id,created_by=session['user_id'])
+    #   db.session.add(variance_journal)
+     #   db.session.flush()
     if amount[0]:
         cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount[0],dr=cogs.id,cr=inventory.id,created_by=session['user_id'])
         db.session.add(cogs_journal)
@@ -1110,7 +1110,7 @@ def account_code(account_category):
             "Bank":(400,450),
             "Inventory":(451,460),
             "Prepayment":(461,500),
-            "Current Asset":(501,599),
+            "Other Current Asset":(501,599),
             "Non Current Asset":(600,699),
             "Current Liability":(700,799),
             "Non Current Liability":(800,899),
@@ -1129,12 +1129,11 @@ def create_chart_of_accounts():
     """ Create Model COA"""
     cash = Account(code=400,account_name="Cash",account_category="Bank",entry="DR")
     db.session.add(cash)
-    accounts = [(501,"Accounts Receivables","Current Asset","DR"),
+    accounts = [(501,"Accounts Receivables","Other Current Asset","DR"),
                 (452,"Fuel Inventory","Inventory","DR"),
                 (453,"Lubes Inventory","Inventory","DR"),
                 (300,"Salaries","Expense","DR"),
                 (700,"Accounts Payables","Current Liability","CR"),
-                (200,"Fuel Shrinkages","GOGS","DR"),
                 (900,"Capital","Equity","CR"),
                 (201,"Fuel COGS","COGS","DR"),
                 (202,"Lubes COGS","COGS","DR"),

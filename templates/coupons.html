@@ -64,7 +64,7 @@
                                         <input id="LC" type = "number"  name="coupon_qty" autocomplete="off" placeholder="Coupon Qty" autofocus class="form-control" required>
                                     </div>
                                     <div id="account"  class="form-group">
-                                        <label for="SA">Select Account for coupons:</label>
+                                        <label for="SA">Select customer account for coupons:</label>
                                         <select id="SA" class="form-control"  name="account" required>
                                             <option selected></option>
                                             {% for account in accounts %}
@@ -142,7 +142,7 @@
                                         <input id="LC" type = "number" value="{{ coupon.coupon_qty }}" name="coupon_qty" autocomplete="off" placeholder="Coupon Qty" autofocus class="form-control" required>
                                     </div>
                                     <div id="account"  class="form-group">
-                                        <label for="SA">Select Account for coupons:</label>
+                                        <label for="SA">Select customer account for coupons:</label>
                                         <select id="SA" class="form-control"  name="account" required>
                                             <option selected></option>
                                             {% for account in accounts %}

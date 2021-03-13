@@ -74,16 +74,16 @@ Suppliers
                                                     <input type="text"  value="{{ supplier.id }}" name="id" autocomplete="off"  autofocus class="form-control" hidden>
                                                 </div>
                                                 <div class="form-group  " >
-                                                    
-                                                    <input  type = "text"  value="{{ supplier.name }}" name="name" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
+                                                    <label for="nme">Name:</label>
+                                                    <input id="nme" type = "text"  value="{{ supplier.name }}" name="name" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
                                                 </div>
                                                 <div class="form-group  ">
-                                    
-                                                    <input  type = "text" value="{{ supplier.contact_person }}" name="contact_person" autocomplete="off" placeholder="contact_person" autofocus class="form-control" required>
+                                                    <label for="per">Contact Person:</label>
+                                                    <input id="per" type = "text" value="{{ supplier.contact_person }}" name="contact_person" autocomplete="off" placeholder="contact_person" autofocus class="form-control" required>
                                                 </div>
                                                 <div class="form-group  ">
-                                                    
-                                                    <input type ="tel" pattern="[0-9]{10}" value="{{ supplier.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
+                                                    <label for="NO">Phone Number (e.g 0812776393449):</label>
+                                                    <input id="NO" type ="tel" pattern="[0-9]{10}" value="{{ supplier.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
                                                 </div>
                                                 
                                                 <button class="btn btn-primary btn-block" type="submit">Update Supplier</button>
@@ -113,13 +113,15 @@ Suppliers
                             <div class="modal-body">
                                 <form  action="{{ url_for('add_supplier') }}" method="post" > 
                                     <div class="form-group  " >
-                                        <input type = "text"  name="name" autocomplete="off" placeholder="name" autofocus class="form-control" required>
+                                        <label for="NME">Name:</label>
+                                        <input id="NME" type = "text"  name="name" autocomplete="off" placeholder="name" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group  ">
-                                        <input type = "text"  name="contact_person" autocomplete="off" placeholder="contact person" autofocus class="form-control" required>
+                                        <label for="PER">Contact Person:</label>
+                                        <input id="PER" type = "text"  name="contact_person" autocomplete="off" placeholder="contact person" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group  ">
-                                        <label for="ph">Phone Number (e.g 0812776393449):</label>
+                                        <label for="ph">Phone Number (e.g 0776393449):</label>
                                         <input id="ph" type ="tel" pattern="[0-9]{10}"  name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group  ">
@@ -154,7 +156,7 @@ Suppliers
                                 <div class="modal-body">
                                     <form action="{{ url_for('delete_supplier') }}" method="post" > 
                                         <div class="form-group">
-                                            <select class="form-control" name="suppliers">
+                                            <select class="form-control" name="suppliers" required>
                                                 <option selected>Choose..</option>
                                                 {% for  supplier in suppliers %}
                                                 <option  value="{{ supplier.id }}">{{ supplier.name }}</option>

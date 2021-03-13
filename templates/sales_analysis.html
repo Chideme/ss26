@@ -41,8 +41,8 @@
                         
                         <td>{{ date }}</td>
                         <td>{{ reports[date][0] }}</td>
-                        <td>{{ reports[date][1] }}</td>
-                        <td>{{ reports[date][2] }}</td>
+                        <td>{{ reports[date][1] | currencyFormat }}</td>
+                        <td>{{ reports[date][2] | currencyFormat }}</td>
                         <td>
                             <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#SalesBreakdown{{ date }}">
                                 View Breakdown <span data-feather="eye"></span>

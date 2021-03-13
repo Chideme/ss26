@@ -106,7 +106,7 @@
                 <tr class="driveway-table">
                   <th class="driveway-table" colspan="3">Total</th>
                   
-                  <td class="driveway-table">{{ total_sales_ltr | currencyFormat }}</td>
+                  <td class="driveway-table">{{ total_sales_ltr  }}</td>
                   <td class="driveway-table">{{ total_sales_amt | currencyFormat }}</td>
                 </tr>
               </tbody>
@@ -151,8 +151,8 @@
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
                 <div class="btn-toolbar mb-2 mb-md-0">
                   <div class="btn-group mr-2">
-                    <button  type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#CustomerSales">Customer Sales</button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#SalesReceipts">Sales Receipt</button>
+                    <button  type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#CustomerSales">Customer Sales (Non Cash Customers )</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#SalesReceipts">Sales Receipt (Cash Account Sales)</button>
                     <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#CouponSales">Coupon Sales</button>
                   </div>
                 </div>
@@ -699,11 +699,11 @@
                     <form role="form"   action="{{ url_for('cash_up') }}" method="post" > 
                         <div class="form-group" >
                             <label for="CashSales">Cash Sales</label>
-                            <input id="CashSales" type = "number" step="0.01" value="{{ sales_breakdown['Cash'] }}"  name="cash_sales_amount" autocomplete="off" autofocus class="form-control" readonly>
+                            <input id="CashSales" type = "number" step="0.01" value="{{ sales_breakdown['Cash'] | round(2) }}"  name="cash_sales_amount" autocomplete="off" autofocus class="form-control" readonly>
                         </div>
                         <div class="form-group">
                             <label for="ExpectedAmount">Expected Amount</label>
-                            <input id="ExpectedAmount" type = "number"  step="0.01" value="{{ sales_breakdown['Cash']-total_cash_expenses }}"  name="expected_amount" autocomplete="off" autofocus class="form-control" readonly>
+                            <input id="ExpectedAmount" type = "number"  step="0.01" value="{{ (sales_breakdown['Cash']-total_cash_expenses) | round(2) }}"  name="expected_amount" autocomplete="off" autofocus class="form-control" readonly>
                         </div>
                         
                         <div class="form-group" >

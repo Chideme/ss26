@@ -23,6 +23,8 @@
                         <th>Product Name</th>
                         <th>Product Cost Price</th>
                         <th>Product Selling Price</th>
+                        <th>Millitres per Unit</th>
+                        <th>Current Stock</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -32,6 +34,8 @@
                         <td>{{ product.name }}</td>
                         <td>{{ product.cost_price }}</td>
                         <td>{{ product.selling_price }}</td>
+                        <td>{{ product.unit }}</td>
+                        <td>{{ product.qty }}</td>
                         <td>
                             <button type="button" class="btn btn-light" data-toggle="modal" data-target="#EditProduct{{ product.id }}">
                                 Edit  <span data-feather="edit-2"></span>
@@ -96,9 +100,10 @@
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label for="Account">Inventory Account:</label>
-                                        <select id="Account" class="form-control" name="account" required> 
+                                        <select id="Account" class="form-control" name="account" required>
+                                            <option value="{{ prod.id }}" selected>{{ prod.account_name }}</option> 
                                             {% for account in accounts %}
-                                            <option value="{{ account.id }}" selected>{{ account.account_name }}</option>
+                                            <option value="{{ account.id }}">{{ account.account_name }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
@@ -169,8 +174,8 @@
                                              <div class="form-group">
                                              <label for="PT">Product Type:</label>
                                              <select id="PT" class="form-control" name="product_type" required>
-                                                 <option value="Fuels" selected>Fuels</option>
-                                                 <option value="Lubricants">Lubricants</option>
+                                                 <option value="Fuels">Fuels</option>
+                                                 <option value="Lubricants" selected>Lubricants</option>
                                              </select>
                                          </div>
                                         
@@ -178,8 +183,9 @@
                                          <div class="form-group">
                                              <label for="Account">Inventory Account:</label>
                                              <select id="Account" class="form-control" name="account" required>
+                                                <option value="{{ prod.id }}" selected>{{ prod.account_name }}</option> 
                                                  {% for account in accounts %}
-                                                 <option value="{{ account.id }}" selected>{{ account.account_name }}</option>
+                                                 <option value="{{ account.id }}">{{ account.account_name }}</option>
                                                  {% endfor %}
                                              </select>
                                          </div>

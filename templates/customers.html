@@ -69,17 +69,43 @@ Customers
                                                 </button>
                                         </div>
                                         <div class="modal-body">
-                                            <form  action="{{ url_for('edit_customer') }}" method="post" > 
-                                                <div class="form-group  " >
-                                                    <input type = "text"  value="{{ customer.name }}" name="name" autocomplete="off" placeholder="Username" autofocus class="form-control" required>
+                                            <form  action="{{ url_for('edit_customer') }}" method="post" >
+                                                <div class="form-row">
+                                                    <div class="form-group col-md-1 " >
+                                                        
+                                                        <input  type = "number"  value="{{ customer.id }}" name="customer_id" autocomplete="off" autofocus class="form-control" hidden>
+                                                    </div>
+                                                    <div class="form-group col-md-9 " >
+                                                        <label for="cn">Customer Name:</label>
+                                                        <input id="cn" type = "text"  value="{{ customer.name }}" name="name" autocomplete="off"  autofocus class="form-control" required>
+                                                    </div>
                                                 </div>
-                                                <div class="form-group">
-                                                    <input type = "text" value="{{ customer.contact_person }}" name="contact_person" autocomplete="off" placeholder="contact_person" autofocus class="form-control" required>
+                                                <div class="form-row">
+                                                    <div class="form-group col-md-6">
+                                                        <label for="cp">Contact Person:</label>
+                                                        <input id="cp" type = "text" value="{{ customer.contact_person }}" name="contact_person" autocomplete="off" placeholder="contact_person" autofocus class="form-control" required>
+                                                    </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="ph" class="text-left">Phone Number (e.g 0776393449):</label>
+                                                        <input id="ph" type ="tel" pattern="[0-9]{10}"  value="{{ customer.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
+                                                    </div>
                                                 </div>
-                                                <div class="form-group">
-                                                    <input type ="text" value="{{ customer.phone_number }}" name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
+                                                <div class="form-row">
+                                                    <div class="form-group col-md-6">
+                                                        <label for="SA">Select Account (eg. Accounts Receivable if customer account is non cash):</label>
+                                                        <select id="SA" class="form-control"  name="acct" required>
+                                                            <option value="{{ customer.account_id }}" selected >{{ accounts_dict[customer.account_id].account_name }}</option>
+                                                            {% for account in accounts %}
+                                                            <option  value="{{ account.id }}">{{ account.account_name }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <div class="form-group col-md-6 ">
+                                                        <label for="op">Opening Balance:</label>
+                                                        <input id="op" value="{{ customer.opening_balance }}" type = "number" step="0.01" name="balance" autocomplete="off" placeholder="Opening Balance" autofocus class="form-control" required>
+                                                    </div>
                                                 </div>
-                         
                                                 <button class="btn btn-primary btn-block" type="submit">Update Customer</button>
                                         
                                              </form>
@@ -115,25 +141,25 @@ Customers
                                         <input id="ContactPerson" type = "text"  name="contact_person" autocomplete="off" placeholder="contact person" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group  ">
-                                        <label for="PH">Phone Number:</label>
+                                        <label for="PH">Phone Number (e.g 0776393449):</label>
                                         <input id="PH" type ="tel" pattern="[0-9]{10}"   name="phone" autocomplete="off" placeholder="Phone Number" autofocus class="form-control" required>
                                     </div>
                                     <div class="form-group">
-                                        <label for="TYP">Type (Cash or Non-Cash):</label>
-                                    <select id="TYP" class="form-control" name="type" onchange="showDiv('account', this)">
+                                        <label for="typ">Type (Cash or Non-Cash):</label>
+                                        <select id="typ" class="form-control" name="type" onchange="showDiv('account', this)" required>
                                         <option selected  value="Non-Cash">Non-Cash</option>
                                         <option  value="Cash">Cash</option>
                                     </select>
                                     </div>
                                     <div id="account" style="display: none;" class="form-group">
-                                        <label for="SA">Select Account:</label>
-                                        <select id="SA" class="form-control"  name="acct" required>
+                                        <label for="sa">Select Account:</label>
+                                        <select id="sa" class="form-control"  name="acct">
                                             <option selected></option>
                                             {% for account in cash_accounts %}
                                             <option  value="{{ account.id }}">{{ account.account_name }}</option>
                                             {% endfor %}
                                         </select>
-                                        </div>
+                                    </div>
                                 <div class="form-group  ">
                                     <label for="OP">Opening Balance:</label>
                                     <input id="OP" type = "number" step="0.01" name="balance" autocomplete="off" placeholder="Opening Balance" autofocus class="form-control" required>
@@ -166,7 +192,7 @@ Customers
                                     <form action="{{ url_for('delete_customer') }}" method="post" > 
                                         <div class="form-group">
                                             <label for="Choose">Choose:</label>
-                                            <select id="Choose" class="form-control" name="customers">
+                                            <select id="Choose" class="form-control" name="customers" required>
                                                 
                                                 {% for  customer in customers %}
                                                 <option  value="{{ customer.id }}">{{ customer.name }}</option>
@@ -312,8 +338,8 @@ Customers
    <script>
        function showDiv(divId, element){
         document.getElementById(divId).style.display = element.value == 'Cash' ? 'block' : 'none';
-        }        
-    
+        }
+        
    </script>
 
     

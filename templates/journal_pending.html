@@ -35,7 +35,7 @@
                         <td>{{ j.amount | currencyFormat }}</td>
                         <td>
                             <button type="button" class="btn btn-light" data-toggle="modal" data-target="#ActionJournal{{ j.id }}">
-                                Approve/Delete <span data-feather="check-square"></span>
+                                Approve <span data-feather="check-square"></span> /Delete <span data-feather="trash"></span>
                             </button>
                         </td>
                     
@@ -61,7 +61,7 @@
                                                     <input type = "hidden"  value="{{ j.id }}" name="id" autocomplete="off"  autofocus class="form-control" readonly>
                                                 </div>
                                                 
-                                                <button class="btn btn-primary btn-block" type="submit">Approve</button>
+                                                <button class="btn btn-primary btn-block" type="submit">Approve <span data-feather="check-square"></span></button>
                                              </form>
                                              <div class="p-2" >
                                              <form  action="{{ url_for('delete_journal') }}" method="post" > 
@@ -69,7 +69,7 @@
                                                     <input type = "hidden"  value="{{ j.id }}" name="id"  autocomplete="off" autofocus class="form-control" readonly>
                                                 </div>
                                                 
-                                                <button class="btn btn-warning btn-block" type="submit">Delete</button>
+                                                <button class="btn btn-warning btn-block" type="submit">Delete <span data-feather="trash"></span></button>
                                              </form>
                                              </div>
                                         </div>

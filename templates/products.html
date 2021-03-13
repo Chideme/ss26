@@ -93,8 +93,9 @@
                                     <div class="form-group col-md-4">
                                         <label for="Account">Inventory Account:</label>
                                         <select id="Account" class="form-control" name="account" required>
+                                            <option value="{{ prod.id }}" selected>{{ prod.account_name }}</option> 
                                             {% for account in accounts %}
-                                            <option value="{{ account.id }}" selected>{{ account.account_name }}</option>
+                                            <option value="{{ account.id }}">{{ account.account_name }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
@@ -180,8 +181,9 @@
                                                 <div class="form-group">
                                                     <label for="Account">Inventory Account:</label>
                                                     <select id="Account" class="form-control" name="account" required>
+                                                        <option value="{{ prod.id }}" selected>{{ prod.account_name }}</option> 
                                                         {% for account in accounts %}
-                                                        <option value="{{ account.id }}" selected>{{ account.account_name }}</option>
+                                                        <option value="{{ account.id }}" >{{ account.account_name }}</option>
                                                         {% endfor %}
                                                     </select>
                                                 </div>

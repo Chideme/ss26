@@ -9,8 +9,8 @@
         
         
           <div class="btn-group mr-2">
-            <button  type="button" id="print" class="btn btn-sm btn-outline-secondary">Print</button>
-            <button class="btn btn-sm btn-outline-secondary">Export</button>
+            <button  type="button" id="print" onclick="printTable()" class="btn  btn-outline-secondary"><span data-feather="printer"></span></button>
+          <button  type="button" id="download" class="btn  btn-outline-secondary"><span data-feather="download"></span></button>
           </div>
         </div>
       </div>
@@ -18,7 +18,7 @@
     
       
       <h2>Update Lube Sales</h2>
-      <div class="table-responsive driveway" id="printTable">
+      <div class="table-responsive driveway"  id="printTable">
       
     
         <table class="driveway-table">
@@ -340,7 +340,23 @@
   </div>
   <!--Cash Up Modal-->
 
- 
+  <script>
+    //Prints Driveway
+         
+    function printTable(){
+              var toprint = document.getElementById('printTable');
+              newWIn = window.open("",'PRINT', 'height=650,width=900,top=100,left=150');
+              newWIn.document.write('<html><body>');
+              newWIn.document.write('<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"/>');
+              newWIn.document.write('<link href="/static/style.css" rel="stylesheet">');
+              newWIn.document.write(toprint.innerHTML);
+              newWIn.document.write('</body></html>');
+              newWIn.print();
+              newWIn.close();
+              location.reload();
+              return false;
+          };
+  </script>
 
 {% endblock %}
    

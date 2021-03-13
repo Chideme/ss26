@@ -59,9 +59,9 @@ From:{{ start_date }} To: {{ end_date }}
                     <td>{{ start_date }}</td>
                     <td>Opening Balance</td>
                     {% if entry == "DR" %}
-                    <td>{{ opening_balance }}</td>
+                    <td>{{ opening_balance | currencyFormat }}</td>
                     {% else %}
-                    <td>{{ opening_balance }}</td>
+                    <td>{{ opening_balance | currencyFormat }}</td>
                     {% endif %}
                   </tr>
                     {% for j in journals %}

@@ -263,12 +263,16 @@ def dashboard_reports():
                 start_date = datetime.strptime(start_date,"%Y-%m-%d")
                 end_date = datetime.strptime(end_date,"%Y-%m-%d")
                 ###### Tank Variance %
-                tank_id = int(request.form.get("tank"))
+                tank_id = request.form.get("tank")
                 if tank_id != "Add Tank":
+                        tank_id = int(tank_id)
                         tank_data = tank_variance_daily_report(start_date,end_date,tank_id)
                         t_sorted_date= sorted_dates([i for i in tank_data])
                         tank_info = [tank_data[i] for i in t_sorted_date]
                         tank_dates = [i.strftime('%d-%b-%y')  for i in t_sorted_date]
+                else:
+                        tank_info = []
+                        tank_dates = []
                 
                 if frequency == "Day-to-day":
                         if product=="Fuel":
@@ -968,13 +972,14 @@ def products():
                 products = Product.query.filter_by(product_type="Fuels").all()
                 accounts = Account.query.filter(Account.code.between(451,460)).all()
                 tank_product = db.session.query(Tank,Product).filter(Product.id == Tank.product_id).all()
+                prod = Account.query.filter_by(account_name="Fuel Inventory").first()
                 qty = {}
                 for i in tank_product:
                         if i[1].name not in qty:
                                 qty[i[1].name]=i[0].dip
                         else:
                                 qty[i[1].name]+=i[0].dip
-                return render_template("products.html",products=products,qty=qty,accounts=accounts)
+                return render_template("products.html",products=products,qty=qty,accounts=accounts,prod=prod)
 
 @app.route("/inventory/fuel_products/add_product",methods=["POST"])
 @admin_required
@@ -1061,7 +1066,8 @@ def lube_products():
                 shift = Shift.query.order_by(Shift.id.desc()).first()
                 accounts = Account.query.filter(Account.code.between(451,460)).all()
                 products = Product.query.filter_by(product_type="Lubricants").all()
-                return render_template("lube_products.html",products=products,shift=shift,accounts=accounts)
+                prod = Account.query.filter_by(account_name="Lubes Inventory").first()
+                return render_template("lube_products.html",products=products,shift=shift,accounts=accounts,prod=prod)
 
 @app.route("/inventory/lubes/add_lube_product/",methods=["POST"])
 @admin_required
@@ -1226,6 +1232,8 @@ def customers():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 customers= Customer.query.all()
                 products = Product.query.all()
+                accounts= Account.query.filter(Account.code.between(400,599)).all()
+                accounts_dict = {i.id:i for i in accounts}
                 cash_accountss = Account.query.filter(Account.code.between(400,450)).all()
                 paypoints = Account.query.filter(Account.code.between(400,450)).all()
                 cash_ids = [i.id for i in cash_accountss]
@@ -1238,7 +1246,8 @@ def customers():
                         c_notes = CreditNote.query.filter_by(customer_id=customer.id).all()
                         net =  sum([i.price*i.qty for i in invoices])-sum([i.amount for i in payments]) - sum([i.price*i.qty for i in c_notes])
                         balances[customer]= net + customer.opening_balance
-                return render_template("customers.html",products=products,customers=customers,balances=balances,paypoints=paypoints,cash_accounts=cash_accountss,non_cash_customers=non_cash_customers)
+                return render_template("customers.html",products=products,customers=customers,balances=balances,paypoints=paypoints,
+                                        cash_accounts=cash_accountss,non_cash_customers=non_cash_customers,accounts=accounts,accounts_dict=accounts_dict)
 
 @app.route("/customers/customer_payment",methods=["POST"])
 @admin_required
@@ -1397,9 +1406,18 @@ def add_customer():
 def edit_customer():
         """Edit Customer Information"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                name = request.form.get("name").capitalize()
-                db.session.query(Customer).filter(Customer.name == name).update({Customer.phone_number: request.form.get("phone")}, synchronize_session = False)
-                db.session.query(Customer).filter(Customer.name == request.form.get("name")).update({Customer.contact_person: request.form.get("contact_person")}, synchronize_session = False)
+                customer_id = request.form.get("customer_id")
+                name = request.form.get("name")
+                contact_person=request.form.get("contact_person")
+                phone_number=request.form.get("phone")
+                opening_balance = float(request.form.get("balance"))
+                account_id = request.form.get("acct")
+                customer = Customer.query.get(int(customer_id))
+                customer.name = name
+                customer.opening_balance = opening_balance
+                customer.phone_number = phone_number
+                customer.contact_person = contact_person
+                customer.account_d = account_id
                 db.session.commit()
                 flash('Customer Successfully Updated','info')
                 return redirect(url_for('customers'))
@@ -1649,7 +1667,7 @@ def add_account():
                 if code == False:
                         flash("You have reached the number of {} accounts".format(account_category))
                         return redirect(url_for('accounts'))
-                entry = {"Income":"CR","Expense":"DR","Current Asset":"DR","Current Liability":"CR","COGS":"DR",
+                entry = {"Income":"CR","Expense":"DR","Other Current Asset":"DR","Current Liability":"CR","COGS":"DR",
                 "Non Current Asset":"DR","Equity":"CR","Non Current Liability":"CR","Bank":"DR"}
                 account = Account(code=code,account_name=name,account_category=account_category,entry=entry[account_category])
                 account_exists = bool(Account.query.filter_by(account_name=request.form.get("name")).first())
@@ -1684,7 +1702,7 @@ def edit_account():
                 if code == False:
                         flash("You have reached the number of {} accounts".format(account_category))
                         return redirect(url_for('accounts'))
-                entry = {"Income":"CR","Expense":"DR","Current Asset":"DR","Current Liability":"CR","COGS":"DR",
+                entry = {"Income":"CR","Expense":"DR","Other Current Asset":"DR","Current Liability":"CR","COGS":"DR",
                 "Non Current Asset":"DR","Equity":"CR","Non Current Liability":"CR","Bank":"DR"}
 
                 account.name = name
@@ -1763,10 +1781,13 @@ def ledger():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 accounts= Account.query.all()
                 if request.method =="GET":
+                        end_date = date.today()
+                        start_date = end_date - timedelta(days=30)
                         account = Account.query.get(1)
                         accounts = Account.query.all()
                         names = {i.id:i.account_name for i in accounts}
-                        return render_template("ledger.html",accounts=accounts,ac=account,names=names)
+                        balance = opening_balance(start_date,account.id)
+                        return render_template("ledger.html",accounts=accounts,ac=account,names=names,opening_balance=balance)
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
@@ -2361,7 +2382,6 @@ def customer_sales():
                 shift_underway = Shift_Underway.query.all()
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
-                shift_daytime = current_shift.daytime
                 shift_id = current_shift.id
                 date = current_shift.date
                 vehicle_number= request.form.get("vehicle_number").capitalize()
@@ -2428,7 +2448,7 @@ def coupon_sales():
                 product = Product.query.get(request.form.get("product_id"))
                 coupon = Coupon.query.get(request.form.get("coupon_id"))
                 number_of_coupons = request.form.get("number_of_coupons")
-                total_litres = int(coupon.coupon_qty) * int(number_of_coupons)
+                total_litres = float(coupon.coupon_qty) * float(number_of_coupons)
                 customer = Customer.query.get(coupon.customer_id)
                 price = Price.query.filter(and_(Price.shift_id==shift_id,Price.product_id==product.id)).first()
                 coupon_sale = CouponSale(date=date,shift_id=shift_id,product_id=product.id,coupon_id=coupon.id,qty=number_of_coupons)
@@ -2556,6 +2576,7 @@ def update_lube_qty():
                         if product_qty:
                                 try:
                                         product_qty.qty = request.form.get("qty")
+                                        product.qty = request.form.get("qty")
                                         db.session.commit()
                                         return redirect(url_for('readings_entry'))
                                 except:
@@ -2567,6 +2588,7 @@ def update_lube_qty():
                         else:
                                 qty =request.form.get("qty")
                                 lube_qty = LubeQty(shift_id=shift_id,date=date,qty=qty,product_id=product.id)
+                                product.qty = request.form.get("qty")
                                 try:
                                         db.session.add(lube_qty)
                                         db.session.commit()
