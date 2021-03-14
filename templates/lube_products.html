@@ -16,12 +16,13 @@
       </div>
   </h2>
     <div class="row">
-        <div class="col-md-9">
+        <div class="col-md-11">
             <table class="display" id="export">
                 <thead>
                     <tr>
                         <th>Product Name</th>
                         <th>Product Cost Price</th>
+                        <th>Product Avg Price</th>
                         <th>Product Selling Price</th>
                         <th>Millitres per Unit</th>
                         <th>Current Stock</th>
@@ -33,6 +34,7 @@
                     <tr>
                         <td>{{ product.name }}</td>
                         <td>{{ product.cost_price }}</td>
+                        <td>{{ product.avg_price }}</td>
                         <td>{{ product.selling_price }}</td>
                         <td>{{ product.unit }}</td>
                         <td>{{ product.qty }}</td>

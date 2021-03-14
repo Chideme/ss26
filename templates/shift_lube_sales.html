@@ -80,7 +80,7 @@
                 <th class="driveway-table" colspan="6">Total</th>
                 
                 <td class="driveway-table">{{ total_sales_ltrs}} ltrs</td>
-                <td class="numbers driveway-table">${{ total_sales_amt }}</td>
+                <td class="numbers driveway-table">{{ total_sales_amt | currencyFormat }}</td>
               </tr>
               </tbody>
             </table>
@@ -167,6 +167,10 @@
                             <div class="form-group">
                                 <label for="qty">Qty:</label>
                                 <input id="qty" type = "number" step="any" value="{{ product_sales[product.name][6] }} " name="qty" autocomplete="off"autofocus class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="c">Cost Price:</label>
+                                <input id="c" type = "number" step="0.01"  name="cost_price" autocomplete="off"autofocus class="form-control" required>
                             </div>
                             <div class="form-group  " >
                                 <label for="ref">Reference:</label>

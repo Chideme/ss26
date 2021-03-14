@@ -29,15 +29,21 @@ app.config.update(dict(
 ))
 mail = Mail(app)
 def main():
-    tenant = "test_service_station"
-    
+    tenant = "puma_service_station"
+   
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
-        end_date = date.today()
-        start_date = end_date - timedelta(days=90)
-        report = daily_sales_analysis(start_date,end_date)
-        dates = [i for i in report]
-        report = day_sales_breakdown(dates)
-        print(report)
+       
+        lubes = Product.query.filter_by(product_type="Lubricants").all()
+        lubes_dict = create_dict(lubes)
+        shifts = Shift.query.order_by(Shift.id.desc()).all()
+
+        for i in lubes_dict:
+            for shift in shifts:
+                z = i
+                z = Price(date=shift.date,shift_id=shift.id,product_id=lubes_dict[i].id,cost_price=lubes_dict[i].cost_price,selling_price=lubes_dict[i].selling_price,avg_price=lubes_dict[i].avg_price)
+                db.session.add(z)
+                db.session.flush()
+        db.session.commit()
 with app.app_context():
         main()
 

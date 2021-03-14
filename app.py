@@ -471,12 +471,16 @@ def start_shift_update():
                                         else:
                                                 flash("Set Up a supplier to run a shift update")
                                                 return redirect(url_for('suppliers'))
-                               """
+                                """
+                                # Update prices
                                 for i in fuels_dict:
                                         fuels_dict[i] = Price(date=date,shift_id=shift_id,product_id=fuels_dict[i].id,cost_price=fuels_dict[i].cost_price,selling_price=fuels_dict[i].selling_price,avg_price=fuels_dict[i].avg_price)
                                         db.session.add(fuels_dict[i])
                                         db.session.flush()
-                                
+                                for i in lubes_dict:
+                                        lubes_dict[i] = Price(date=date,shift_id=shift_id,product_id=lubes_dict[i].id,cost_price=lubes_dict[i].cost_price,selling_price=lubes_dict[i].selling_price,avg_price=lubes_dict[i].avg_price)
+                                        db.session.add(lubes_dict[i])
+                                        db.session.flush()
                                         
                                 session["shift"]  = shift_id
                                 session["shift_underway"]=shift_underway[0].state
@@ -1511,21 +1515,25 @@ def debit_note():
                 shift_id = int(request.form.get("shift"))
                 shift = Shift.query.get(shift_id)
                 qty =float(request.form.get("delivery"))
-                document = request.form.get("reference")
+                document = request.form.get("document")
                 supplier_id = request.form.get("supplier")
                 cost_price = float(request.form.get("cost_price"))
                 product = Product.query.get(int(request.form.get("product")))
-                if product.product_type =="Fuels":
-                        tank_id= request.form.get("tank")
-                        tank = Tank.query.get(tank_id)
-                        tank_id = tank.id
-                else:
-                        tank_id=0
                 supplier = Supplier.query.get(supplier_id)
-                
                 amount = cost_price * qty
                 amount = round(amount,2)
-                debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank_id,qty=qty,product_id=int(product.id),document_number=document,supplier=supplier.id,cost_price=cost_price)
+                if product.product_type =="Fuels":
+                        tank_id= request.form.get("tank")
+                        try:
+                                tank = Tank.query.get(tank_id)
+                                tank_id = tank.id
+                        except:
+                                flash('Please select valid tank','warning')
+                                return redirect(url_for('suppliers'))             
+                        debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank_id,qty=qty,product_id=tank.product.id,document_number=document,supplier=supplier.id,cost_price=cost_price)
+                        
+                else:
+                       debitnote = DebitNote(date=shift.date,shift_id=shift_id,qty=qty,product_id=product.id,document_number=document,supplier=supplier.id,cost_price=cost_price) 
                 journal =  Journal(date=shift.date,details=document,amount=amount,dr=supplier.account_id,cr=product.account_id,created_by=session['user_id'])
                 db.session.add(debitnote)
                 db.session.add(journal)
@@ -2383,6 +2391,7 @@ def update_fuel_deliveries():
                 product.cost_price = cost_price
                 product.avg_price = round(new_cost,2)
                 price.avg_price = round(new_cost,2)
+                pricr.cost_price = cost_price
                 delivery = Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
                 journal = Journal(date=current_shift.date,details=document,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                 db.session.add(journal)
@@ -2647,7 +2656,7 @@ def shift_lube_sales():
                 date = current_shift.date
                 daytime = current_shift.daytime
                 prev_shift_id = prev_shift.id
-                products = Product.query.filter_by(product_type="Lubricants").all()
+                products = Product.query.filter_by(product_type="Lubricants").order_by(Product.id.asc()).all()
                 product_sales = lube_sales(shift_id,prev_shift_id)               
                 total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
                 total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
@@ -2843,10 +2852,14 @@ def update_lubes_deliveries():
                         try:
                                 product = Product.query.filter_by(id=request.form.get("product")).first() 
                                 qty =float(request.form.get("qty"))
-                                cost_price = product.cost_price
+                                cost_price = float(request.form.get("cost_price"))
+                                price= Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
+                                product.cost_price = cost_price
                                 amount = cost_price * qty
                                 new_cost = ((product.avg_price*product.qty) + amount)/(qty +product.qty)
                                 product.avg_price = round(new_cost,2)
+                                price.cost_price = cost_price
+                                price.avg_price = round(new_cost,2)
                                 supplier_id = request.form.get("supplier")
                                 supplier = Supplier.query.get(supplier_id)
                                 document = request.form.get("document")
@@ -2881,10 +2894,14 @@ def update_lubes_cost_prices():
                         shift_underway = Shift_Underway.query.all()
                         current_shift = shift_underway[0].current_shift
                         current_shift = Shift.query.get(current_shift)
+                        shift_id = current_shift.id
                 
                 product = Product.query.filter_by(id=request.form.get("product")).first() 
                 try:
-                        product.cost_price = request.form.get("cost_price")
+                        cost_price = request.form.get("cost_price")
+                        product.cost_price = cost_price
+                        price =Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
+                        price.cost_price = cost_price
                         db.session.commit()
                 except:
                         db.session.rollback()
@@ -2908,15 +2925,20 @@ def update_lubes_selling_prices():
                         shift_underway = Shift_Underway.query.all()
                         current_shift = shift_underway[0].current_shift
                         current_shift = Shift.query.get(current_shift)
+                        shift_id = current_shift.id
                 product = Product.query.filter_by(id=request.form.get("product")).first() 
                 try:
-                        product.cost_price = request.form.get("selling_price")
+                        selling_price = request.form.get("selling_price")
+                        product.selling_price = selling_price
+                        price =Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
+                        price.selling_price = selling_price
                         db.session.commit()
-                except:
+                except :
                         db.session.rollback()
-                        
+                        flash('Something is wrong','warning')
+                        return redirect('shift_lube_sales')
                 else:
-                        flash('There was an error','warning')
+                        flash('Success','info')
                         return redirect('shift_lube_sales')
                 
 

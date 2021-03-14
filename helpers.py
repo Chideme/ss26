@@ -320,10 +320,14 @@ def lube_sales(shift_id,prev_shift_id):
             curr = LubeQty.query.filter(and_(LubeQty.shift_id == shift_id,LubeQty.product_id== product.id)).first()
             if prev and curr: # check if previous shift exists
                 delivery = Delivery.query.filter(and_(Delivery.shift_id==shift_id,Delivery.product_id==product.id)).all()
-                deliveries = sum([i.qty for i in delivery])
+                d_notes = DebitNote.query.filter(and_(DebitNote.shift_id==shift_id,DebitNote.product_id==product.id)).all()
+                deliveries = sum([i.qty for i in delivery])- sum([i.qty for i in d_notes])
                 sales = ( prev.qty + deliveries)-curr.qty
                 cost_price = product.cost_price
                 selling_price = product.selling_price
+                price = Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
+                cost_price = price.cost_price
+                selling_price = price.selling_price
                 mls = product.unit
                 
                 #remove spaces fron names so as to render modals correctly
