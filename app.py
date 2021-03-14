@@ -1455,6 +1455,7 @@ def suppliers():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 
                 suppliers = Supplier.query.all()
+                products = Product.query.all()
                 tanks = Tank.query.all()
                 paypoints = Account.query.filter(Account.code.between(500,599)).all()
                 # calculate balances
@@ -1466,7 +1467,7 @@ def suppliers():
                         net = sum([i.cost_price*i.qty for i in deliveries])-sum([i.amount for i in payments]) - sum([i.cost_price*i.qty for i in d_notes])
 
                         balances[supplier.name]= net + supplier.opening_balance
-                return render_template("suppliers.html",tanks=tanks,suppliers=suppliers,balances=balances,paypoints=paypoints)
+                return render_template("suppliers.html",products=products,tanks=tanks,suppliers=suppliers,balances=balances,paypoints=paypoints)
 
 
 @app.route("/suppliers/supplier_payment",methods=["POST"])
@@ -1509,17 +1510,22 @@ def debit_note():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}): 
                 shift_id = int(request.form.get("shift"))
                 shift = Shift.query.get(shift_id)
-                tank_id= request.form.get("tank")
-                tank = Tank.query.get(tank_id)
-                product = Product.query.get(tank.product_id)
                 qty =float(request.form.get("delivery"))
                 document = request.form.get("reference")
                 supplier_id = request.form.get("supplier")
-                supplier = Supplier.query.get(supplier_id)
                 cost_price = float(request.form.get("cost_price"))
+                product = Product.query.get(int(request.form.get("product")))
+                if product.product_type =="Fuels":
+                        tank_id= request.form.get("tank")
+                        tank = Tank.query.get(tank_id)
+                        tank_id = tank.id
+                else:
+                        tank_id=0
+                supplier = Supplier.query.get(supplier_id)
+                
                 amount = cost_price * qty
                 amount = round(amount,2)
-                debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=int(product.id),document_number=document,supplier=supplier.id,cost_price=cost_price)
+                debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank_id,qty=qty,product_id=int(product.id),document_number=document,supplier=supplier.id,cost_price=cost_price)
                 journal =  Journal(date=shift.date,details=document,amount=amount,dr=supplier.account_id,cr=product.account_id,created_by=session['user_id'])
                 db.session.add(debitnote)
                 db.session.add(journal)
@@ -1634,6 +1640,7 @@ def accounts():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 accounts= Account.query.all()
                 return render_template("accounts.html",accounts=accounts)
+
 @app.route("/accounts/delete_account",methods=["POST"])
 @admin_required
 @check_schema
@@ -1642,6 +1649,11 @@ def delete_account():
         """Deletes Account"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 account = db.session.query(Account).get(int(request.form.get("accounts")))
+                accounts = [501,402,452,453,300,700,900,201,202,100,101,400] # model Chart of accounts, can not delete these.
+                if account.code in accounts:
+                        flash("You can not delete this account",'warning')
+                        return redirect(url_for('accounts'))
+
                 try:
                         db.session.delete(account)
                         db.session.commit()
@@ -1964,6 +1976,8 @@ def cash_up_reports():
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
                         cash = CashUp.query.filter(CashUp.date.between(start_date,end_date)).all()
+                        start_date = datetime.strptime(start_date,"%Y-%m-%d")
+                        end_date = datetime.strptime(end_date,"%Y-%m-%d")
                         return render_template("cash_up_report.html",cash=cash,start_date=start_date,end_date=end_date)
 
 @app.route("/reports/lubes_cashup",methods=["GET","POST"])
@@ -1981,6 +1995,8 @@ def lubes_cash_up_reports():
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
                         cash = LubesCashUp.query.filter(CashUp.date.between(start_date,end_date)).all()
+                        start_date = datetime.strptime(start_date,"%Y-%m-%d")
+                        end_date = datetime.strptime(end_date,"%Y-%m-%d")
                         return render_template("lubes_cash_up_report.html",cash=cash,start_date=start_date,end_date=end_date)
 
 @app.route("/reports/tank_variances/<int:tank_id>",methods=["GET","POST"])
@@ -2017,7 +2033,7 @@ def sales_summary():
                 
                 if request.method =="GET":
                        
-                        products = Product.query.all()
+                        products = Product.query.filter_by(product_type="Fuels").all()
                         
                         return render_template("sales_summary_filter.html",products=products)
                 else:
@@ -2025,14 +2041,15 @@ def sales_summary():
                         end_date = request.form.get("end_date")
                         
                         product = request.form.get("product")
-                        products = Product.query.all()
+                        products = Product.query.filter_by(product_type="Fuels").all()
                         if product =="All":
                                 tanks = Tank.query.all()
                         else:
                                 tanks = Tank.query.filter_by(product_id=product).all()
                         
                         sales_summary= daily_sales_summary(tanks,start_date,end_date)
-
+                        start_date = datetime.strptime(start_date,"%Y-%m-%d")
+                        end_date = datetime.strptime(end_date,"%Y-%m-%d")
                         return render_template("sales_summary.html",report=sales_summary,products=products,start_date=start_date,end_date=end_date)
 
 @app.route("/reports/pump_meter_readings",methods=["GET","POST"])
@@ -2080,7 +2097,7 @@ def get_driveway():
                                 prev_shift_id=prev.id if  prev else shift_id
                                 ######
                                 data = get_driveway_data(shift_id,prev_shift_id)
-                                
+                                date = current_shift.date
                                 return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
                                 lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
                                 products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
@@ -2103,7 +2120,7 @@ def get_driveway():
                                         prev_shift_id = prev_shift.id if prev_shift else shift_id
                                 
                                 data = get_driveway_data(shift_id,prev_shift_id)
-                                
+                                date = current_shift.date
                                 return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
                                 lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
                                 products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
@@ -2141,7 +2158,88 @@ def get_driveway():
                                 return redirect(url_for('start_shift_update'))
                                 
 
+@app.route("/driveway_report",methods=["GET","POST"])
+@check_schema
+@login_required
+def driveway_report():
 
+        """Query Shift Driveways for a particular day """
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                if request.method == "POST":
+                        shift_daytime = request.form.get("shift")
+                        date = request.form.get("date")
+                        pumps = Pump.query.order_by(Pump.id.asc()).all()
+                        tanks = Tank.query.order_by(Tank.id.asc()).all()
+                       
+                        if shift_daytime != "Total":
+                                current_shift= Shift.query.filter(and_(Shift.date == date,Shift.daytime == shift_daytime)).first()
+                                if not current_shift:
+                                        flash("No Such Shift exists",'warning')
+                                        return redirect(url_for('driveway_report'))
+                                shift_id = current_shift.id
+                                #####
+                                prev = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+                                prev_shift_id=prev.id if  prev else shift_id
+                                ######
+                                data = get_driveway_data(shift_id,prev_shift_id)
+                                date = current_shift.date
+                                return render_template("driveway_report.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
+                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
+                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
+                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
+                        else:
+                                #Driveway for the day
+                                current_shift= Shift.query.filter_by(date=date).order_by(Shift.id.desc()).first()
+                                if not current_shift:
+                                        flash('No such shift exists','warning')
+                                        return redirect(url_for('driveway_report'))
+                                shift_id = current_shift.id
+                                prev_date = current_shift.date -timedelta(days=1)
+                                prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
+                                if prev_shift:
+                                        prev_shift_id = prev_shift.id
+                                else:
+                                        prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+                                        prev_shift_id = prev_shift.id if prev_shift else shift_id
+                                
+                                data = get_driveway_data(shift_id,prev_shift_id)
+                                date = current_shift.date
+                                return render_template("driveway_report.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
+                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
+                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
+                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])        
+                        
+                else:
+
+                       
+                        shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+                        
+                        if shifts:
+                                current_shift = shifts[0]
+                                prev_shift = shifts[1] if len(shifts)>1 else shifts[0]
+                                shift_daytime = current_shift.daytime
+                                shift_id = current_shift.id
+                                pumps = Pump.query.order_by(Pump.id.asc()).all()
+                                tanks = Tank.query.all()
+                               
+                                date = current_shift.date
+                                prev_shift_id = prev_shift.id
+                                data = get_driveway_data(shift_id,prev_shift_id)
+                                
+                                return render_template("driveway_report.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
+                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
+                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
+                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
+                                
+                        else:
+                                flash("No shift updated yet",'warning')
+                                return redirect(url_for('start_shift_update'))
 
 @app.route("/ss26",methods=["GET"])
 @start_shift_first
@@ -2549,13 +2647,101 @@ def shift_lube_sales():
                 date = current_shift.date
                 daytime = current_shift.daytime
                 prev_shift_id = prev_shift.id
-                products = Product.query.filter_by(product_type="Lubricants")
+                products = Product.query.filter_by(product_type="Lubricants").all()
                 product_sales = lube_sales(shift_id,prev_shift_id)               
                 total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
                 total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
                 
                 return render_template("shift_lube_sales.html",product_sales=product_sales,shift_number=shift_id,
                                         date=date,shift_daytime =daytime,suppliers=suppliers,total_sales_amt=total_sales_amt,total_sales_ltrs=total_sales_ltrs,products=products)
+
+
+@app.route("/stock_sheet",methods=["GET","POST"])
+@check_schema
+@login_required
+def get_lubes_stock_sheet():
+
+        """Query Shift Stock Sheets for Lubes for a particular day """
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                if request.method == "POST":
+                        shift_daytime = request.form.get("shift")
+                        date = request.form.get("date")
+                
+                        if shift_daytime != "Total":
+                                current_shift= Shift.query.filter(and_(Shift.date == date,Shift.daytime == shift_daytime)).first()
+                                if not current_shift:
+                                        flash("No Such Shift exists",'warning')
+                                        return redirect(url_for('get_lubes_stock_sheet'))
+                                shift_id = current_shift.id
+                                daytime = current_shift.daytime
+                                date = current_shift.date
+                                #####
+                                prev = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+                                prev_shift_id=prev.id if  prev else shift_id
+                                ######
+                                
+                                products = Product.query.filter_by(product_type="Lubricants").all()
+                                product_sales = lube_sales(shift_id,prev_shift_id)               
+                                total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
+                                total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
+                
+                                return render_template("lubes_stocksheet.html",product_sales=product_sales,shift_number=shift_id,
+                                        date=date,shift_daytime =daytime,suppliers=suppliers,total_sales_amt=total_sales_amt,total_sales_ltrs=total_sales_ltrs,products=products)
+                                
+                        else:
+                                #Driveway for the day
+                                current_shift= Shift.query.filter_by(date=date).order_by(Shift.id.desc()).first()
+                                if not current_shift:
+                                        flash('No such shift exists','warning')
+                                        return redirect(url_for('get_lubes_stock_sheet'))
+                                shift_id = current_shift.id
+                                date = current_shift.date
+                                prev_date = current_shift.date -timedelta(days=1)
+                                prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
+                                if prev_shift:
+                                        prev_shift_id = prev_shift.id
+                                else:
+                                        prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+                                        prev_shift_id = prev_shift.id if prev_shift else shift_id
+                                daytime ="Total"
+                                
+                                products = Product.query.filter_by(product_type="Lubricants").all()
+                                product_sales = lube_sales(shift_id,prev_shift_id)               
+                                total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
+                                total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
+                
+                                return render_template("lubes_stocksheet.html",product_sales=product_sales,shift_number=shift_id,
+                                        date=date,shift_daytime =daytime,suppliers=suppliers,total_sales_amt=total_sales_amt,total_sales_ltrs=total_sales_ltrs,products=products)
+                                                
+                        
+                else:
+
+                       
+                        shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+                        
+                        if shifts:
+                                current_shift = shifts[0]
+                                prev_shift = shifts[1] if len(shifts)>1 else shifts[0]
+                                shift_daytime = current_shift.daytime
+                                shift_id = current_shift.id
+                              
+                                date = current_shift.date
+                                daytime = current_shift.daytime
+                                prev_shift_id = prev_shift.id
+                                
+                                products = Product.query.filter_by(product_type="Lubricants").all()
+                                product_sales = lube_sales(shift_id,prev_shift_id)               
+                                total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
+                                total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
+                
+                                return render_template("lubes_stocksheet.html",product_sales=product_sales,shift_number=shift_id,
+                                                        date=date,shift_daytime =daytime,suppliers=suppliers,
+                                                        total_sales_amt=total_sales_amt,total_sales_ltrs=total_sales_ltrs,products=products)
+                                
+                        else:
+                                flash("No shift updated yet",'warning')
+                                return redirect(url_for('start_shift_update'))
+
 
 
 @app.route("/update_lube_qty",methods=['POST'])
@@ -2567,7 +2753,7 @@ def update_lube_qty():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 #current_shift = Shift.query.order_by(Shift.id.desc()).first()
                 req =request.form.get("shift_id")# if the update is from  editing a previous shift
-                product = Product.query.filter_by(name=request.form.get("product")).first() 
+                product = Product.query.filter_by(id=request.form.get("product")).first() 
                 if req:
                         current_shift = Shift.query.get(req)
                         shift_id = current_shift.id
@@ -2636,7 +2822,7 @@ def update_lubes_deliveries():
                         shift_id = current_shift.id
                         date = current_shift.date
                         try:
-                                product = Product.query.filter_by(name=request.form.get("product")).first() 
+                                product = Product.query.filter_by(id=request.form.get("product")).first() 
                                 product = LubeQty.query.filter(and_(LubeQty.shift_id==current_shift.id,LubeQty.product_id==product.id)).first()
                                 product.delivery_qty = request.form.get("qty")
                                 db.session.commit()
@@ -2655,23 +2841,24 @@ def update_lubes_deliveries():
                         date = current_shift.date
 
                         try:
-                                product = Product.query.filter_by(name=request.form.get("product")).first() 
-                                qty =request.form.get("qty")
+                                product = Product.query.filter_by(id=request.form.get("product")).first() 
+                                qty =float(request.form.get("qty"))
                                 cost_price = product.cost_price
                                 amount = cost_price * qty
                                 new_cost = ((product.avg_price*product.qty) + amount)/(qty +product.qty)
                                 product.avg_price = round(new_cost,2)
-                                supplier = Supplier.query.get("supplier")
+                                supplier_id = request.form.get("supplier")
+                                supplier = Supplier.query.get(supplier_id)
                                 document = request.form.get("document")
                                 inventory = Account.query.filter_by(account_name="Lubes Inventory").first()
                                 delivery = Delivery(date=current_shift.date,shift_id=shift_id,qty=qty,product_id=product.id,document_number=document,supplier=supplier.id,cost_price=cost_price)
-                                journal = Journal(date=date,details="Lubes Delivery",amount=amount,dr=inventory.id,cr=supplier.account_id,created_by=session['user_id'])
+                                journal = Journal(date=date,details=document,amount=amount,dr=inventory.id,cr=supplier.account_id,created_by=session['user_id'])
                                 db.session.add(delivery)
                                 db.session.add(journal)
                                 db.session.commit()
-                        except:
+                        except Exception as e:
                                 db.session.rollback()
-                                flash("There was an error",'warning')
+                                flash(str(e),'warning')
                                 return redirect('shift_lube_sales')
                         else:
                                 
@@ -2695,7 +2882,7 @@ def update_lubes_cost_prices():
                         current_shift = shift_underway[0].current_shift
                         current_shift = Shift.query.get(current_shift)
                 
-                product = Product.query.filter_by(name=request.form.get("product")).first() 
+                product = Product.query.filter_by(id=request.form.get("product")).first() 
                 try:
                         product.cost_price = request.form.get("cost_price")
                         db.session.commit()
@@ -2721,7 +2908,7 @@ def update_lubes_selling_prices():
                         shift_underway = Shift_Underway.query.all()
                         current_shift = shift_underway[0].current_shift
                         current_shift = Shift.query.get(current_shift)
-                product = Product.query.filter_by(name=request.form.get("product")).first() 
+                product = Product.query.filter_by(id=request.form.get("product")).first() 
                 try:
                         product.cost_price = request.form.get("selling_price")
                         db.session.commit()

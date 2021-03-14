@@ -159,7 +159,12 @@ font-weight: bold;
 display: block;
 width: 150px;
 float: left;
-}s
+}
 
-.dataTables_filter input { width: 100px }
 
+.pull-left{float:left!important;}
+.pull-right{float:right!important;}
+
+.l-width{
+  width:3in;
+}

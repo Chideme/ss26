@@ -1,0 +1,137 @@
+{% extends "report_layout.html" %}
+
+{% block title %}
+    Lubricants Stocksheet: {{ date | dateFormat }} ( {{ shift_daytime }} )
+{% endblock %}
+
+
+{% block main %}
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#ShiftSelection">
+            Select Shift
+        </button>
+        
+        <h4 class="card">Lubricants Stocksheet: {{ date | dateFormat }} ( {{ shift_daytime }} )</h4>
+        
+          <div class="btn-group mr-2">
+            
+          </div>
+        
+      </div>
+
+    
+      
+      
+      <div>
+      
+    
+        <table class="diplay"  id="export">
+          
+            <thead>
+                <th>Product</th>
+                <th>Cost Price</th>
+                <th>Selling Price</th>
+                <th>Opening Qty</th>
+                <th>Delivery</th>
+                <th>Closing Qty</th>
+                <th>Sales (Units)</th>
+                <th>Sales (Amount)</th>
+            </thead>
+            <tbody>
+              {%for product in product_sales %}
+              <tr>
+                <td>{{ product }}</td>
+                
+                <td>{{ product_sales[product][3] }}</td>
+                <td>
+                   
+                        {{ product_sales[product][4] }}
+                   
+                </td>
+                <td>{{ product_sales[product][0] }}</td>
+                <td>
+                   
+                      {{ product_sales[product][6] }}
+                    
+                  </td>
+                <td>
+                 
+                    {{ product_sales[product][1] }}
+                  
+                </td>
+                <td>{{ product_sales[product][2] }}</td>
+                <td>{{ product_sales[product][2]*product_sales[product][4] | round(2) }}</td>
+              </tr>
+              
+              {% endfor %}
+              <tfoot>
+                <tr>
+                    <th>Total</th>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <th>{{ total_sales_ltrs}} ltrs</th>
+                    <th>{{ total_sales_amt | currencyFormat }}</th>
+                </tr>
+              </tfoot>
+              </tbody>
+            </table>
+       
+    </div>
+      
+       <!--Shift Slection Modal-->
+   <div class="modal fade" id="ShiftSelection" tabindex="-1" role="dialog" aria-labelledby="ShiftSelectionFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ShiftSelectionFormLabel">Select Shift</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form  action="{{ url_for('get_lubes_stock_sheet') }}" method="post" > 
+                    <div class="form-group">
+                        <input type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                      <select class="form-control" name="shift">
+                        <option selected>Total</option>
+                        <option>Day</option>
+                        <option>Night</option>
+                    </select>
+                  </div>
+
+                    <button class="btn btn-primary btn-block" type="submit">Enter</button>
+            
+                 </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div> 
+
+  <script>
+    //Prints Driveway
+         
+    function printTable(){
+              var toprint = document.getElementById('printTable');
+              newWIn = window.open("",'PRINT', 'height=650,width=900,top=100,left=150');
+              newWIn.document.write('<html><body>');
+              newWIn.document.write('<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"/>');
+              newWIn.document.write('<link href="/static/style.css" rel="stylesheet">');
+              newWIn.document.write(toprint.innerHTML);
+              newWIn.document.write('</body></html>');
+              newWIn.print();
+              newWIn.close();
+              location.reload();
+              return false;
+          };
+  </script>
+
+{% endblock %}
+   

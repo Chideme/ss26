@@ -544,6 +544,12 @@ def get_month_day1(end_date):
     first_day = date(year,month,1)
     return first_day
 
+def get_30_day_before(end_date):
+    """Get 30 days for moving average"""
+    today = end_date
+    
+    first_day = today - timedelta(days=30)
+    return first_day
 
 def fuel_daily_sales(start_date,end_date):
     """fuel day to day  sales"""
@@ -619,7 +625,7 @@ def lubes_mnth_sales(start_date,end_date):
 
 
 def fuel_sales_avg(start_date,end_date):
-    """fuel  average for the current"""
+    """fuel 30 day average sales"""
     shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).all()
     daily_sales = fuel_daily_sales(start_date,end_date)
     total = sum([daily_sales[i] for i in daily_sales ])
@@ -656,14 +662,15 @@ def lubes_daily_sales(start_date,end_date):
     
 
 def lubes_sales_avg(start_date,end_date):
-    """Lubes average for the current dates"""
+    """Lubes 30 day average sales"""
     shifts = Shift.query.filter(Shift.date.between(start_date,end_date)).all()
     if shifts:
         daily_sales = lubes_daily_sales(start_date,end_date)
         total = sum([daily_sales[i] for i in daily_sales ])
         end_date= shifts[-1].date
         start_date= shifts[0].date
-        days= (end_date - start_date).days + 1
+        days_diff  = (end_date - start_date).days + 1
+        days = days_diff
         try:    
             avg = total/days
         except ZeroDivisionError:
@@ -793,14 +800,14 @@ def get_driveway_data(shift_id,prev_shift_id):
     data['accounts'] = Account.query.all()
     data['end_date'] = current_shift.date
     end_date= current_shift.date
-    data['avg_sales'] = fuel_sales_avg(get_month_day1(end_date),end_date)
+    data['avg_sales'] = fuel_sales_avg(get_30_day_before(end_date),end_date)
     daily_sales = fuel_daily_sales(get_month_day1(end_date),end_date) 
     data['mnth_sales'] = sum([daily_sales[i] for i in daily_sales])
     lubes_daily_sale = lubes_daily_sales(get_month_day1(end_date),end_date)
     data['lubes_daily_sale']= lubes_daily_sale
-    lubes_mnth_sales = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
+    
     data['lubes_mnth_sales'] = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
-    data['lube_avg'] = lubes_sales_avg(get_month_day1(end_date),end_date)
+    data['lube_avg'] = lubes_sales_avg(get_30_day_before(end_date),end_date)
     total_lubes_shift_sales = lube_sales(shift_id,prev_shift_id)
     data['total_lubes_shift_sales']=sum([total_lubes_shift_sales[i][5]*total_lubes_shift_sales[i][2] for i in total_lubes_shift_sales])/1000
 
@@ -1016,7 +1023,7 @@ def post_lubes_sales_journal(shift_id):
         cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
         amount = cash_up.expected_amount
         sales_acc = Account.query.filter_by(account_name="Lube Sales").first()
-        debtor = Account.query.filter_by(account_name="Cash").first()
+        debtor = Account.query.filter_by(account_name="Undeposited Funds").first()
         details = "Shift {} lubricants sales".format(shift_id)
         if amount != 0:
             sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
@@ -1130,6 +1137,7 @@ def create_chart_of_accounts():
     cash = Account(code=400,account_name="Cash",account_category="Bank",entry="DR")
     db.session.add(cash)
     accounts = [(501,"Accounts Receivables","Other Current Asset","DR"),
+                (402,"Undeposited Funds","Bank","DR"),
                 (452,"Fuel Inventory","Inventory","DR"),
                 (453,"Lubes Inventory","Inventory","DR"),
                 (300,"Salaries","Expense","DR"),

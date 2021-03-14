@@ -35,9 +35,11 @@ $(document).ready(function(){
         
         // DataTables function
         $('#export').DataTable( {
-            dom: '<fli<t>Bp>',
+            dom: '<"pull-left"f><"pull-right"B>tip',
+            
             "lengthMenu": [ 200, 150, 100, 75],
             buttons: [
+                'pageLength',
                 'copy',
                 'excel',
                 'csv',
@@ -46,7 +48,7 @@ $(document).ready(function(){
         } );
 
         
-            
+          
 // html2pdf
 $('#download').on('click',function(){
     var element = document.getElementById('printTable');

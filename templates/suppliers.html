@@ -247,26 +247,36 @@ Suppliers
                         <div class="form-group">
                           <input  id="SF" type ="number" name="shift" autocomplete="off"autofocus class="form-control">
                       </div>
-                          <div class="form-group  " >
-                            <label for="TankD">Tank Name:</label>
+                      <div class="form-group" >
+                        <label for="pt">Product:</label>
+                        <select  id="pt" class="form-control" name="product">
+                            {% for product in products %}
+                          <option value="{{ product.id }}">{{ product.name }}</option>
+                          {% endfor %}
+                      </select>
+                      </div>
+                          <div class="form-group" >
+                            <label for="TankD">Tank Name (if product is a fuel):</label>
                             <select  id="TankD" class="form-control" name="tank">
+                                <option value="Select">Select...</option>
                                 {% for tank in tanks %}
                               <option value="{{ tank.id }}">{{ tank.name }}</option>
                               {% endfor %}
                           </select>
                           </div>
-                          <label for="DNOTE">Delivery Note Number</label>
+                          <label for="DNOTE">Debit Note Reference</label>
                           <div class="form-group">
-                            <input  id="DNOTE" type ="text" name="document" placeholder="Delivery Note Number" autocomplete="off"autofocus class="form-control">
+                            <input  id="DNOTE" type ="text" name="document" placeholder="Note Ref" autocomplete="off"autofocus class="form-control">
                         </div>
                        
                         <label for="Quantity">Quantity</label>
                           <div class="form-group">
                               <input id="Quantity" type ="number" step="any"  placeholder="Quantity" name="delivery" autocomplete="off"autofocus class="form-control" required>
                           </div>
-                          <label for="CostPrice">Cost Price:</label>
+                          
                           <div class="form-group">
-                              <input type ="number" id="CostPrice" step="any" name="cost_price" autocomplete="off"autofocus class="form-control" required>
+                            <label for="CostPrice">Cost Price:</label>
+                              <input type ="number" id="CostPrice" step="0.01" name="cost_price" autocomplete="off"autofocus class="form-control" required>
                           </div>
                           <div class="form-group">
                             <label for="Supplier">Supplier</label>

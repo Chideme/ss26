@@ -1,8 +1,6 @@
 {% extends "layout.html" %}
 
-{% block title %}
-    Reports
-{% endblock %}
+
 
 {% block sidebar %}
       <div class="row">
@@ -21,9 +19,9 @@
           <ul class="nav flex-column mb-2">
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('sales_summary') }}">
-                <span data-feather="activity"></span>
+                <span data-feather="file-text"></span>
                 <span style="color: lightseagreen;">
-                Product Sales Summary
+                Product Sales Analyis
                 </span>
               </a>
             </li>
@@ -36,7 +34,15 @@
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('get_driveway') }}">
+              <a class="nav-link" href="{{ url_for('tanks') }}">
+                <span data-feather="file-text"></span>
+                <span style="color: lightseagreen;">
+                Tank Analyis
+                </span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('driveway_report') }}">
                 <span data-feather="file-text"></span>
                 <span style="color: lightseagreen;">
                 Driveway Report
@@ -44,8 +50,16 @@
               </a>
             </li>
             <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('get_lubes_stock_sheet') }}">
+                <span data-feather="file-text"></span>
+                <span style="color: lightseagreen;">
+                Lubricants Stocksheets
+                </span>
+              </a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" href="{{ url_for('sales_analysis') }}">
-                <span data-feather="activity"></span>
+                <span data-feather="file-text"></span>
                 <span style="color: lightseagreen;">
                 Driveway Summaries
                 </span>

@@ -64,12 +64,14 @@ Trial Balance as at {{ end_date }}
                         <td class="DR">0</td>
                         <td class="CR">{{ r_e |  round(2)   }}</td>  
                     </tr>
-                    <tr>
-                        <th>5000</th>
-                        <th>Total</th>
-                        <th id="SUM-DR"></th>
-                        <th id="SUM-CR"></th>
-                    </tr>
+                    <tfoot>
+                        <tr>
+                            <th>Total</th>
+                            <th></th>
+                            <th id="SUM-DR"></th>
+                            <th id="SUM-CR"></th>
+                        </tr>
+                    </tfoot>
                 </tbody>
                 
             </table>

@@ -5,20 +5,17 @@
 
 {% block main %}
       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
-        <div class="btn-toolbar mb-2 mb-md-0">
+       
+        <h2>Update Lube Sales</h2>
         
         
-          <div class="btn-group mr-2">
-            <button  type="button" id="print" onclick="printTable()" class="btn  btn-outline-secondary"><span data-feather="printer"></span></button>
-          <button  type="button" id="download" class="btn  btn-outline-secondary"><span data-feather="download"></span></button>
-          </div>
         </div>
-      </div>
+      
 
     
       
-      <h2>Update Lube Sales</h2>
-      <div class="table-responsive driveway"  id="printTable">
+      
+    
       
     
         <table class="driveway-table">
@@ -50,32 +47,32 @@
                 <th class="driveway-table">Sales (Amount)</th>
             </thead>
             <tbody>
-              {%for product in product_sales %}
+              {%for product in products %}
               <tr class="driveway-table">
                 <td class="driveway-table">{{ product }}</td>
                 <td class="driveway-table">
-                <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#{{ product_sales[product][7] }}CostPrice">
-                    {{ product_sales[product][3] }}
+                <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#CostPrice{{ product.id }}">
+                    {{ product_sales[product.name][3] }}
                   </button>
                 </td>
                 <td class="driveway-table">
-                    <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#{{ product_sales[product][7] }}SellingPrice">
-                        {{ product_sales[product][4] }}
+                    <button type="button" class="btn btn-outline" data-toggle="modal" data-target="#SellingPrice{{ product.id }}">
+                        {{ product_sales[product.name][4] }}
                     </button>
                 </td>
-                <td class="numbers driveway-table">{{ product_sales[product][0] }}</td>
+                <td class="numbers driveway-table">{{ product_sales[product.name][0] }}</td>
                 <td class="numbers driveway-table">
-                    <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#LubesDelivery{{ product_sales[product][7] }}">
-                      {{ product_sales[product][6] }}
+                    <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#LubesDelivery{{ product.id }}">
+                      {{ product_sales[product.name][6] }}
                     </button>
                   </td>
                 <td class="numbers driveway-table">
-                  <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#ClosingQty{{ product_sales[product][7] }}">
-                    {{ product_sales[product][1] }}
+                  <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#ClosingQty{{ product.id }}">
+                    {{ product_sales[product.name][1] }}
                   </button>
                 </td>
-                <td class="numbers driveway-table">{{ product_sales[product][2] }}</td>
-                <td class="numbers driveway-table">{{ product_sales[product][2]*product_sales[product][4] | round(2) }}</td>
+                <td class="numbers driveway-table">{{ product_sales[product.name][2] }}</td>
+                <td class="numbers driveway-table">{{ product_sales[product.name][2]*product_sales[product.name][4] | round(2) }}</td>
               </tr>
               
               {% endfor %}
@@ -102,12 +99,12 @@
       
       <!--MODALS-->
       <!--Product Qty Modal-->
-      {% for product in product_sales %}
-      <div class="modal fade" id="ClosingQty{{ product_sales[product][7] }}" tabindex="-1" role="dialog" aria-labelledby="#ClosingQty{{ product_sales[product][7] }}FormModalLabel" aria-hidden="true">
+      {% for product in products %}
+      <div class="modal fade" id="ClosingQty{{ product.id }}" tabindex="-1" role="dialog" aria-labelledby="#ClosingQty{{ product.id }}FormModalLabel" aria-hidden="true">
           <div class="modal-dialog" role="document">
               <div class="modal-content">
                   <div class="modal-header">
-                      <h5 class="modal-title" id="ClosingQty{{ product_sales[product][7] }}FormLabel">Enter Closing Qty Reading</h5>
+                      <h5 class="modal-title" id="ClosingQty{{ product.id }}FormLabel">Enter Closing Qty Reading</h5>
                           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                               <span aria-hidden="true">&times;</span>
                           </button>
@@ -115,10 +112,13 @@
                   <div class="modal-body">
                       <form  action="{{ url_for('update_lube_qty') }}" method="post" > 
                           <div class="form-group  " >
-                              <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
+                              <input type = "text"  value="{{ product.id }}" name="product" autocomplete="off"  autofocus class="form-control" hidden>
                           </div>
+                          <div class="form-group  " >
+                            <input type = "text"  value="{{ product }}" name="name" autocomplete="off"  autofocus class="form-control" readonly>
+                        </div>
                           <div class="form-group">
-                              <input type ="number" step="any" value="{{ product_sales[product][2] }}" name="qty" autocomplete="off"autofocus class="form-control" required>
+                              <input type ="number" step="any" value="{{ product_sales[product.name][2] }}" name="qty" autocomplete="off"autofocus class="form-control" required>
                           </div>
    
                           <button class="btn btn-primary btn-block" type="submit">Update Quantity</button>
@@ -135,46 +135,50 @@
       
 
       <!--Delivery Modal-->
-      {% for product in product_sales %}
-      <div class="modal fade" id="LubesDelivery{{ product_sales[product][7] }}" tabindex="-1" role="dialog" aria-labelledby="LubesDelivery{{ product_sales[product][7] }}FormModalLabel" aria-hidden="true">
+      {% for product in products %}
+      <div class="modal fade" id="LubesDelivery{{ product.id }}" tabindex="-1" role="dialog" aria-labelledby="LubesDelivery{{ product.id }}FormModalLabel" aria-hidden="true">
           <div class="modal-dialog" role="document">
               <div class="modal-content">
-                  <div class="modal-header">
-                      <h5 class="modal-title" id="LubesDelivery{{ product_sales[product][7] }}FormLabel">Enter Delivery</h5>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="LubesDelivery{{ product.id }}FormLabel">Enter Delivery</h5>
                           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                               <span aria-hidden="true">&times;</span>
                           </button>
-                  </div>
-                  <div class="modal-body">
-                      <form  action="{{ url_for('update_lubes_deliveries') }}" method="post" >
-                        <div class="form-group" >
-                            <label for="supplier">Supplier:</label>
-                            <select id="supplier" class="form-control" name="supplier">
-                                <option selected></option>
-                                {% for supplier in suppliers %}
-                                <option  value="{{ supplier.id }}">{{ supplier.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                          <div class="form-group  " >
-                              <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
-                          </div>
-                          </div>
+                    </div>
+                    <div class="modal-body">
+                        <form  action="{{ url_for('update_lubes_deliveries') }}" method="post" >
+                            <div class="form-group" >
+                                <label for="supplier">Supplier:</label>
+                                <select id="supplier" class="form-control" name="supplier">
+                                    <option selected></option>
+                                    {% for supplier in suppliers %}
+                                    <option  value="{{ supplier.id }}">{{ supplier.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group " >
+                                <input type = "text"  value="{{ product.id }}" name="product" autocomplete="off"  autofocus class="form-control" hidden>
+                            </div>
+                            <div class="form-group " >
+                                <label for="product">Product:</label>
+                                <input id="product" type = "text"  value="{{ product.name }}" name="name" autocomplete="off"  autofocus class="form-control" readonly>
+                            </div>
 
-                          <div class="form-group">
-                              <input type = "number" step="any" value="{{ product_sales[product][6] }} " name="qty" autocomplete="off"autofocus class="form-control" required>
-                          </div>
-                          <div class="form-group  " >
-                            <input type = "text"   name="document" placeholder="Reference" autocomplete="off"  autofocus class="form-control" required>
-                        </div>
-                        </div>
+                            <div class="form-group">
+                                <label for="qty">Qty:</label>
+                                <input id="qty" type = "number" step="any" value="{{ product_sales[product.name][6] }} " name="qty" autocomplete="off"autofocus class="form-control" required>
+                            </div>
+                            <div class="form-group  " >
+                                <label for="ref">Reference:</label>
+                                <input id="ref" type = "text"   name="document" placeholder="Reference" autocomplete="off"  autofocus class="form-control" required>
+                            </div>
+                        
                           <button class="btn btn-primary btn-block" type="submit">Enter Delivery</button>
-                  
                        </form>
-                  </div>
-                  <div class="modal-footer">  
+                    </div>
+                    <div class="modal-footer">  
                       <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
-                  </div>
+                    </div>
               </div>
           </div>
       </div>
@@ -183,13 +187,13 @@
 
        
 
-       {% for product in product_sales %}
+       {% for product in products %}
         <!--Product Cost price Modal-->
-        <div class="modal fade" id="{{ product_sales[product][7] }}CostPrice" tabindex="-1" role="dialog" aria-labelledby="{{ product_sales[product][7] }}CostPriceFormModalLabel" aria-hidden="true">
+        <div class="modal fade" id="CostPrice{{ product.id }}" tabindex="-1" role="dialog" aria-labelledby="CostPrice{{ product.id }}FormModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="{{ product_sales[product][7] }}CostPriceFormLabel">Update Price</h5>
+                        <h5 class="modal-title" id="CostPrice{{ product.id }}FormLabel">Update Cost Price</h5>
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
@@ -197,10 +201,15 @@
                     <div class="modal-body">
                         <form  action="{{ url_for('update_lubes_cost_prices') }}" method="post" > 
                             <div class="form-group  " >
-                                <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
+                                <input type = "text"  value="{{ product.id }}" name="product" autocomplete="off"  autofocus class="form-control" hidden>
+                            </div>
+                            <div class="form-group  " >
+                                <label for="cpd">Product:</label>
+                                <input id="cpd" type = "text"  value="{{ product }}" name="name" autocomplete="off"  autofocus class="form-control" readonly>
                             </div>
                             <div class="form-group">
-                                <input type = "number" step="0.01" value="{{ product_sales[product][3] }}" name="cost_price" autocomplete="off"autofocus class="form-control" required>
+                                <label for="cp">Cost Price:</label>
+                                <input id="cp" type = "number" step="0.01" value="{{ product_sales[product.name][3] }}" name="cost_price" autocomplete="off"autofocus class="form-control" required>
                             </div>
      
                             <button class="btn btn-primary btn-block" type="submit">Update Price</button>
@@ -217,12 +226,12 @@
         <!--Product Cost Price  Modal-->
 
         <!--Product Selling Price Modal-->
-        {% for product in product_sales_ltr %}
-        <div class="modal fade" id="{{ product_sales[product][7] }}SellingPrice" tabindex="-1" role="dialog" aria-labelledby="{{ product_sales[product][7] }}SellingPriceFormModalLabel" aria-hidden="true">
+        {% for product in products %}
+        <div class="modal fade" id="SellingPrice{{ product.id}}" tabindex="-1" role="dialog" aria-labelledby="SellingPrice{{ product.id }}FormModalLabel" aria-hidden="true">
           <div class="modal-dialog" role="document">
               <div class="modal-content">
                   <div class="modal-header">
-                      <h5 class="modal-title" id="{{ product_sales[product][7] }}SellingPriceFormLabel">Update Price</h5>
+                      <h5 class="modal-title" id="SellingPrice{{ product.id }}FormLabel">Update Selling Price</h5>
                           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                               <span aria-hidden="true">&times;</span>
                           </button>
@@ -230,10 +239,15 @@
                   <div class="modal-body">
                       <form  action="{{ url_for('update_lubes_selling_prices') }}" method="post" > 
                           <div class="form-group  " >
-                              <input type = "text"  value="{{ product }}" name="product" autocomplete="off"  autofocus class="form-control" required>
+                              <input type = "text"  value="{{ product.id }}" name="product" autocomplete="off"  autofocus class="form-control" hidden>
                           </div>
+                          <div class="form-group  " >
+                            <label for="spd">Product:</label>
+                            <input id="spd" type = "text"  value="{{ product }}" name="name" autocomplete="off"  autofocus class="form-control" readonly>
+                        </div>
                           <div class="form-group">
-                              <input type = "number" step="0.01" value="{{ product_sales[product][4] }}" name="selling_price" autocomplete="off"autofocus class="form-control" required>
+                            <label for="sp">Selling Price:</label>
+                              <input id="sp" type = "number" step="0.01" value="{{ product_sales[product.name][4] }}" name="selling_price" autocomplete="off"autofocus class="form-control" required>
                           </div>
    
                           <button class="btn btn-primary btn-block" type="submit">Update Price</button>
@@ -340,23 +354,7 @@
   </div>
   <!--Cash Up Modal-->
 
-  <script>
-    //Prints Driveway
-         
-    function printTable(){
-              var toprint = document.getElementById('printTable');
-              newWIn = window.open("",'PRINT', 'height=650,width=900,top=100,left=150');
-              newWIn.document.write('<html><body>');
-              newWIn.document.write('<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"/>');
-              newWIn.document.write('<link href="/static/style.css" rel="stylesheet">');
-              newWIn.document.write(toprint.innerHTML);
-              newWIn.document.write('</body></html>');
-              newWIn.print();
-              newWIn.close();
-              location.reload();
-              return false;
-          };
-  </script>
+ 
 
 {% endblock %}
    

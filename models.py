@@ -390,7 +390,7 @@ class Coupon(db.Model):
     __tablename__="coupons"
     __table_args__={'schema':'tenant'}
     id=db.Column(db.Integer,primary_key=True,nullable=False)
-    name = db.Column(db.String,nullable=False)
+    name = db.Column(db.String,nullable=False,unique=True)
     coupon_qty = db.Column(db.Float,nullable=False)
     customer_id = db.Column(db.Integer,db.ForeignKey("customers.id"),nullable=False)
 
