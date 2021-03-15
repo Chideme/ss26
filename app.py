@@ -524,7 +524,7 @@ def end_shift_update():
                                         shift_underway[0].state = False
                                         db.session.commit()
                                         flash('Shift Ended','info')
-                                        return redirect(url_for('get_driveway'))
+                                        return redirect(url_for('driveway_report'))
                                 else:
                                         flash('Something is wrong','warning')
                                         return redirect(url_for('ss26'))
@@ -539,7 +539,7 @@ def end_shift_update():
                                 db.session.commit()
                                 session["shift_underway"]=False
                                 flash('Shift Ended','info')
-                                return redirect(url_for('get_driveway'))
+                                return redirect(url_for('driveway_report'))
                         else:
                                 flash('Do cash up ','warning')
                                 return redirect(url_for('ss26')) 
@@ -1530,7 +1530,7 @@ def debit_note():
                         except:
                                 flash('Please select valid tank','warning')
                                 return redirect(url_for('suppliers'))             
-                        debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank_id,qty=qty,product_id=tank.product.id,document_number=document,supplier=supplier.id,cost_price=cost_price)
+                        debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank_id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier.id,cost_price=cost_price)
                         
                 else:
                        debitnote = DebitNote(date=shift.date,shift_id=shift_id,qty=qty,product_id=product.id,document_number=document,supplier=supplier.id,cost_price=cost_price) 
@@ -1639,6 +1639,18 @@ def supplier(supplier_id):
                         report = supplier_statement(supplier_id,start_date,end_date)
                         return render_template("supplier.html",report=report,supplier=supplier,net=net,start=start_date,end=end_date)
 
+@app.route("/<int:delivery_id>",methods=["GET","POST"])
+@check_schema
+@login_required
+def delivery(delivery_id):
+        """Delivery Details"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                delivery = Delivery.query.get(delivery_id)
+                supplier = Supplier.query.get(delivery.supplier_id)
+                tenant = Tenant.query.get(session['tenant'])
+                product = Product.query.get(delivery.product_id)
+                return render_template("delivery.html",supplier=supplier,delivery=delivery,tenant=tenant,product=product)
+
 
 @app.route("/accounts",methods=["GET","POST"])
 @check_schema
@@ -1718,6 +1730,10 @@ def edit_account():
                 name=request.form.get("name")
                 account_category=request.form.get("category")
                 account = Account.query.get(account_id)
+                accounts = [501,402,452,453,300,700,900,201,202,100,101,400] # model Chart of accounts, can not delete these.
+                if account.code in accounts:
+                        flash("You can not edit this account",'warning')
+                        return redirect(url_for('accounts'))
                 code = account_code(account_category)
                 if code == False:
                         flash("You have reached the number of {} accounts".format(account_category))
@@ -2391,7 +2407,7 @@ def update_fuel_deliveries():
                 product.cost_price = cost_price
                 product.avg_price = round(new_cost,2)
                 price.avg_price = round(new_cost,2)
-                pricr.cost_price = cost_price
+                price.cost_price = cost_price
                 delivery = Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
                 journal = Journal(date=current_shift.date,details=document,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                 db.session.add(journal)
@@ -2955,7 +2971,7 @@ def lubes_cash_up():
                 current_shift = Shift.query.get(current_shift)
                 shift_id = current_shift.id
                 date = current_shift.date
-                cash_sales_amount = request.form.get("cash_sales_amount") or 0
+                cash_sales_amount = request.form.get("cash_sales_amount") 
                 cash_sales_amount = float(cash_sales_amount)
                 expected_amount = float(request.form.get("expected_amount"))
                 variance = cash_sales_amount-expected_amount

@@ -923,8 +923,8 @@ def supplier_statement(supplier_id,start_date,end_date):
         j += 1       
     return report
 
-def fuel_variance_amt(shift_id):
-    """ Calculate Variance and COGS Amounts for journal posting """
+def fuel_cogs_amt(shift_id):
+    """ Calculate COGS Amounts for journal posting """
     shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
     prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
     tanks = get_tank_dips(shift_id,prev_shift.id)
@@ -934,14 +934,29 @@ def fuel_variance_amt(shift_id):
         i = db.session.query(Product,Tank).filter(Product.id ==Tank.product_id,Tank.id==int(tanks[tank][4])).first()
         avg_price = i[0].avg_price
         sale = (tanks[tank][0]+tanks[tank][3])-tanks[tank][1]
-        sales += sale*avg_price
+        sales += (sale*avg_price)
         #variance += (tanks[tank][2]-sale)*avg_price
 # tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
     return sales,variance
 
-def post_fuel_variance_journals(shift_id):
-    """Post amount for fuel shrinkages to journals """
-    amount = fuel_variance_amt(shift_id)
+def lubes_cogs_amt(shift_id):
+    """ Calculate COGS Amounts for journal posting """
+    shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+    prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
+    product_sales =  lube_sales(shift_id,prev_shift.id)
+    sales = 0.00
+    for product in product_sales:
+        i = Product.query.filter_by(name=product).first()
+        avg_price = i.avg_price
+        sale = product_sales[product][2]
+        sales += sale*avg_price
+        
+# product_sales[product.name]= (prev.qty,curr.qty,sales,cost_price,selling_price,mls,deliveries)
+    return sales
+
+def post_fuel_cogs_journal(shift_id):
+    """Post amount for fuel cogs to journals """
+    amount = fuel_cogs_amt(shift_id)
     shift = Shift.query.get(shift_id)
     #variance_acc = Account.query.filter_by(account_name="Fuel Shrinkages").first()
     inventory = Account.query.filter_by(account_name="Fuel Inventory").first()
@@ -957,7 +972,20 @@ def post_fuel_variance_journals(shift_id):
         db.session.add(cogs_journal)
         db.session.flush()
     return True
-    
+
+def post_lubes_cogs_journal(shift_id):
+    """Post amount for Lubes cogs to journals """
+    amount = lubes_cogs_amt(shift_id)
+    shift = Shift.query.get(shift_id)
+    inventory = Account.query.filter_by(account_name="Lubes Inventory").first()
+    cogs = Account.query.filter_by(account_name="Lubes COGS").first()
+    detail_cogs = "Shift {} cost of goods sold".format(shift_id)
+    if amount:
+        cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount,dr=cogs.id,cr=inventory.id,created_by=session['user_id'])
+        db.session.add(cogs_journal)
+        db.session.flush()
+    return True
+
 def coupon_amount(shift_id):
     """ Calculate amount for Coupon Receivables posting """
     coupon_sales = db.session.query(CouponSale,Coupon,Product).filter(and_(CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id,CouponSale.coupon_id==Coupon.id)).all()
@@ -971,7 +999,7 @@ def cash_sales_amount(shift_id):
     return amount
 
 
-def post_fuel_sales_journals(shift_id):
+def post_fuel_sales_journal(shift_id):
     """ Post non cash amount to debtor control account """
     shift = Shift.query.get(shift_id)
     invoices = Invoice.query.filter_by(shift_id=shift_id)
@@ -1021,7 +1049,7 @@ def post_cash_sales_journal(shift_id):
 
 def post_lubes_sales_journal(shift_id):
     """ Post sales journal for Lube sales """
-    lubes = Product.query.filter_by(product_type="Lubes").first()
+    lubes = Product.query.filter_by(product_type="Lubricants").first()
     if lubes:
         shift = Shift.query.get(shift_id)
         cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
@@ -1029,7 +1057,8 @@ def post_lubes_sales_journal(shift_id):
         sales_acc = Account.query.filter_by(account_name="Lube Sales").first()
         debtor = Account.query.filter_by(account_name="Undeposited Funds").first()
         details = "Shift {} lubricants sales".format(shift_id)
-        if amount != 0:
+        
+        if amount:
             sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
             db.session.add(sales_journal)
         db.session.flush()
@@ -1037,12 +1066,15 @@ def post_lubes_sales_journal(shift_id):
 
 def post_all_shift_journals(shift_id):
     """ Post all Journals """
-    post_cash_sales_journal(shift_id)
-    post_coupon_sales_journal(shift_id)
-    post_fuel_sales_journals(shift_id)
-    post_fuel_variance_journals(shift_id)
-    post_lubes_sales_journal(shift_id)
-
+    try:
+        post_cash_sales_journal(shift_id)
+        post_coupon_sales_journal(shift_id)
+        post_fuel_sales_journal(shift_id)
+        post_fuel_cogs_journal(shift_id)
+        post_lubes_sales_journal(shift_id)
+        post_lubes_cogs_journal(shift_id)
+    except:
+        return False
     return True
 
 def opening_balance(date,account_id):

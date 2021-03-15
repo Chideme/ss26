@@ -32,18 +32,8 @@ def main():
     tenant = "puma_service_station"
    
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
-       
-        lubes = Product.query.filter_by(product_type="Lubricants").all()
-        lubes_dict = create_dict(lubes)
-        shifts = Shift.query.order_by(Shift.id.desc()).all()
 
-        for i in lubes_dict:
-            for shift in shifts:
-                z = i
-                z = Price(date=shift.date,shift_id=shift.id,product_id=lubes_dict[i].id,cost_price=lubes_dict[i].cost_price,selling_price=lubes_dict[i].selling_price,avg_price=lubes_dict[i].avg_price)
-                db.session.add(z)
-                db.session.flush()
-        db.session.commit()
+        
 with app.app_context():
         main()
 
