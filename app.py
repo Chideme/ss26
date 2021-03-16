@@ -2005,7 +2005,7 @@ def profit_statement():
                 if request.method =="GET":
 
                         end_date = date.today()
-                        start_date = end_date - timedelta(days=900)
+                        start_date = end_date - timedelta(days=30)
                         report = fuel_product_profit_statement(start_date,end_date)
                         total_profit = fuel_daily_profit_report(start_date,end_date)
                         total_litres = fuel_daily_sales(start_date,end_date)

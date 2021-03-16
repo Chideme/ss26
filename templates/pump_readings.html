@@ -1,11 +1,10 @@
-<link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css"/>
-<link href="/static/dashboard.css" rel="stylesheet">
-<link href="/static/style.css" rel="stylesheet">
-<!--DataTables-->
-<link rel="stylesheet" type="text/css" href="/static/DataTables/DataTables-1.10.21/css/jquery.dataTables.min.css"/>
-<link rel="stylesheet" type="text/css" href="/static/DataTables/Buttons-1.6.3/css/buttons.dataTables.min.css"/>
-<link rel="stylesheet" type="text/css" href="/static/DataTables/SearchPanes-1.1.1/css/searchPanes.dataTables.min.css"/>
+{% extends "layout.html" %}
 
+{% block title %}
+Pump Readings
+{% endblock %}
+
+{% block sidebar %}
 <a href="{{ url_for('pump_meter_readings') }}"><span style="color: royalblue;">Back</span></a>
 
 
@@ -19,9 +18,9 @@
                 <thead>
                     <tr>
                         <th>Date</th>
-                        <th>Opening Meter Reading</th>
-                        <th>Closing Meter Reading</th>
-                        <th> Sales Litres</th>
+                        <th>Opening Meter Reading (Litres</th>
+                        <th>Closing Meter Reading (Litres)</th>
+                        <th> Sales (Litres)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -37,26 +36,6 @@
             </table>
 </div>
 
-<script src="/static/vendor/jquery/jquery-3.4.1.min.js" type="text/javascript"></script>
-    <script src="/static/scripts.js" type="text/javascript" ></script>
-    <!--DataTables-->
-    <script type="text/javascript" src="/static/DataTables/JSZip-2.5.0/jszip.min.js"></script>
-    <script type="text/javascript" src="/static/DataTables/DataTables-1.10.21/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="/static/DataTables/Buttons-1.6.3/js/dataTables.buttons.min.js"></script>
-    <script type="text/javascript" src="/static/DataTables/Buttons-1.6.3/js/buttons.html5.min.js"></script>
-    <script type="text/javascript" src="/static/DataTables/SearchPanes-1.1.1/js/dataTables.searchPanes.min.js"></script>
-    <script>
-        $(document).ready(function() {
-        $('#export').DataTable( {
-            dom: 'Bfrtip',
-            buttons: [
-                'copyHtml5',
-                'excelHtml5',
-                'csvHtml5',
-                'pdfHtml5'
-            ]
-        } );
-    } );
-    </script>
+{% endblock %}
 
     
