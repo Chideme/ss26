@@ -907,7 +907,7 @@ def supplier_statement(supplier_id,start_date,end_date):
         details = str(delivery[0].document_number)
         amount = delivery[0].qty*delivery[0].cost_price
         amount = round(amount,2)
-        report[j] = {"date":delivery[0].date,"details":details,"dr":0.00,"cr":amount}
+        report[j] = {"date":delivery[0].date,"details":details,"dr":0.00,"cr":amount,"delivery_id":int(delivery[0].id)}
         j += 1
     for note in debit_notes:
         details = str(note[0].document_number)

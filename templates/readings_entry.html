@@ -14,6 +14,7 @@
     </li>
     <li class="nav-item"><a class="nav-link" id="tankdips-tab" role="tab" aria-controls="TankDips" href="#TankDips" data-toggle="tab" aria-selected="false">Tank Dips</a></li>
     <li class="nav-item"><a class="nav-link" id="invoices-tab" role="tab" aria-controls="Invoices" href="#Invoices" data-toggle="tab" aria-selected="false">Invoices</a></li>
+    <li class="nav-item"><a class="nav-link" id="deliveries-tab" role="tab" aria-controls="Deliveries" href="#Deliveries" data-toggle="tab" aria-selected="false">Delivery</a></li>
     <li class="nav-item"><a class="nav-link" id="lubesqty-tab" role="tab" aria-controls="LubeQty" href="#LubeQty" data-toggle="tab" aria-selected="false">Adjust Qty for Lubes</a></li>   
 </ul>
 <div class="tab-content">
@@ -24,18 +25,18 @@
             <input type = "number"  name="shift" autocomplete="off" placeholder="Shift" autofocus class="form-control" required>
         </div>
         <div class="form-group"> 
-            <select class="form-control" name="product">
-                <option selected>Select Product</option>
+            <select class="form-control" name="product" required>
+                <option selected></option>
                 {% for product in products %}
                 <option value="{{ product.id }}">{{ product.name }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="form-group"> 
-            <input type = "text"  name="cost_price" autocomplete="off" placeholder="Cost Price" autofocus class="form-control">
+            <input type = "number"  step="0.01" name="cost_price" autocomplete="off" placeholder="Cost Price" autofocus class="form-control" required>
         </div>
         <div class="form-group">   
-            <input type = "text"  name="selling_price" autocomplete="off" placeholder="Selling Price" autofocus class="form-control">
+            <input type = "number" step="0.01"  name="selling_price" autocomplete="off" placeholder="Selling Price" autofocus class="form-control" required>
         </div>
             <button class="btn btn-primary btn-block" type="submit">Enter</button>      
         </form>
@@ -49,15 +50,15 @@
             <input type = "number"  name="shift" autocomplete="off" placeholder="Shift" autofocus class="form-control" required>
         </div>
         <div class="form-group"> 
-            <select class="form-control" name="pump_name">
-                <option selected>Select Pump</option>
+            <select class="form-control" name="pump_name" required>
+                <option selected></option>
                 {% for pump in pumps %}
                 <option value="{{ pump.id }}">{{ pump.name }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="form-group"> 
-            <input type = "number" step="any"  name="litre_reading" autocomplete="off" placeholder="Litre Reading" autofocus class="form-control">
+            <input type = "number" step="any"  name="litre_reading" autocomplete="off" placeholder="Litre Reading" autofocus class="form-control" required>
         </div>
         <div class="form-group">   
             <input type = "number" step="0.01" name="money_reading" autocomplete="off" placeholder="Money Reading" autofocus class="form-control">
@@ -74,15 +75,15 @@
                 <input type = "number"  name="shift" autocomplete="off" placeholder="Shift" autofocus class="form-control" required>
             </div>     
             <div class="form-group" >
-                    <select class="form-control" name="tank_name">
-                        <option selected>Select Tank</option>
+                    <select class="form-control" name="tank_name" required>
+                        <option selected></option>
                         {% for tank in tanks %}
                         <option value="{{ tank.id }}" >{{ tank.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="form-group" >
-                    <input type = "number" step="any" name="tank_dip" autocomplete="off" placeholder="Tank Dips" autofocus class="form-control">
+                    <input type = "number" step="any" name="tank_dip" autocomplete="off" placeholder="Tank Dips" autofocus class="form-control" required>
                 </div>
 
             <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
@@ -102,7 +103,7 @@
                         </div>
                     <div class="form-group col-md-6">
                         <label for="customer">Pick Customer:</label>
-                        <select id="customer" class="form-control" name="customers"> <!--DataList-->
+                        <select id="customer" class="form-control" name="customers" required> <!--DataList-->
                             <option selected></option>
                             {% for customer in customers %}
                             <option  value="{{ customer.id }}">{{ customer.name }}</option>
@@ -113,7 +114,7 @@
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label for="salesproduct">Select Product:</label>
-                            <select id="salesproduct" class="form-control" name="product">
+                            <select id="salesproduct" class="form-control" name="product" required>
                                 <option selected></option>
                                 {% for product in products %}
                                 <option  value="{{ product.id }}">{{ product.name }}</option>
@@ -122,11 +123,11 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label for="sales_price">Selling Price:</label>
-                            <input id="sales_price" type="number" step="0.01" name="sales_price"  placeholder="Price" class="form-control">
+                            <input id="sales_price" type="number" step="0.01" name="sales_price"  placeholder="Price" class="form-control" required>
                         </div>
                         <div class="form-group col-md-4">
                             <label for="qtyltr">Quantity:</label>
-                            <input id="qtyltr" type="number"  step="any" name="qty"  placeholder="litres" class="form-control">
+                            <input id="qtyltr" type="number"  step="any" name="qty"  class="form-control" required>
                         </div>
                     </div>
                     <div class="form-row">
@@ -144,6 +145,72 @@
         </div>
 
     </div>
+
+    <!--Delivery-->
+    <div class="tab-pane" id="Deliveries" role="tabpanel" aria-labelledby="deliveries-tab">
+        <div class="text-center p-5">
+            <form role="form" style="display: inline-block;"  action="{{ url_for('update_deliveries') }}" method="post" >
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label for="shift">Enter Shift Number:</label>
+                            <div class="form-group"> 
+                            <input id="shift" type = "number"  name="shift" autocomplete="off" placeholder="Shift" autofocus class="form-control" required>
+                        </div>
+                        </div>
+                    <div class="form-group col-md-6">
+                        <label for="supplier">Pick Supplier:</label>
+                        <select id="supplier" class="form-control" name="suppliers" required> <!--DataList-->
+                            <option selected></option>
+                            {% for supplier in suppliers %}
+                            <option  value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="salesproduct">Select Product:</label>
+                            <select id="salesproduct" class="form-control" name="product" required>
+                                <option selected></option>
+                                {% for product in product_all %}
+                                <option  value="{{ product.id }}">{{ product.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="cost_price">Cost Price:</label>
+                            <input id="cost_price" type="number" step="0.01" name="cost_price"  placeholder="Cost" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="qtyltrd">Quantity:</label>
+                            <input id="qtyltrd" type="number"  step="any" name="qty"   class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-8" >
+                            <label for="TankD">Tank Name (if product is a fuel):</label>
+                            <select  id="TankD" class="form-control" name="tank">
+                                <option value="Select">Select...</option>
+                                {% for tank in tanks %}
+                              <option value="{{ tank.id }}">{{ tank.name }}</option>
+                              {% endfor %}
+                          </select>
+                          </div>
+                       
+                    </div>
+                    <div class="form-row">
+                      
+                        <div class="form-group col-md-6">
+                            <label for="document">Document Number:</label>
+                            <input id="document" type="text" name="document"  placeholder="Document" class="form-control" required>
+                        </div> 
+                    </div>
+                    <button  class="btn btn-primary btn-block" type="submit">Save</button>    
+            </form>     
+        </div>
+
+    </div>
+
 
     <div class="tab-pane" id="LubeQty" role="tabpanel" aria-labelledby="lubesqty-tab">
     <div class="text-center p-5">

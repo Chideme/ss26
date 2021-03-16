@@ -551,15 +551,18 @@ def end_shift_update():
 @check_schema
 @login_required
 def readings_entry():
-        """Edit previous driveways"""
+        """Adjust previous driveways"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 pumps = Pump.query.all()
                 tanks= Tank.query.all()
                 products= Product.query.filter_by(product_type="Fuels").all()
                 customers= Customer.query.all()
+                suppliers = Supplier.query.all()
                 accounts =Account.query.all()
+                product_all= Product.query.all()
                 lubes = Product.query.filter_by(product_type="Lubricants").all()
-                return render_template("readings_entry.html",lubes=lubes,tanks=tanks,pumps=pumps,products=products,customers=customers,accounts=accounts)
+                return render_template("readings_entry.html",product_all=product_all,lubes=lubes,tanks=tanks,pumps=pumps,
+                                        products=products,customers=customers,suppliers=suppliers,accounts=accounts)
 
 @app.route("/driveway/edit/price_change",methods=["GET","POST"])
 @login_required
@@ -636,7 +639,7 @@ def tank_dips_entry():
 @check_schema
 @login_required
 def update_sales_receipts():
-        """Invoices for cash sales"""
+        """Adjustment for sales invoices outside shift update"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 
                 shift_id = request.form.get("shift")
@@ -644,7 +647,7 @@ def update_sales_receipts():
                 date = shift.date
                 vehicle_number= request.form.get("vehicle_number")
                 driver_name= request.form.get("driver_name")
-                details = "Adjustment on Sales"
+               
                 sales_price= float(request.form.get("sales_price"))
                 product_id = request.form.get("product")
                 qty= float(request.form.get("qty"))
@@ -654,9 +657,59 @@ def update_sales_receipts():
                 customer_id=request.form.get("customers")
                 customer = Customer.query.get(customer_id)
                 invoice = Invoice(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name)
+                db.session.add(invoice)
+                db.session.flush()
+                details = "Invoice {}".format(invoice.id)
                 sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'])
                 db.session.add(sales_journal)
-                db.session.add(invoice)
+                db.session.commit()
+                
+                return redirect(url_for('readings_entry'))
+
+@app.route("/driveway/edit/update_deliveries",methods=["POST"])
+@view_only
+@admin_required
+@check_schema
+@login_required
+def update_deliveries():
+        """Adjustment for deliverries outside shift update session"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                
+                shift_id = request.form.get("shift")
+                shift = Shift.query.get(shift_id)
+                document= request.form.get("document")
+                supplier_id=request.form.get("suppliers")
+                cost_price= float(request.form.get("cost_price"))
+                product_id = request.form.get("product")
+                qty= float(request.form.get("qty"))
+                product = Product.query.get(product_id)
+                price= Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
+                inventory_acc = Account.query.get(product.account_id)
+                amount = qty * cost_price
+                amount = round(amount,2)
+                new_cost = ((product.cost_price*product.qty) + amount)/(qty +product.qty)
+                product.cost_price = cost_price
+                product.avg_price = round(new_cost,2)
+                price.avg_price = round(new_cost,2)
+                price.cost_price = cost_price
+                supplier = Supplier.query.get(supplier_id)
+                if product.product_type =="Fuels":
+                        tank_id= request.form.get("tank")
+                        try:
+                                tank = Tank.query.get(tank_id)
+                                tank_id = tank.id
+                        except:
+                                flash('Please select valid tank','warning')
+                                return redirect(url_for('readings_entry')) 
+                        delivery =  Delivery(date=shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
+                else:
+                        delivery =  Delivery(date=shift.date,shift_id=shift_id,qty=qty,product_id=product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
+                
+                db.session.add(delivery)
+                db.session.flush()
+                details = "Delivery {}".format(delivery.id)
+                delivery_journal=Journal(date=shift.date,details=details,amount=amount,dr=inventory_acc.id,cr=supplier.account_id,created_by=session['user_id'])
+                db.session.add(delivery_journal)
                 db.session.commit()
                 
                 return redirect(url_for('readings_entry'))
@@ -1344,7 +1397,7 @@ def customer(customer_id):
                         report = customer_statement(customer_id,start_date,end_date)
                         return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
                        
-@app.route("/<int:invoice_id>",methods=["GET","POST"])
+@app.route("/invoice/<int:invoice_id>",methods=["GET","POST"])
 @check_schema
 @login_required
 def invoice(invoice_id):
@@ -1534,8 +1587,10 @@ def debit_note():
                         
                 else:
                        debitnote = DebitNote(date=shift.date,shift_id=shift_id,qty=qty,product_id=product.id,document_number=document,supplier=supplier.id,cost_price=cost_price) 
-                journal =  Journal(date=shift.date,details=document,amount=amount,dr=supplier.account_id,cr=product.account_id,created_by=session['user_id'])
                 db.session.add(debitnote)
+                db.session.flush()
+                details = "Debit note {}".format(debitnote.id)
+                journal =  Journal(date=shift.date,details=details,amount=amount,dr=supplier.account_id,cr=product.account_id,created_by=session['user_id'])
                 db.session.add(journal)
                 db.session.commit()
                 flash('Debit note created','info')
@@ -1639,17 +1694,22 @@ def supplier(supplier_id):
                         report = supplier_statement(supplier_id,start_date,end_date)
                         return render_template("supplier.html",report=report,supplier=supplier,net=net,start=start_date,end=end_date)
 
-@app.route("/<int:delivery_id>",methods=["GET","POST"])
+@app.route("/delivery/<int:delivery_id>",methods=["GET","POST"])
 @check_schema
 @login_required
 def delivery(delivery_id):
         """Delivery Details"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 delivery = Delivery.query.get(delivery_id)
-                supplier = Supplier.query.get(delivery.supplier_id)
+                supplier = Supplier.query.get(delivery.supplier)
                 tenant = Tenant.query.get(session['tenant'])
                 product = Product.query.get(delivery.product_id)
-                return render_template("delivery.html",supplier=supplier,delivery=delivery,tenant=tenant,product=product)
+                try:
+                        tank = Tank.query.get(delivery.tank_id)
+                except:
+                        tank_name = "Lubricants"
+                tank_name = tank.name
+                return render_template("delivery.html",tank_name=tank_name,supplier=supplier,delivery=delivery,tenant=tenant,product=product)
 
 
 @app.route("/accounts",methods=["GET","POST"])
@@ -1855,6 +1915,8 @@ def trial_balance():
                         end_date = request.form.get("end_date")
                         report = trial_balance_report(start_date,end_date)
                         r_e = retained_earnings(start_date)
+                        start_date = datetime.strptime(start_date,"%Y-%m-%d")
+                        end_date = datetime.strptime(end_date,"%Y-%m-%d")
                         return render_template("trial_balance.html",accounts=accounts,report=report,r_e=r_e,start_date=start_date,end_date=end_date)
 
 @app.route("/pnl",methods=["GET","POST"])
@@ -1882,6 +1944,8 @@ def profit_and_loss():
                         total_revenue = sum(report[i.id] for i in incomes)
                         total_costs = sum(report[i.id] for i in expenses)
                         profit = total_revenue - total_costs
+                        start_date = datetime.strptime(start_date,"%Y-%m-%d")
+                        end_date = datetime.strptime(end_date,"%Y-%m-%d")
                         return render_template("pnl.html",total_costs=total_costs,total_revenue=total_revenue,profit=profit,incomes=incomes,expenses=expenses,report=report,start_date=start_date,end_date=end_date)
 
 
@@ -1946,7 +2010,7 @@ def profit_statement():
                         total_profit = fuel_daily_profit_report(start_date,end_date)
                         total_litres = fuel_daily_sales(start_date,end_date)
                         
-
+                        
                         return render_template("profit_statement.html",reports=report,start_date=start_date,end_date=end_date,products=products,total_profit=total_profit,total_litres=total_litres)
                         
                 else:
@@ -1955,7 +2019,8 @@ def profit_statement():
                         report = fuel_product_profit_statement(start_date,end_date)
                         total_profit = fuel_daily_profit_report(start_date,end_date)
                         total_litres = fuel_daily_sales(start_date,end_date)
-
+                        start_date = datetime.strptime(start_date,"%Y-%m-%d")
+                        end_date = datetime.strptime(end_date,"%Y-%m-%d")
                         return render_template("profit_statement.html",reports=report,start_date=start_date,end_date=end_date,products=products,total_profit=total_profit,total_litres=total_litres)
                 
 @app.route("/drivewaysummaries",methods=["GET","POST"])
@@ -2409,7 +2474,10 @@ def update_fuel_deliveries():
                 price.avg_price = round(new_cost,2)
                 price.cost_price = cost_price
                 delivery = Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
-                journal = Journal(date=current_shift.date,details=document,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
+                db.session.add(delivery)
+                db.session.flush()
+                details = "Delivery {}".format()
+                journal = Journal(date=current_shift.date,details=details,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                 db.session.add(journal)
                 db.session.add(delivery)
                 db.session.commit()
@@ -2879,15 +2947,18 @@ def update_lubes_deliveries():
                                 supplier_id = request.form.get("supplier")
                                 supplier = Supplier.query.get(supplier_id)
                                 document = request.form.get("document")
-                                inventory = Account.query.filter_by(account_name="Lubes Inventory").first()
+                                inventory = Account.query.get(product.account_id)
                                 delivery = Delivery(date=current_shift.date,shift_id=shift_id,qty=qty,product_id=product.id,document_number=document,supplier=supplier.id,cost_price=cost_price)
-                                journal = Journal(date=date,details=document,amount=amount,dr=inventory.id,cr=supplier.account_id,created_by=session['user_id'])
+                                db.session.add(delivery)
+                                db.session.flush()
+                                details ="Delivery {}".format()
+                                journal = Journal(date=date,details=details,amount=amount,dr=inventory.id,cr=supplier.account_id,created_by=session['user_id'])
                                 db.session.add(delivery)
                                 db.session.add(journal)
                                 db.session.commit()
-                        except Exception as e:
+                        except:
                                 db.session.rollback()
-                                flash(str(e),'warning')
+                                flash("There was an error",'warning')
                                 return redirect('shift_lube_sales')
                         else:
                                 
