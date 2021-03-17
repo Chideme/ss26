@@ -533,13 +533,16 @@ def end_shift_update():
                                 return redirect(url_for('shift_lube_sales'))
                 else:
                         if check_cash_up:
-                               
-                                post_all_shift_journals(shift_id)
-                                shift_underway[0].state = False
-                                db.session.commit()
-                                session["shift_underway"]=False
-                                flash('Shift Ended','info')
-                                return redirect(url_for('driveway_report'))
+                               try:
+                                        post_all_shift_journals(shift_id)
+                                        shift_underway[0].state = False
+                                        db.session.commit()
+                                        session["shift_underway"]=False
+                                        flash('Shift Ended','info')
+                                        return redirect(url_for('driveway_report'))
+                                except:
+                                        flash('Something is wrong','warning')
+                                        return redirect(url_for('ss26'))
                         else:
                                 flash('Do cash up ','warning')
                                 return redirect(url_for('ss26')) 
@@ -574,16 +577,24 @@ def price_change():
                 shift_id = int(request.form.get("shift"))
                 cost_price = request.form.get("cost_price")
                 selling_price = request.form.get("selling_price")
-                product= Product.query.filter_by(id=request.form.get("product")).first()
                 cost_price = request.form.get("cost_price")
-                price = Price.query.filter(and_(Price.shift_id==shift_id,Price.product_id==product.id)).first()
-                price.cost_price = cost_price
-                price.selling_price= selling_price
-                product.selling_price = selling_price
-                product.cost_price = cost_price
-                db.session.commit()
-                flash('Done','info')
-                return redirect(url_for('readings_entry'))
+                product_id = request.form.get("product")
+                product= Product.query.filter_by(id=product_id).first()
+                try:
+                
+                        price = Price.query.filter(and_(Price.shift_id==shift_id,Price.product_id==product.id)).first()
+                        price.cost_price = cost_price
+                        price.selling_price= selling_price
+                        product.selling_price = selling_price
+                        product.cost_price = cost_price
+                        db.session.commit()
+                        flash('Done','info')
+                        return redirect(url_for('readings_entry'))
+                except:
+
+                        db.session.rollback()
+                        flash('Something is wrong, try again','warning')
+                        return redirect(url_for('readings_entry'))
 
 @app.route("/driveway/edit/pump_readings_entry",methods=["GET","POST"])
 @view_only
@@ -598,14 +609,18 @@ def pump_readings_entry():
                 pump = Pump.query.get(pump_id)
                 litre_reading = request.form.get("litre_reading")
                 money_reading = request.form.get("money_reading")
-                reading = PumpReading.query.filter(and_(PumpReading.shift_id==shift_id,PumpReading.pump_id==pump_id)).first()
-                reading.money_reading = money_reading
-                reading.litre_reading = litre_reading
-                pump.money_reading = money_reading
-                pump.litre_reading = litre_reading
-                db.session.commit()
-                flash('Done','info')
-                return redirect(url_for('readings_entry'))
+                try:
+                        reading = PumpReading.query.filter(and_(PumpReading.shift_id==shift_id,PumpReading.pump_id==pump_id)).first()
+                        reading.money_reading = money_reading
+                        reading.litre_reading = litre_reading
+                        pump.money_reading = money_reading
+                        pump.litre_reading = litre_reading
+                        db.session.commit()
+                        flash('Done','info')
+                        return redirect(url_for('readings_entry'))
+                except:
+                        flash('Something is wrong, try again','warning')
+                        return redirect(url_for('readings_entry'))
 
 
 @app.route("/driveway/edit/tank_dips_entry",methods=["POST"])
@@ -618,8 +633,9 @@ def tank_dips_entry():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 shift_id = int(request.form.get("shift"))
                 tank_id = request.form.get("tank_name")
-                tank = Tank.query.get(tank_id)
                 tank_dip = request.form.get("tank_dip")
+                tank = Tank.query.get(tank_id)
+                
                 shift_dip = TankDip.query.filter(and_(TankDip.tank_id==tank_id,TankDip.shift_id==shift_id)).first()
                 shift_dip.dip = tank_dip
                 tank.dip = tank_dip
@@ -647,24 +663,28 @@ def update_sales_receipts():
                 date = shift.date
                 vehicle_number= request.form.get("vehicle_number")
                 driver_name= request.form.get("driver_name")
-               
+               customer_id=request.form.get("customers")
                 sales_price= float(request.form.get("sales_price"))
                 product_id = request.form.get("product")
                 qty= float(request.form.get("qty"))
-                sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
-                amount = qty * sales_price
-                amount = round(amount,2)
-                customer_id=request.form.get("customers")
-                customer = Customer.query.get(customer_id)
-                invoice = Invoice(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name)
-                db.session.add(invoice)
-                db.session.flush()
-                details = "Invoice {}".format(invoice.id)
-                sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'])
-                db.session.add(sales_journal)
-                db.session.commit()
-                
-                return redirect(url_for('readings_entry'))
+                try:
+                        sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
+                        amount = qty * sales_price
+                        amount = round(amount,2)
+                        
+                        customer = Customer.query.get(customer_id)
+                        invoice = Invoice(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name)
+                        db.session.add(invoice)
+                        db.session.flush()
+                        details = "Invoice {}".format(invoice.id)
+                        sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'])
+                        db.session.add(sales_journal)
+                        db.session.commit()
+                        
+                        return redirect(url_for('readings_entry'))
+                except:
+                        flash("Something is wrong",'warning')
+                        return redirect(url_for('readings_entry'))
 
 @app.route("/driveway/edit/update_deliveries",methods=["POST"])
 @view_only
@@ -805,12 +825,16 @@ def edit_user():
                 password  = request.form.get("password")
                 password1  = request.form.get("password1")
                 if password == password1:
-                        user = User.query.filter_by(username=username).first()
-                        user.password = generate_password_hash(password)
-                        user.role_id =  request.form.get("role")
-                        db.session.commit()
-                        flash('User Successfully Updated','info')
-                        return redirect(url_for('manage_users'))
+                        try:
+                                user = User.query.filter_by(username=username).first()
+                                user.password = generate_password_hash(password)
+                                user.role_id =  request.form.get("role")
+                                db.session.commit()
+                                flash('User Successfully Updated','info')
+                                return redirect(url_for('manage_users'))
+                        except:
+                                flash('Something is wrong','warning')
+                                return redirect(url_for('manage_users')) 
                 else:
                         flash('Passwords Must be the same','warning')
                         return redirect(url_for('manage_users')) 
