@@ -533,7 +533,8 @@ def end_shift_update():
                                 return redirect(url_for('shift_lube_sales'))
                 else:
                         if check_cash_up:
-                               try:
+
+                                try:
                                         post_all_shift_journals(shift_id)
                                         shift_underway[0].state = False
                                         db.session.commit()
@@ -663,7 +664,7 @@ def update_sales_receipts():
                 date = shift.date
                 vehicle_number= request.form.get("vehicle_number")
                 driver_name= request.form.get("driver_name")
-               customer_id=request.form.get("customers")
+                customer_id=request.form.get("customers")
                 sales_price= float(request.form.get("sales_price"))
                 product_id = request.form.get("product")
                 qty= float(request.form.get("qty"))
