@@ -32,7 +32,10 @@ def main():
     tenant = "puma_service_station"
    
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
-
+        lubes = Product.query.filter_by(product_type="Lubricants").all()
+        lubes_dict = create_dict(lubes)
+        for i in lubes_dict:
+            print(lubes_dict[i].cost_price)
         
 with app.app_context():
         main()

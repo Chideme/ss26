@@ -435,8 +435,8 @@ def start_shift_update():
                                         for product in lubes_dict:
                                                 prev_qty = LubeQty.query.filter(and_(LubeQty.shift_id==prev.id,LubeQty.product_id==lubes_dict[product].id)).first() if prev else lubes_dict[product].qty
                                                 prev_qty = prev_qty.qty if prev else lubes_dict[product].qty
-                                                lubes_dict[product] = LubeQty(shift_id=shift_id,date=date,qty=prev_qty,product_id=lubes_dict[product].id)
-                                                db.session.add(lubes_dict[product])
+                                                product = LubeQty(shift_id=shift_id,date=date,qty=prev_qty,product_id=lubes_dict[product].id)
+                                                db.session.add(product)
                                                 db.session.flush()
                                 for pump in pumps_dict:
                                         product = db.session.query(Tank,Product,Pump).filter(and_(Tank.product_id == Product.id,Tank.id==Pump.tank_id,Pump.id == pumps_dict[pump].id)).first()
@@ -445,19 +445,19 @@ def start_shift_update():
                                                 prev_reading = PumpReading.query.filter(and_(PumpReading.shift_id == prev.id,PumpReading.pump_id==pumps_dict[pump].id)).first()
                                                 litre_reading = prev_reading.litre_reading if prev_reading else pump.litre_reading
                                                 money_reading = prev_reading.money_reading if prev_reading else pump.money_reading
-                                                pumps_dict[pump] =PumpReading(date=date,product_id=product_id,litre_reading=litre_reading,money_reading=money_reading,pump_id=pumps_dict[pump].id,shift_id=shift_id)
+                                                pump=PumpReading(date=date,product_id=product_id,litre_reading=litre_reading,money_reading=money_reading,pump_id=pumps_dict[pump].id,shift_id=shift_id)
                                         else:
-                                                pumps_dict[pump] =PumpReading(date=date,product_id=product_id,litre_reading=pumps_dict[pump].litre_reading,money_reading=pumps_dict[pump].money_reading,pump_id=pumps_dict[pump].id,shift_id=shift_id)
-                                        db.session.add(pumps_dict[pump])
+                                                pump=PumpReading(date=date,product_id=product_id,litre_reading=pumps_dict[pump].litre_reading,money_reading=pumps_dict[pump].money_reading,pump_id=pumps_dict[pump].id,shift_id=shift_id)
+                                        db.session.add(pump)
                                         db.session.flush()
                                 for tank in tanks_dict:      
                                         if prev:
                                                 prev_dip = TankDip.query.filter(and_(TankDip.shift_id==prev.id,TankDip.tank_id==tanks_dict[tank].id)).first()
                                                 dip = prev_dip.dip if prev_dip else tanks_dict[tank].dip
-                                                tanks_dict[tank] = TankDip(date=date,dip=dip,tank_id=tanks_dict[tank].id,shift_id=shift_id)
+                                                tank= TankDip(date=date,dip=dip,tank_id=tanks_dict[tank].id,shift_id=shift_id)
                                         else:
-                                                tanks_dict[tank] = TankDip(date=date,dip=tanks_dict[tank].dip,tank_id=tanks_dict[tank].id,shift_id=shift_id)
-                                        db.session.add(tanks_dict[tank])
+                                                tank = TankDip(date=date,dip=tanks_dict[tank].dip,tank_id=tanks_dict[tank].id,shift_id=shift_id)
+                                        db.session.add(tank)
                                         db.session.flush()
                                 """
                                 for tank in tanks:
@@ -473,21 +473,25 @@ def start_shift_update():
                                                 return redirect(url_for('suppliers'))
                                 """
                                 # Update prices
-                                for i in fuels_dict:
-                                        fuels_dict[i] = Price(date=date,shift_id=shift_id,product_id=fuels_dict[i].id,cost_price=fuels_dict[i].cost_price,selling_price=fuels_dict[i].selling_price,avg_price=fuels_dict[i].avg_price)
-                                        db.session.add(fuels_dict[i])
-                                        db.session.flush()
-                                for i in lubes_dict:
-                                        lubes_dict[i] = Price(date=date,shift_id=shift_id,product_id=lubes_dict[i].id,cost_price=lubes_dict[i].cost_price,selling_price=lubes_dict[i].selling_price,avg_price=lubes_dict[i].avg_price)
-                                        db.session.add(lubes_dict[i])
-                                        db.session.flush()
-                                        
-                                session["shift"]  = shift_id
-                                session["shift_underway"]=shift_underway[0].state
-                                shift_underway[0].current_shift = shift_id
-                                db.session.commit()
-                                flash("Shift Started",'info')
-                                return redirect(url_for('ss26'))
+                                try:
+                                        for i in fuels_dict:
+                                                i= Price(date=date,shift_id=shift_id,product_id=fuels_dict[i].id,cost_price=fuels_dict[i].cost_price,selling_price=fuels_dict[i].selling_price,avg_price=fuels_dict[i].avg_price)
+                                                db.session.add(i)
+                                                db.session.flush()
+                                        for i in lubes_dict:
+                                                i = Price(date=date,shift_id=shift_id,product_id=lubes_dict[i].id,cost_price=lubes_dict[i].cost_price,selling_price=lubes_dict[i].selling_price,avg_price=lubes_dict[i].avg_price)
+                                                db.session.add(i)
+                                                db.session.flush()
+                                                
+                                        session["shift"]  = shift_id
+                                        session["shift_underway"]=shift_underway[0].state
+                                        shift_underway[0].current_shift = shift_id
+                                        db.session.commit()
+                                        flash("Shift Started",'info')
+                                        return redirect(url_for('ss26'))
+                                except:
+                                        flash("An error occured",'warning')
+                                        return redirect(url_for('ss26'))
                                         
                         
                         #Unfinished set up of products              
