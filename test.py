@@ -29,14 +29,13 @@ app.config.update(dict(
 ))
 mail = Mail(app)
 def main():
-    tenant = "puma_service_station"
+    tenant = "demo_service_station"
    
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
-        lubes = Product.query.filter_by(product_type="Lubricants").all()
-        lubes_dict = create_dict(lubes)
-        for i in lubes_dict:
-            print(lubes_dict[i].cost_price)
-        
+        post_fuel_cogs_journal(6)
+        db.session.commit()
+       
+
 with app.app_context():
         main()
 

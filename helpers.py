@@ -936,8 +936,8 @@ def fuel_cogs_amt(shift_id):
         sale = (tanks[tank][0]+tanks[tank][3])-tanks[tank][1]
         sales += (sale*avg_price)
         #variance += (tanks[tank][2]-sale)*avg_price
-# tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
-    return sales,variance
+        # tank_dips[tank.name]=[prev_shift_dip,current_shift_dip,pump_sales,deliveries,tank.id]
+    return sales
 
 def lubes_cogs_amt(shift_id):
     """ Calculate COGS Amounts for journal posting """
@@ -967,8 +967,8 @@ def post_fuel_cogs_journal(shift_id):
     #    variance_journal = Journal(date=shift.date,details=detail_variance,amount=-amount[1],dr=variance_acc.id,cr=inventory.id,created_by=session['user_id'])
     #   db.session.add(variance_journal)
      #   db.session.flush()
-    if amount[0]:
-        cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount[0],dr=cogs.id,cr=inventory.id,created_by=session['user_id'])
+    if amount:
+        cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount,dr=cogs.id,cr=inventory.id,created_by=1)
         db.session.add(cogs_journal)
         db.session.flush()
     return True
