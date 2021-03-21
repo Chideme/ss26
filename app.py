@@ -2008,8 +2008,12 @@ def cash_account(account_id):
                 balance = sum([i.amount for i in receipts])- sum([i.amount for i in payments])
 
                 if request.method == "GET":
-
-                        return render_template("cash_account.html",account=account,balance=balance)
+                        end_date = date.today()
+                        start_date = end_date - timedelta(days=30)
+                        account_id = account_id
+                        opening_ = opening_balance(start_date,account_id)
+                        report = Journal.query.filter(Journal.date.between(start_date,end_date)).filter(or_(Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
+                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance,opening=opening_,start_date=start_date,end_date=end_date)
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
@@ -2017,7 +2021,7 @@ def cash_account(account_id):
                         opening_ = opening_balance(start_date,account_id)
                         report = Journal.query.filter(Journal.date.between(start_date,end_date)).filter(or_(Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
                 
-                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance,opening=opening_)
+                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance,opening=opening_,start_date=start_date,end_date=end_date)
 
 
 
