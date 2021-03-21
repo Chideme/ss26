@@ -1735,9 +1735,10 @@ def delivery(delivery_id):
                 product = Product.query.get(delivery.product_id)
                 try:
                         tank = Tank.query.get(delivery.tank_id)
+                        tank_name = tank.name
                 except:
                         tank_name = "Lubricants"
-                tank_name = tank.name
+                
                 return render_template("delivery.html",tank_name=tank_name,supplier=supplier,delivery=delivery,tenant=tenant,product=product)
 
 
