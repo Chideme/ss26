@@ -152,6 +152,7 @@ def login():
                 company = Tenant.query.filter_by(tenant_code=tenant_code).first()
                 try:
                         active =  company.active
+                        tenant_id = company.id
 
                 except:
                         flash('Company does not exist, check your code and try again or contact support','warning')

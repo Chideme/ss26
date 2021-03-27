@@ -32,10 +32,12 @@ def main():
     tenant = "puma_service_station"
     
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
-        tenant = Tenant.query.get(2)
-        tenant.tenant_code = create_tenant_code(tenant.id)
+        tenant = Tenant.query.get(1)
+        code = create_tenant_code(tenant.id)
+        tenant.tenant_code = code
         db.session.commit()
         
+        print(code)
         
        
 
