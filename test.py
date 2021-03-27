@@ -29,11 +29,14 @@ app.config.update(dict(
 ))
 mail = Mail(app)
 def main():
-    tenant = "demo_service_station"
-   
+    tenant = "puma_service_station"
+    
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
-        post_fuel_cogs_journal(6)
+        tenant = Tenant.query.get(2)
+        tenant.tenant_code = create_tenant_code(tenant.id)
         db.session.commit()
+        
+        
        
 
 with app.app_context():

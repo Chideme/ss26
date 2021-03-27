@@ -66,7 +66,7 @@ def signup():
                         flash("Account already created use login in page, or contact support",'warning')
                         return redirect(url_for('login'))
                 try:
-                
+                        tenant.tenant_code = create_tenant_code(tenant.id)
                         db.session.execute('CREATE SCHEMA IF NOT EXISTS {}'.format(schema))
                         db.session.commit()
                 except:
@@ -75,6 +75,7 @@ def signup():
                 
                 #####
                 create_tenant_tables(schema)
+                
                 
                 session['schema'] =tenant.schema
                 session['tenant']= tenant.id
@@ -107,7 +108,7 @@ def activate(tenant_schema):
                         create_chart_of_accounts()
                         user=User(username=super_user,password=hash_password,role_id=1,tenant_id=tenant_id,schema=session["schema"])
                         shift_underway = Shift_Underway(state=False,current_shift=0)
-                        msg_body = "<h3>Please find your login details :</h3><body><p>Company Code: {}</p><p>User Name: Admin</p><p>Password: {}</p><small>Make sure to change your password once logged in</small></body>".format(tenant.id,password)
+                        msg_body = "<h3>Please find your login details :</h3><body><p>Company Code: {}</p><p>User Name: Admin</p><p>Password: {}</p><small>Make sure to change your password once logged in</small></body>".format(tenant.tenant_code,password)
                         db.session.add(shift_underway) 
                         db.session.add(user)
                         db.session.flush()
@@ -147,8 +148,8 @@ def login():
        #log in company id
 
         if request.method == "POST":
-                tenant_id = int(request.form.get("tenant_id"))
-                company = Tenant.query.get(tenant_id)
+                tenant_code = request.form.get("tenant_code")
+                company = Tenant.query.filter_by(tenant_code=tenant_code).first()
                 try:
                         active =  company.active
 
@@ -3110,8 +3111,8 @@ def forgot_password():
         else:
                 
                 username=request.form.get("name")
-                code = int(request.form.get("code"))
-                tenant = Tenant.query.get(code)
+                code = request.form.get("code")
+                tenant = Tenant.query.filter_by(tenant_code=code).first()
                 
 
                 if tenant:
@@ -3136,7 +3137,7 @@ def send_password(tenant,username):
                         password = get_random_string()
                         hash_password = generate_password_hash(password)
                         user.password = hash_password
-                        msg_body = "<h3>Please find your login details :</h3><body><p>Company Code: {}</p><p>User Name: {}</p><p>Password: {}</p><small>Make sure to change your password once logged in</small></body>".format(org.id,user.username,password)
+                        msg_body = "<h3>Please find your login details :</h3><body><p>Company Code: {}</p><p>User Name: {}</p><p>Password: {}</p><small>Make sure to change your password once logged in</small></body>".format(org.tenant_code,user.username,password)
                         msg = Message(
                         subject="Password Reset-Edriveway",
                         html=msg_body,

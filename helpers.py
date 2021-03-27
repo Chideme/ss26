@@ -836,11 +836,26 @@ def create_schema_name(company_name):
     else:
         schema = n
     tenants = Tenant.query.all()
-    if schema not in tenants:
+    schemas = [i.schema for i in tenants]
+    if schema not in schemas:
         return schema
     else:
         schema = schema + '_1'
         return schema
+
+def create_tenant_code(tenant_id):
+    tenant= Tenant.query.get(tenant_id)
+    company_name = tenant.name
+    n =company_name.upper()
+    code = n[:3] + str(tenant_id)
+    tenants = Tenant.query.all()
+    codes = [i.tenant_code for i in tenants]
+    if code not in codes:
+        return code
+    else:
+        code = code + '_1'
+        return code
+
 
 def create_dict(pumps):
     """Creates a dict out of a pump query list to generate variable names"""
