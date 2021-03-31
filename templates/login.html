@@ -17,7 +17,7 @@
   </head>
  
   <body class="text-center">
-    <nav class="navbar navbar-expand-md bg-dark  fixed-top">
+    <nav class="navbar navbar-expand-md bg-dark  navbar-dark  fixed-top">
       <a class="navbar-brand" href="{{ url_for('index') }}"><span style="color:whitesmoke;">eDriveway</span></a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -33,7 +33,7 @@
         
       </div>
     </nav>
-    <main role="main" class="col-md-12 ml-sm-auto col-lg-12 px-4">
+    <main role="main" class="col-md-12 ml-sm-auto col-lg-12 px-4 p-5">
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}

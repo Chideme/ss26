@@ -11,22 +11,22 @@
               <form  action="{{ url_for('dashboard_finance') }}" id="form" method="post">
                 <div class="form-row align-items-center">
                   
-                  <div class="form-group col-sm-2">
+                  <div class="form-group col">
                     <label for="frequency">Frequency:</label>
                       <select class="form-control-sm"  id="frequency" style="background-color: #333;color: lightseagreen;padding: 2px;">
                         <option selected >Day-to-day</option>
                         <option>Month-to-month</option>
                       </select>
                   </div>
-                  <div class="form-group col-sm-2">
+                  <div class="form-group col">
                     <label for="start_date">From:</label>
                       <input type = "date"  value="{{ start_date }}" id="start_date" autocomplete="off" class="form-control-sm" style="background-color: #333;color: lightseagreen; padding: 2px;" required >
                   </div>
-                  <div class="form-group col-sm-2">
+                  <div class="form-group col">
                     <label for="end_date">To:</label>
                       <input type = "date"  value="{{ end_date }}" id="end_date" autocomplete="off"  class="form-control-sm" style="background-color: #333; color: lightseagreen;padding: 2px;" required>
                   </div>
-                  <div class="form-group col-sm-2">
+                  <div class="form-group col">
                       <label for="clickbutton">Filter:</label>
                       <button type="submit"  id="clickbutton" class="btn btn-block btn-sm  btn-outline-primary" style="padding: 2px;"><span data-feather="filter"></span> Filter</button>
                   </div>
@@ -36,28 +36,28 @@
         </div>
                 
       <div class="row p-3">
-        <div class="card col-md-3 col-sm-3 piece" style="max-height: 85px;">
+        <div class="card col piece">
           <div class="card-title h6" style="color:white;">Quick Ratio</div>
           <div class="text-center">
             <div class="ratio">{{ ratios[1] }}</div>
             <p class="card-text" style="color: lightgray;">Target 0.5 or higher</p>
           </div>
         </div>
-        <div class="card col-md-3  col-sm-3  offset-md-1 piece">
+        <div class="card col  offset-1 piece">
           <div class="card-title h6" style="color:white;">Current Ratio</div>
           <div class="text-center">
             <div class="ratio">{{ ratios[0] }}</div>
             <p class="card-text" style="color: lightgray;">Target 1.5 or higher</p>
           </div>
         </div>
-        <div class="card col-md-4  col-sm-4 offset-md-1 piece" style="max-height:min-content;">
+        <div class="card col offset-1 piece">
             <div class="card-title h6" style="color:white;">Cash Balance</div>
             <div class="ratio text-center">{{ cash }}</div>
         </div>
       </div>
 
       <div class="row p-3">
-       <div class="col-lg-7 col-sm-7 piece">
+       <div class="col-lg-7 col-sm-6 col-md-7 piece">
             <canvas class="my-4 w-100" id="CashBalances" width="900" height="450"></canvas>
         </div>
         <div class="col-lg-4 col-sm-4 col-md-4 offset-md-1  piece">

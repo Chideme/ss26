@@ -12,20 +12,20 @@
 
 
     <div class="row">
-        <div class="col-sm-4 col-lg-3 col-md-3">
+        <div class="col-sm col-lg-3 col-md-3">
             <div class="card">
                 <div class="card-header" style="background-color: lightseagreen;">Filter</div>
                 <div class="card-body">
                 <form style="display: inline-block;" action="{{ url_for('customer',customer_id= customer.id) }}"  method="post">
-                    <div class="form-group">
+                    <div class="form-group col-md-6 col-lg-12 ">
                         <label for="start_date">From:</label>
                           <input type = "date" name="start_date" id="start_date" value="{{ start }}" autocomplete="off" autofocus class="form-control" required>
                       </div>
-                      <div class="form-group">
+                      <div class="form-group col-md-6 col-lg-12 ">
                         <label for="end_date">To:</label>
                           <input type = "date"  name="end_date" id="end_date" value="{{ end }}" autocomplete="off"  class="form-control" required>
                       </div>
-                      <div class="form-group">
+                      <div class="form-group col-md-6 col-lg-12">
                           <button type="submit"  id="clickbutton" class="btn btn-block btn-outline-secondary">Enter</button>
                       </div>
                 
@@ -66,7 +66,7 @@
             <tr>
                 <td>{{ report[i]["date"]  }}</td>
                 {% if report[i]["invoice_id"] %}
-                    <td><a href="{{ url_for('invoice',invoice_id=report[i]['invoice_id']) }}">{{ report[i]["details"] }}</a></td>
+                    <td><a href="{{ url_for('invoice',invoice_id=report[i]['invoice_id']) }}">{{ report[i]["details"] }} <br>{{ report[i]["product"], report[i]["qty"] ,  report[i]["price"] }} </a></td>
                 {% else %}
                     <td>{{ report[i]["details"] }}</td>
                 {% endif %}

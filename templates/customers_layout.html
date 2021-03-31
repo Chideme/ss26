@@ -4,7 +4,7 @@
 
 {% block sidebar %}
       <div class="row">
-        <nav class="col-md-2 d-none d-md-block  sidebar sidelayout">
+        <nav class="col-md-2 col-sm-2 d-none d-sm-block  sidebar sidelayout">
           <div class="sidebar-sticky">
             
             
@@ -38,7 +38,7 @@
 
          
   
-        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4 p-3">
           {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
