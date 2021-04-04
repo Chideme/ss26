@@ -32,18 +32,41 @@ def main():
     tenant = "puma_service_station"
     
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
-        journals = Journal.query.all()
-        l = Ledger.query.all()
-        for i in journals:
-            i.updated = False
-        for i in l:
-            db.session.delete(i)
-        db.session.commit()
         
-        
-        
+        invoices = Invoice.query.all()
+        payments = CustomerPayments.query.all()
+        credit_notes = CreditNote.query.all()
        
-
+        for invoice in invoices:
+            amount= round(invoice.price*invoice.qty,2)
+            date = invoice.date
+            post_balance=customer_txn_opening_balance(date,invoice.customer_id) + amount
+            txn = CustomerTxn(date=invoice.date,txn_type="Invoice",customer_id=invoice.customer_id,amount=amount,post_balance=post_balance)
+            db.session.add(txn)
+            db.session.flush()
+            invoice.customer_txn_id = txn.id
+            update_customer_balances(date,amount,invoice.customer_id,txn.txn_type)
+        for invoice in credit_notes:
+            date = invoice.date
+            amount= round(invoice.selling_price*invoice.qty,2)
+            post_balance=customer_txn_opening_balance(date,invoice.customer_id) - amount
+            txn = CustomerTxn(date=invoice.date,txn_type="Credit Note",customer_id=invoice.customer_id,amount=amount,post_balance=post_balance)
+            db.session.add(txn)
+            db.session.flush()
+            invoice.customer_txn_id = txn.id
+            update_customer_balances(date,amount,invoice.customer_id,txn.txn_type)
+        
+        for paymemt in payments:
+            date = payment.date
+            amount= payment.amount
+            post_balance=customer_txn_opening_balance(date,payment.customer_id) - amount
+            txn = CustomerTxn(date=payment.date,txn_type="Payment",customer_id=payment.customer_id,amount=amount,post_balance=post_balance)
+            db.session.add(txn)
+            db.session.flush()
+            invoice.customer_txn_id = txn.id
+            update_customer_balances(date,amount,invoice.customer_id,txn.txn_type)
+       
+        db.session.commit()
 with app.app_context():
         main()
 

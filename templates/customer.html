@@ -47,21 +47,11 @@
         <thead>
             <th>Date</th>
             <th>Details</th>
-            <th></th>
             <th>Dr</th>
-            <th></th>
             <th>Cr</th>
-            
+            <th>Balance</th>  
         </thead>
         <tbody>
-            <tr>
-                <td>{{ start }}</td>
-                <td><b>Opening Balance</b></td>
-                <td></td>
-                <td>{{ report['balance'] | currencyFormat }}</td>
-                <td></td>
-                <td></td>
-            </tr>
             {% for i in report %}
             <tr>
                 <td>{{ report[i]["date"]  }}</td>
@@ -70,24 +60,16 @@
                 {% else %}
                     <td>{{ report[i]["details"] }}</td>
                 {% endif %}
-                <td></td>
+                
                 <td>{{ report[i]['dr'] }}</td>
-                <td></td>
+                
                 <td>{{ report[i]["cr"]  }}</td>
-          
+                <td>{{ report[i]["balance"]  }}</td>
             </tr>
             {% endfor %}
-            <tr>
-                <td>{{ end }}</td>
-                <td><b>Closing Balance</b></td>
-                <td></td>
-                <td>{{ net | currencyFormat  }}</td>
-                <td></td>
-                <td></td>
-            </tr>
         </tbody>
     </table>
 </div>
-</div>
+
 
 {% endblock %}

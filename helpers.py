@@ -516,17 +516,29 @@ def cash_sales(amount,customer_id,shift_id,date):
             sales_price = get_product_price(shift_id,product.id)
             if products_qty[prod]*sales_price < amount:
                 qty = products_qty[prod]
-                invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price)
+                inv_amt = float(products_qty[prod] * sales_price)
+                post_balance=customer_txn_opening_balance(date,customer_id) + inv_amt
+                txn = CustomerTxn(date=date,txn_type="Invoice",customer_id=customer_id,amount=inv_amt,post_balance=post_balance)
+                db.session.add(txn)
+                db.session.flush()
+                update_customer_balances(date,amount,customer_id,txn.txn_type)
+                invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price,customer_txn_id=txn.id)
                 db.session.add(invoice)
                 db.session.flush()
-                inv_amt = float(products_qty[prod] * sales_price)
+                
                 amount = float(amount-inv_amt)
                 products_qty[prod] = int(products_qty[prod]-qty)
             elif products_qty[prod]*sales_price > amount or products_qty[prod]*sales_price == amount :
                 qty = float(amount/sales_price)
-                invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price)
-                db.session.add(invoice)
                 inv_amt = float(qty * sales_price)
+                post_balance=customer_txn_opening_balance(date,customer_id) + inv_amt
+                txn = CustomerTxn(date=date,txn_type="Invoice",customer_id=customer_id,amount=inv_amt,post_balance=post_balance)
+                db.session.add(txn)
+                db.session.flush()
+                update_customer_balances(date,amount,customer_id,txn.txn_type)
+                invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer_id,qty=qty,price=sales_price,customer_txn_id=txn.id)
+                db.session.add(invoice)
+                
                 amount = float(amount-inv_amt)
                 products_qty[prod] = int(products_qty[prod]-qty)
                 
@@ -872,35 +884,32 @@ def get_random_string():
 def customer_statement(customer_id,start_date,end_date):
     """Returns Customer statement"""
   
-    total_invoices = Invoice.query.filter(and_(Invoice.customer_id==customer_id,Invoice.date < start_date)).all()
-    total_notes = CreditNote.query.filter(and_(CreditNote.customer_id==customer_id,CreditNote.date < start_date)).all()
-    total_payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date < start_date)).all()
+    
     customer = Customer.query.get(customer_id)
     invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).order_by(Invoice.date.asc()).all()
     payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).order_by(CustomerPayments.date.asc()).all()     
     credit_notes = db.session.query(CreditNote,Product).filter(and_(CreditNote.product_id == Product.id,CreditNote.customer_id==customer_id,CreditNote.date.between(start_date,end_date))).order_by(CreditNote.date.asc()).all()
-    balance = sum([i.qty * i.price for i in total_invoices]) - sum([i.amount for i in total_payments])-sum([i.qty * i.price for i in total_notes])
-    balance = balance + customer.opening_balance
-    report = {"balance":round(balance,2)}
+    
     j = 1
     for invoice in invoices:
         details = "Invoice {}".format(invoice[0].id)
         amount = invoice[0].qty*invoice[0].price
-        
-        report[j] = {"date":invoice[0].date,"details":details,"dr":round(amount,2),"cr":0.00,"invoice_id":int(invoice[0].id),"qty":invoice[0].qty,"price":invoice[0].price,"product":invoice[1].name}
+        balance = db.session.query(Invoice,CustomerTxn).filter(and_(Invoice.id==invoice[0].id,CustomerTxn.customer_id==invoice[0].customer_id,CustomerTxn.id==Invoice.customer_txn_id)).first()
+        report[j] = {"date":invoice[0].date,"details":details,"dr":round(amount,2),"cr":0.00,"invoice_id":int(invoice[0].id),"qty":invoice[0].qty,"price":invoice[0].price,"product":invoice[1].name,"balance":balance[1].post_balance}
         j +=1
     
     for invoice in credit_notes:
         details = "Credit Note {}".format(invoice[0].id)
         amount = invoice[0].qty*invoice[0].price
-       
-        report[j] = {"date":invoice[0].date,"details":details,"dr":0.00,"cr":round(amount,2)}
+        balance = db.session.query(Invoice,CustomerTxn).filter(and_(Invoice.id==invoice[0].id,CustomerTxn.customer_id==invoice[0].customer_id,CustomerTxn.id==Invoice.customer_txn_id)).first()
+        report[j] = {"date":invoice[0].date,"details":details,"dr":0.00,"cr":round(amount,2),"balance":balance[1].post_balance}
         j +=1
 
     for payment in payments:
         amount = payment.amount
         details  = "Payment - {}".format(payment.ref)
-        report[j] = {"date":payment.date,"details":details,"dr":0.00,"cr":round(amount,2)}
+        balance = db.session.query(CustomerPayments,CustomerTxn).filter(and_(CustomerPayments.id==payment.id,CustomerTxn.customer_id==payment.customer_id,CustomerTxn.id==CustomerPayments.customer_txn_id)).first()
+        report[j] = {"date":payment.date,"details":details,"dr":0.00,"cr":round(amount,2),"balance":balance[1].post_balance}
         j += 1
     return report
 
@@ -921,7 +930,7 @@ def customer_txn_opening_balance(date,customer_id):
 
 def update_customer_balances(date,amount,customer_id,txn_type):
     """ recalculate post txn customer balances """
-    customer = Customer.query.get(customer_id)
+    
     if txn_type  == 'Payment':
         customer_txns = CustomerTxn.query.filter(and_(CustomerTxn.customer_id==customer_id,CustomerTxn.date > date)).all()
         for txn in customer_txns:
@@ -932,39 +941,68 @@ def update_customer_balances(date,amount,customer_id,txn_type):
         for txn in customer_txns:
             txn.post_balance = txn.post_balance + amount
     return True
+
 def supplier_statement(supplier_id,start_date,end_date):
     """Returns Supplier statement"""
-  
-    total_deliveries = Delivery.query.filter(and_(Delivery.supplier==supplier_id,Delivery.date < start_date)).all()
-    total_payments = SupplierPayments.query.filter(and_(SupplierPayments.supplier_id==supplier_id,SupplierPayments.date < start_date)).all()
-    total_debitnotes = DebitNote.query.filter(and_(DebitNote.supplier==supplier_id,DebitNote.date < start_date)).all()
     supplier = Supplier.query.get(supplier_id)
     deliveries = db.session.query(Delivery,Product).filter(and_(Delivery.product_id == Product.id,Delivery.supplier==supplier_id,Delivery.date.between(start_date,end_date))).all()
     payments = SupplierPayments.query.filter(and_(SupplierPayments.supplier_id==supplier_id,SupplierPayments.date.between(start_date,end_date))).all()     
     debit_notes =  db.session.query(DebitNote,Product).filter(and_(DebitNote.product_id == Product.id,DebitNote.supplier==supplier_id,DebitNote.date.between(start_date,end_date))).all()
-    balance = sum([i.qty * i.cost_price for i in total_deliveries]) - sum([i.amount for i in total_payments]) - sum([i.qty * i.cost_price for i in total_debitnotes])
-    balance = balance + supplier.opening_balance
-    report = {"balance":balance}
+    
     j = 1
     for delivery in deliveries:
         details = str(delivery[0].document_number)
         amount = delivery[0].qty*delivery[0].cost_price
         amount = round(amount,2)
-        report[j] = {"date":delivery[0].date,"details":details,"dr":0.00,"cr":amount,"delivery_id":int(delivery[0].id)}
+        balance = db.session.query(Delivery,SupplierTxn).filter(and_(Delivery.id==delivery[0].id,SupplierTxn.supplier_id==delivery[0].supplier_id,SupplierTxn.id==Delivery.supplier_txn_id)).first()
+        report[j] = {"date":delivery[0].date,"details":details,"dr":0.00,"cr":amount,"delivery_id":int(delivery[0].id),"balance":balance.post_balance}
         j += 1
     for note in debit_notes:
         details = str(note[0].document_number)
         amount = note[0].qty*note[0].cost_price
         amount = round(amount,2)
-        report[j] = {"date":note[0].date,"details":details,"dr":amount,"cr":0.00}
+        balance = db.session.query(Delivery,SupplierTxn).filter(and_(Delivery.id==delivery[0].id,SupplierTxn.supplier_id==delivery[0].supplier_id,SupplierTxn.id==Delivery.supplier_txn_id)).first()
+        report[j] = {"date":note[0].date,"details":details,"dr":amount,"cr":0.00,"balance":balance.post_balance}
         j += 1
     for payment in payments:
         amount = float(payment.amount)
         amount = round(amount,2)
         details  = "Top up - {}".format(payment.ref)
-        report[j] = {"date":payment.date,"details":details,"dr":amount,"cr":0.00}
+        balance = db.session.query(SupplierPayments,SupplierTxn).filter(and_(SupplierPayments.id==payment.id,SupplierTxn.supplier_id==payment.supplier_id,SupplierTxn.id==SupplierPayments.supplier_txn_id)).first()
+        report[j] = {"date":payment.date,"details":details,"dr":amount,"cr":0.00,"balance":balance.post_balance}
         j += 1       
     return report
+
+
+def supplier_txn_opening_balance(date,supplier_id):
+    """ calculate prior txn balance """
+    supplier = Supplier.query.get(supplier_id)
+    last_txn = SupplierTxn.query.filter(and_(SupplierTxn.date==date,SupplierTxn.supplier_id==supplier_id)).order_by(SupplierTxn.id.desc()).first()
+    if last_txn:
+        account_balance = last_txn.post_balance
+    else: # get last day of txns before this date
+        try:
+            last_txn =  SupplierTxn.query.filter(and_(SupplierTxn.date < date,SupplierTxn.supplier_id==supplier_id)).order_by(SupplierTxn.id.desc()).first()
+            account_balance = last_txn.post_balance
+        except:
+            account_balance = supplier.opening_balance
+    
+    return account_balance
+
+def update_supplier_balances(date,amount,supplier_id,txn_type):
+    """ recalculate post txn supplier balances """
+    
+    if txn_type  == 'Payment':
+        supplier_txns = SupplierTxn.query.filter(and_(SupplierTxn.supplier_id==supplier_id,SupplierTxn.date > date)).all()
+        for txn in supplier_txns:
+            txn.post_balance = txn.post_balance - amount
+            
+    else:
+        supplier_txns = SupplierTxn.query.filter(and_(SupplierTxn.supplier_id==supplier_id,SupplierTxn.date > date)).all()
+        for txn in supplier_txns:
+            txn.post_balance = txn.post_balance + amount
+    return True
+
 
 def fuel_cogs_amt(shift_id):
     """ Calculate COGS Amounts for journal posting """

@@ -216,12 +216,52 @@ class CustomerPayments(db.Model):
     customer_id = db.Column(db.Integer,db.ForeignKey("customers.id"),nullable=False)
     amount= db.Column(db.Float,nullable=False)
     ref = db.Column(db.String,nullable=True)
-    
+    customer_txn_id = db.Column(db.Integer,db.ForeignKey("customer_transactions.id"),nullable=False)
 
     def __repr__(self):
         return "{}".format(self.amount)
 
     __table_args__={'schema':'tenant'}
+
+
+class Invoice(db.Model):
+    __tablename__="invoices"
+    __table_args__={'schema':'tenant'}
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    qty = db.Column(db.Float,nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    price= db.Column(db.Float,nullable=False)
+    vehicle_number = db.Column(db.String,nullable=True)
+    driver_name = db.Column(db.String,nullable=True)
+    customer_txn_id = db.Column(db.Integer,db.ForeignKey("customer_transactions.id"),nullable=False)
+
+class CreditNote(db.Model):
+    __tablename__="credit_notes"
+    __table_args__={'schema':'tenant'}
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    qty = db.Column(db.Float,nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    price= db.Column(db.Float,nullable=False)
+    vehicle_number = db.Column(db.String,nullable=True)
+    driver_name = db.Column(db.String,nullable=True)
+    customer_txn_id = db.Column(db.Integer,db.ForeignKey("customer_transactions.id"),nullable=False)
+
+
+class SaleReceipt(db.Model):
+    __tablename__="sales_receipts"
+    __table_args__={'schema':'tenant'}
+    id=db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    account_id= db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
+    amount= db.Column(db.Integer,nullable=False)
+
 
 class CustomerTxn(db.Model):
     __tablename__="customer_transactions"
@@ -233,11 +273,24 @@ class CustomerTxn(db.Model):
     amount= db.Column(db.Float,nullable=False)
     post_balance= db.Column(db.Float,nullable=False)
    
-    
-
-   
 
     __table_args__={'schema':'tenant'}
+
+    
+class Account(db.Model):
+    __tablename__="accounts"
+    __table_args__={'schema':'tenant'}
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    code = db.Column(db.Integer,nullable=False)
+    account_name= db.Column(db.String,nullable=False,unique=True)
+    account_category =db.Column(db.String,nullable=False)
+    entry = db.Column(db.String,nullable=False)
+    
+
+    def __repr__(self):
+
+        return "{}".format(self.account_name)
+
 class Supplier(db.Model):
     __tablename__="supplier"
     
@@ -261,14 +314,15 @@ class SupplierPayments(db.Model):
     supplier_id = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
     amount= db.Column(db.Float,nullable=False)
     ref = db.Column(db.String,nullable=True)
-    post_balance= db.Column(db.Float,nullable=False)
+    supplier_txn_id = db.Column(db.Integer,db.ForeignKey("supplier_transactions.id"),nullable=False)
+   
 
     def __repr__(self):
         return "{}".format(self.amount)
 
     __table_args__={'schema':'tenant'}
 
-class SupplierTransactions(db.Model):
+class SupplierTxn(db.Model):
     __tablename__="supplier_transactions"
     
     id = db.Column(db.Integer,primary_key=True,nullable=False)
@@ -277,6 +331,7 @@ class SupplierTransactions(db.Model):
     supplier_id = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
     amount= db.Column(db.Float,nullable=False)
     ref = db.Column(db.String,nullable=True)
+    post_balance= db.Column(db.Float,nullable=False)
 
 class Shift_Underway(db.Model):
     __tablename__="shift_underway"
@@ -299,6 +354,7 @@ class Delivery(db.Model):
     product_id = db.Column(db.Integer,db.ForeignKey("products.id"),nullable=True)
     document_number = db.Column(db.String,nullable=True)
     supplier = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
+    supplier_txn_id = db.Column(db.Integer,db.ForeignKey("supplier_transactions.id"),nullable=False)
 
 class DebitNote(db.Model):
     __tablename__="debit_notes"
@@ -312,55 +368,7 @@ class DebitNote(db.Model):
     product_id = db.Column(db.Integer,db.ForeignKey("products.id"),nullable=True)
     document_number = db.Column(db.String,nullable=True)
     supplier = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
-
-class Invoice(db.Model):
-    __tablename__="invoices"
-    __table_args__={'schema':'tenant'}
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    date= db.Column(db.Date, nullable=False)
-    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
-    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
-    qty = db.Column(db.Float,nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
-    price= db.Column(db.Float,nullable=False)
-    vehicle_number = db.Column(db.String,nullable=True)
-    driver_name = db.Column(db.String,nullable=True)
-
-class CreditNote(db.Model):
-    __tablename__="credit_notes"
-    __table_args__={'schema':'tenant'}
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    date= db.Column(db.Date, nullable=False)
-    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
-    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
-    qty = db.Column(db.Float,nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
-    price= db.Column(db.Float,nullable=False)
-    vehicle_number = db.Column(db.String,nullable=True)
-    driver_name = db.Column(db.String,nullable=True)
-
-class Account(db.Model):
-    __tablename__="accounts"
-    __table_args__={'schema':'tenant'}
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    code = db.Column(db.Integer,nullable=False)
-    account_name= db.Column(db.String,nullable=False,unique=True)
-    account_category =db.Column(db.String,nullable=False)
-    entry = db.Column(db.String,nullable=False)
-    
-
-    def __repr__(self):
-
-        return "{}".format(self.account_name)
-
-class SaleReceipt(db.Model):
-    __tablename__="sales_receipts"
-    __table_args__={'schema':'tenant'}
-    id=db.Column(db.Integer,primary_key=True,nullable=False)
-    date= db.Column(db.Date, nullable=False)
-    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
-    account_id= db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
-    amount= db.Column(db.Integer,nullable=False)
+    supplier_txn_id = db.Column(db.Integer,db.ForeignKey("supplier_transactions.id"),nullable=False)
 
 
 

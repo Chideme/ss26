@@ -678,19 +678,18 @@ def update_sales_receipts():
                         sales_acc = Account.query.filter_by(account_name="Fuel Sales").first()
                         amount = qty * sales_price
                         amount = round(amount,2)
-                        
+                        post_balance = customer_txn_opening_balance(date,customer_id) + amount
+                        txn = CustomerTxn(date=date,txn_type="Invoice",customer_id=customer_id,amount=amount,post_balance=post_balance)
+                        db.session.add(txn)
+                        db.session.flush()
+                        update_customer_balances(date,amount,customer_id,txn.txn_type)
                         customer = Customer.query.get(customer_id)
-                        invoice = Invoice(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name)
+                        invoice = Invoice(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name,customer_txn_id=txn.id)
                         db.session.add(invoice)
                         db.session.flush()
                         details = "Invoice {}".format(invoice.id)
-                        post_balance = customer_txn_opening_balance(date,customer_id) + amount
-                        txn = CustomerTxn(date=date,txn_type="Invoice",customer_id=customer_id,amount=amount,post_balance=post_balance)
                         sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'])
-                        db.session.add(txn)
                         db.session.add(sales_journal)
-                        db.session.flush()
-                        update_customer_balances(date,amount,customer_id,txn.txn_type)
                         db.session.commit()
                         
                         return redirect(url_for('readings_entry'))
@@ -725,6 +724,11 @@ def update_deliveries():
                 price.avg_price = round(new_cost,2)
                 price.cost_price = cost_price
                 supplier = Supplier.query.get(supplier_id)
+                post_balance = supplier_txn_opening_balance(shift.date,supplier.id) + amount
+                txn = SupplierTxn(date=shift.date,txn_type="Delivery",supplier_id=supplier.id,amount=amount,post_balance=post_balance)
+                db.session.add(txn)
+                db.session.flush()
+                update_supplier_balances(shift.date,amount,supplier.id,txn.txn_type)
                 if product.product_type =="Fuels":
                         tank_id= request.form.get("tank")
                         try:
@@ -732,10 +736,11 @@ def update_deliveries():
                                 tank_id = tank.id
                         except:
                                 flash('Please select valid tank','warning')
-                                return redirect(url_for('readings_entry')) 
-                        delivery =  Delivery(date=shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
+                                return redirect(url_for('readings_entry'))
+                        
+                        delivery =  Delivery(date=shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=product_id,document_number=document,supplier=supplier_id,cost_price=cost_price,supplier_txn_id=txn.id)
                 else:
-                        delivery =  Delivery(date=shift.date,shift_id=shift_id,qty=qty,product_id=product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
+                        delivery =  Delivery(date=shift.date,shift_id=shift_id,qty=qty,product_id=product_id,document_number=document,supplier=supplier_id,cost_price=cost_price,supplier_txn_id=txn.id)
                 
                 db.session.add(delivery)
                 db.session.flush()
@@ -1331,12 +1336,13 @@ def customers():
                 paypoints = Account.query.filter(Account.code.between(400,450)).all()
                 cash_ids = [i.id for i in cash_accountss]
                 non_cash_customers= Customer.query.filter(Customer.account_id.notin_(cash_ids)).all()
+                end_date = date.today()
                 # calculate balances
                 balances = {}
                 for customer in customers:
                         #get last txn
-                        txn = CustomerTxn.query.filter(and_(CustomerTxn.date <= end_date,CustomerTxn.customer_id==customer.id)).order_by(Customer.id.desc()).first()
-                        balances[customer]= txn.post_balance
+                        #txn = CustomerTxn.query.filter(and_(CustomerTxn.date <= end_date, CustomerTxn.customer_id==customer.id)).order_by(CustomerTxn.id.desc()).first()
+                        balances[customer]= customer_txn_opening_balance(end_date,customer.id)
                 return render_template("customers.html",products=products,customers=customers,balances=balances,paypoints=paypoints,
                                         cash_accounts=cash_accountss,non_cash_customers=non_cash_customers,accounts=accounts,accounts_dict=accounts_dict)
 
@@ -1354,17 +1360,18 @@ def customer_payment():
                 ref = request.form.get("ref") or ""
                 paypoint = Account.query.get(request.form.get("paypoint"))
                 try:
-                        payment = CustomerPayments(date=date,customer_id=customer_id,amount=amount,ref=ref)
-                        cr = customer.account_id
-                        dr= paypoint.id
-                        journal = Journal(date=date,details=ref,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
                         post_balance = customer_txn_opening_balance(date,customer_id) - amount
                         txn = CustomerTxn(date=date,txn_type="Payment",customer_id=customer_id,amount=amount,post_balance=post_balance)
-                        db.session.add(journal)
-                        db.session.add(payment)
                         db.session.add(txn)
                         db.session.flush()
                         update_customer_balances(date,amount,customer_id,txn.txn_type)
+                        payment = CustomerPayments(date=date,customer_id=customer_id,amount=amount,ref=ref,customer_txn_id=txn.id)
+                        cr = customer.account_id
+                        dr= paypoint.id
+                        journal = Journal(date=date,details=ref,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
+                        db.session.add(journal)
+                        db.session.add(payment)
+                        
                         db.session.commit()
                 except:
                         db.session.rollback()
@@ -1396,21 +1403,27 @@ def credit_note():
                 date = shift.date
                 amount = qty * sales_price
                 amount = round(amount,2)
-                credit_note = CreditNote(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name="N/A")
+                post_balance = customer_txn_opening_balance(date,customer_id) - amount
+                txn = CustomerTxn(date=date,txn_type="Credit Note",customer_id=customer_id,amount=amount,post_balance=post_balance)
+                db.session.add(txn)
+                db.session.flush()
+                update_customer_balances(date,amount,customer_id,txn.txn_type)
+                credit_note = CreditNote(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name="N/A",customer_txn_id=txn.id)
                 db.session.flush()
                 details = "Credit note {}".format(credit_note.id)
                 ref = "Credit note {} set off".format(credit_note.id)
                 if account.account_name != "Accounts Receivables" :
-                        payment =  CustomerPayments(date=date,customer_id=customer_id,amount=-amount,ref=ref)
+                        post_balance = customer_txn_opening_balance(date,customer_id) - amount
+                        txn = CustomerTxn(date=date,txn_type="Payment",customer_id=customer_id,amount=amount,post_balance=post_balance)
+                        db.session.add(txn)
+                        db.session.flush()
+                        update_customer_balances(date,amount,customer_id,txn.txn_type)
+                        payment =  CustomerPayments(date=date,customer_id=customer_id,amount=-amount,ref=ref,customer_txn_id=txn.id)
                 sales_journal = Journal(date=shift.date,details=details,dr=sales_return.id,cr=customer.account_id,amount=amount,created_by=session['user_id'])
-                post_balance = customer_txn_opening_balance(date,customer_id) - amount
-                txn = CustomerTxn(date=date,txn_type="Credit Note",customer_id=customer_id,amount=amount,post_balance=post_balance)
                 db.session.add(sales_journal)
                 db.session.add(payment)
                 db.session.add(credit_note)
-                db.session.add(txn)
                 db.session.flush()
-                update_customer_balances(date,amount,customer_id,txn.txn_type)
                 db.session.commit()
                 flash('Credit note created','info')
                 return redirect(url_for('customers'))
@@ -1425,8 +1438,8 @@ def customer(customer_id):
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 customer = Customer.query.filter_by(id=customer_id).first()
                 end_date = date.today()
-                net =  CustomerTxn.query.filter(and_(CustomerTxn.date <= end_date,CustomerTxn.customer_id==customer.id)).order_by(Customer.id.desc()).first()
-                
+                net = customer_txn_opening_balance(end_date,customer.id)
+        
                 if request.method == "POST":
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
@@ -1439,27 +1452,7 @@ def customer(customer_id):
                         report = customer_statement(customer_id,start_date,end_date)
                         return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
 
-@app.route("/customer_statement/<int:customer_id>",methods=["GET","POST"])
-@check_schema
-@login_required
-def customer_statement(customer_id):
-        """Report for single customer"""
-        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                customer = Customer.query.filter_by(id=customer_id).first()
-                end_date = date.today()
-                net =  CustomerTxn.query.filter(and_(CustomerTxn.date <= end_date,CustomerTxn.customer_id==customer.id)).order_by(Customer.id.desc()).first()
-                
-                if request.method == "POST":
-                        start_date = request.form.get("start_date")
-                        end_date = request.form.get("end_date")
-                        report = CustomerTxn.query.filter(CustomerTxn.date.between(start_date,end_date)).all()
 
-                        return render_template("customer_statement.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
-                else:
-                        end_date = date.today()
-                        start_date = end_date - timedelta(days=30)
-                        report = CustomerTxn.query.filter(CustomerTxn.date.between(start_date,end_date)).all()
-                        return render_template("customer_statement.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
 
 @app.route("/invoice/<int:invoice_id>",methods=["GET","POST"])
 @check_schema
@@ -1509,8 +1502,6 @@ def add_customer():
                 
                         try:
                                 db.session.add(customer)
-                                db.session.flush()
-                                txn = CustomerTxn(date=date,txn_type="Opening Balance",customer_id=customer_id,amount=amount,post_balance=amount) 
                                 db.session.commit()
                         except:
                                 db.session.rollback()
@@ -1585,12 +1576,7 @@ def suppliers():
                 # calculate balances
                 balances = {}
                 for supplier in suppliers:
-                        deliveries = Delivery.query.filter_by(supplier=supplier.id).all()
-                        payments = SupplierPayments.query.filter_by(supplier_id=supplier.id).all()
-                        d_notes = DebitNote.query.filter_by(supplier=supplier.id).all()
-                        net = sum([i.cost_price*i.qty for i in deliveries])-sum([i.amount for i in payments]) - sum([i.cost_price*i.qty for i in d_notes])
-
-                        balances[supplier.name]= net + supplier.opening_balance
+                        balances[supplier]= supplier_txn_opening_balance(end_date,customer.id)
                 return render_template("suppliers.html",products=products,tanks=tanks,suppliers=suppliers,balances=balances,paypoints=paypoints)
 
 
@@ -1608,7 +1594,12 @@ def supplier_payment():
                 ref = request.form.get("ref") 
                 paypoint = Account.query.get(request.form.get("paypoint"))
                 try:
-                        payment = SupplierPayments(date=date,supplier_id=supplier_id,amount=amount,ref=ref)
+                        post_balance = supplier_txn_opening_balance(date,supplier.id) - amount
+                        txn = SupplierTxn(date=date,txn_type="Payment",supplier_id=supplier.id,amount=amount,post_balance=post_balance)
+                        db.session.add(txn)
+                        db.session.flush()
+                        update_supplier_balances(date,amount,supplier.id,txn.txn_type)
+                        payment = SupplierPayments(date=date,supplier_id=supplier_id,amount=amount,ref=ref,supplier_txn_id=txn.id)
                         dr = supplier.account_id
                         cr= paypoint.id
                         journal = Journal(date=date,details=ref,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
@@ -1642,6 +1633,11 @@ def debit_note():
                 supplier = Supplier.query.get(supplier_id)
                 amount = cost_price * qty
                 amount = round(amount,2)
+                post_balance = supplier_txn_opening_balance(shift.date,supplier.id) - amount
+                txn = SupplierTxn(date=shift.date,txn_type="Debit Note",supplier_id=supplier.id,amount=amount,post_balance=post_balance)
+                db.session.add(txn)
+                db.session.flush()
+                update_supplier_balances(shift.date,amount,supplier.id,txn.txn_type)
                 if product.product_type =="Fuels":
                         tank_id= request.form.get("tank")
                         try:
@@ -1650,10 +1646,10 @@ def debit_note():
                         except:
                                 flash('Please select valid tank','warning')
                                 return redirect(url_for('suppliers'))             
-                        debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank_id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier.id,cost_price=cost_price)
+                        debitnote = DebitNote(date=shift.date,shift_id=shift_id,tank_id=tank_id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier.id,cost_price=cost_price,supplier_txn_id=txn.id)
                         
                 else:
-                       debitnote = DebitNote(date=shift.date,shift_id=shift_id,qty=qty,product_id=product.id,document_number=document,supplier=supplier.id,cost_price=cost_price) 
+                       debitnote = DebitNote(date=shift.date,shift_id=shift_id,qty=qty,product_id=product.id,document_number=document,supplier=supplier.id,cost_price=cost_price,supplier_txn_id=txn.id) 
                 db.session.add(debitnote)
                 db.session.flush()
                 details = "Debit note {}".format(debitnote.id)
@@ -1708,7 +1704,7 @@ def edit_supplier():
         """Edit Supplier Information"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 supplier = Supplier.query.get(request.form.get("id"))
-                supplier.name = request.form.get("name").strip().capitalize()
+                supplier.name = request.form.get("name")
                 supplier.phone_number=  request.form.get("phone")
                 supplier.contact_person= request.form.get("contact_person")
                 db.session.commit()
@@ -1744,11 +1740,8 @@ def supplier(supplier_id):
         """Report for single supplier"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 supplier = Supplier.query.filter_by(id=supplier_id).first()
-                total_deliveries = Delivery.query.filter_by(supplier=supplier_id).all()
-                total_d_notes = DebitNote.query.filter_by(supplier=supplier_id).all()
-                total_payments = SupplierPayments.query.filter_by(supplier_id=supplier_id).all()
-                net =supplier.opening_balance +  sum([i.cost_price*i.qty for i in total_deliveries])- sum([i.cost_price*i.qty for i in total_d_notes])-sum([i.amount for i in total_payments])
-                
+                end_date = date.today()
+                net= supplier_txn_opening_balance(end_date,customer.id)
                 if request.method == "POST":
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
@@ -1909,7 +1902,7 @@ def post_journal():
                 db.session.add(journal)
                 db.session.delete(j)
                 db.session.commit()
-                flash('Journal posted','info')
+                flash('Journal posted, waiting for processing','info')
                 return redirect(url_for('journal_pending'))
 
 @app.route("/delete_journal",methods=["POST"])
@@ -2017,7 +2010,7 @@ def ledger_report():
                         accounts = Account.query.all()
                         names = {i.id:i.account_name for i in accounts}
                         
-                        journals = Ledger.query.filter(and_(Ledger.date.between(start_date,end_date),Ledger.account_id==account_id)).all()
+                        journals = Ledger.query.filter(and_(Ledger.date.between(start_date,end_date),Ledger.account_id==account_id)).order_by(Ledger.date.asc()).order_by(Ledger.journal_id.asc()).all()
 
                         return render_template("ledger_report.html",journals=journals,account_id=account_id,accounts=accounts,start_date=start_date,end_date=end_date,account=account,names=names)
 
@@ -2625,7 +2618,12 @@ def update_fuel_deliveries():
                 product.avg_price = round(new_cost,2)
                 price.avg_price = round(new_cost,2)
                 price.cost_price = cost_price
-                delivery = Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price)
+                post_balance = supplier_txn_opening_balance(current_shift.date,supplier.id) + amount
+                txn = SupplierTxn(date=current_shift.date,txn_type="Delivery",supplier_id=supplier.id,amount=amount,post_balance=post_balance)
+                db.session.add(txn)
+                db.session.flush()
+                update_supplier_balances(current_shift.date,amount,supplier.id,txn.txn_type)
+                delivery = Delivery(date=current_shift.date,shift_id=shift_id,tank_id=tank.id,qty=qty,product_id=tank.product_id,document_number=document,supplier=supplier_id,cost_price=cost_price,supplier_txn_id=txn.id)
                 db.session.add(delivery)
                 db.session.flush()
                 details = "Delivery {}".format(delivery.id)
@@ -2733,7 +2731,13 @@ def customer_sales():
                 product_id = request.form.get("product")
                 qty= request.form.get("qty")
                 customer_id=request.form.get("customers")
-                invoice = Invoice(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name)
+                amount= round(sales_price*qty,2)
+                post_balance=customer_txn_opening_balance(date,customer.id) + amount
+                txn = CustomerTxn(date=date,txn_type="Invoice",customer_id=customer_id,amount=amount,post_balance=post_balance)
+                db.session.add(txn)
+                db.session.flush()
+                update_customer_balances(date,amount,customer.id,txn.txn_type)
+                invoice = Invoice(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name,customer_txn_id=txn.id)
                 db.session.add(invoice)
                 db.session.commit()
                 return redirect(url_for('ss26'))
@@ -2758,7 +2762,12 @@ def sales_receipts():
                 try:
                         cash_account = Account.query.filter_by(id=customer.account_id).first()
                         amount= float(request.form.get("amount"))
-                        payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id))
+                        post_balance=customer_txn_opening_balance(date,customer.id) - amount
+                        txn = CustomerTxn(date=date,txn_type="Payment",customer_id=customer.id,amount=amount,post_balance=post_balance)
+                        db.session.add(txn)
+                        db.session.flush()
+                        update_customer_balances(date,amount,customer.id,txn.txn_type)
+                        payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id),customer_txn_id=txn.id)
                         receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=cash_account.id,amount=amount)
                 except:
                         flash("Create Customer with the same name as cash account",'warning')
@@ -2766,12 +2775,7 @@ def sales_receipts():
                 else:
                         db.session.add(receipt)
                         db.session.add(payment)
-                        
-                        post_balance=customer_txn_opening_balance(date,customer.id) +amount
-                        txn = CustomerTxn(date=date,txn_type="Sales Recceipts",customer_id=customer.id,amount=amount,post_balance=post_balance)
-                        db.session.flush()
                         cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
-                        update_customer_balances(date,amount,customer.id,txn_type)
                         db.session.commit()
                                         
                         return redirect(url_for('ss26'))
@@ -2799,13 +2803,16 @@ def coupon_sales():
                 customer = Customer.query.get(coupon.customer_id)
                 price = Price.query.filter(and_(Price.shift_id==shift_id,Price.product_id==product.id)).first()
                 coupon_sale = CouponSale(date=date,shift_id=shift_id,product_id=product.id,coupon_id=coupon.id,qty=number_of_coupons)
-                invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer.id,qty=total_litres,price=price.selling_price)
+                amount = round(total_litres * price.selling_price,2)
                 post_balance=customer_txn_opening_balance(date,customer.id) +amount
-                txn = CustomerTxn(date=date,txn_type="Sales Recceipts",customer_id=customer.id,amount=amount,post_balance=post_balance)
+                txn = CustomerTxn(date=date,txn_type="Coupon Sales",customer_id=customer.id,amount=amount,post_balance=post_balance)
+                db.session.add(txn)
+                db.session.flush()
+                update_customer_balances(date,amount,customer.id,txn.txn_type)
+                invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer.id,qty=total_litres,price=price.selling_price,customer_txn_id=txn.id)
+        
                 db.session.add(coupon_sale)
                 db.session.add(invoice)
-                db.session.flush()
-                update_customer_balances(date,amount,customer.id,txn_type)
                 db.session.commit()
                         
                 return redirect(url_for('ss26'))
@@ -2837,14 +2844,17 @@ def cash_up():
                 try:
                         cash_up = CashUp(date=date,shift_id=shift_id,sales_amount=cash_sales_amount,expected_amount=expected_amount,actual_amount=actual_amount,variance=variance)
                         receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=account.id,amount=amount)
+                        post_balance=customer_txn_opening_balance(date,customer.id) - amount
+                        txn = CustomerTxn(date=date,txn_type="Payment",customer_id=customer.id,amount=amount,post_balance=post_balance,customer_txn_id=txn.id)
+                        db.session.add(txn)
+                        db.session.flush()
+                        update_customer_balances(date,amount,customer.id,txn.txn_type)
                         payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id))
                         db.session.add(payment)
                         db.session.add(cash_up)
                         db.session.add(receipt)
                         db.session.flush()
-                        post_balance=customer_txn_opening_balance(date,customer.id) +amount
-                        txn = CustomerTxn(date=date,txn_type="Sales Recceipts",customer_id=customer.id,amount=amount,post_balance=post_balance)
-                        update_customer_balances(date,amount,customer.id,txn_type)
+                       
                         if len(shifts) > 1:
                                 cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
                                 db.session.commit()
@@ -3112,7 +3122,12 @@ def update_lubes_deliveries():
                                 supplier = Supplier.query.get(supplier_id)
                                 document = request.form.get("document")
                                 inventory = Account.query.get(product.account_id)
-                                delivery = Delivery(date=current_shift.date,shift_id=shift_id,qty=qty,product_id=product.id,document_number=document,supplier=supplier.id,cost_price=cost_price)
+                                post_balance = supplier_txn_opening_balance(date,supplier.id) + amount
+                                txn = SupplierTxn(date=current_shift.date,txn_type="Delivery",supplier_id=supplier.id,amount=amount,post_balance=post_balance)
+                                db.session.add(txn)
+                                db.session.flush()
+                                update_supplier_balances(current_shift.date,amount,supplier.id,txn.txn_type)
+                                delivery = Delivery(date=current_shift.date,shift_id=shift_id,qty=qty,product_id=product.id,document_number=document,supplier=supplier.id,cost_price=cost_price,supplier_txn_id=txn.id)
                                 db.session.add(delivery)
                                 db.session.flush()
                                 details ="Delivery {}".format(delivery.id)
@@ -3317,8 +3332,8 @@ def developer_login():
                 user = SystemAdmin.query.filter_by(name=name).first()
                 if user:
                         if  not check_password_hash(user.password,password):
-
-                                return redirect(url_for('index'))
+                                flash("Wrong Password",'warning')
+                                return redirect(url_for('developer_login'))
                         else:
                                 session["system_admin"]= user.id
                                 return redirect(url_for('developer'))
@@ -3331,5 +3346,5 @@ def developer_logout():
         """Developer Logout"""
 
         session.clear()
-
-        return redirect(url_for('index'))
+        
+        return redirect(url_for('developer_login'))
