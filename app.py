@@ -684,8 +684,13 @@ def update_sales_receipts():
                         db.session.add(invoice)
                         db.session.flush()
                         details = "Invoice {}".format(invoice.id)
+                        post_balance = customer_txn_opening_balance(date,customer_id) + amount
+                        txn = CustomerTxn(date=date,txn_type="Invoice",customer_id=customer_id,amount=amount,post_balance=post_balance)
                         sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'])
+                        db.session.add(txn)
                         db.session.add(sales_journal)
+                        db.session.flush()
+                        update_customer_balances(date,amount,customer_id,txn.txn_type)
                         db.session.commit()
                         
                         return redirect(url_for('readings_entry'))
@@ -1329,11 +1334,9 @@ def customers():
                 # calculate balances
                 balances = {}
                 for customer in customers:
-                        invoices = Invoice.query.filter_by(customer_id=customer.id).all()
-                        payments = CustomerPayments.query.filter_by(customer_id=customer.id).all()
-                        c_notes = CreditNote.query.filter_by(customer_id=customer.id).all()
-                        net =  sum([i.price*i.qty for i in invoices])-sum([i.amount for i in payments]) - sum([i.price*i.qty for i in c_notes])
-                        balances[customer]= net + customer.opening_balance
+                        #get last txn
+                        txn = CustomerTxn.query.filter(and_(CustomerTxn.date <= end_date,CustomerTxn.customer_id==customer.id)).order_by(Customer.id.desc()).first()
+                        balances[customer]= txn.post_balance
                 return render_template("customers.html",products=products,customers=customers,balances=balances,paypoints=paypoints,
                                         cash_accounts=cash_accountss,non_cash_customers=non_cash_customers,accounts=accounts,accounts_dict=accounts_dict)
 
@@ -1355,8 +1358,13 @@ def customer_payment():
                         cr = customer.account_id
                         dr= paypoint.id
                         journal = Journal(date=date,details=ref,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
+                        post_balance = customer_txn_opening_balance(date,customer_id) - amount
+                        txn = CustomerTxn(date=date,txn_type="Payment",customer_id=customer_id,amount=amount,post_balance=post_balance)
                         db.session.add(journal)
                         db.session.add(payment)
+                        db.session.add(txn)
+                        db.session.flush()
+                        update_customer_balances(date,amount,customer_id,txn.txn_type)
                         db.session.commit()
                 except:
                         db.session.rollback()
@@ -1395,9 +1403,14 @@ def credit_note():
                 if account.account_name != "Accounts Receivables" :
                         payment =  CustomerPayments(date=date,customer_id=customer_id,amount=-amount,ref=ref)
                 sales_journal = Journal(date=shift.date,details=details,dr=sales_return.id,cr=customer.account_id,amount=amount,created_by=session['user_id'])
+                post_balance = customer_txn_opening_balance(date,customer_id) - amount
+                txn = CustomerTxn(date=date,txn_type="Credit Note",customer_id=customer_id,amount=amount,post_balance=post_balance)
                 db.session.add(sales_journal)
                 db.session.add(payment)
                 db.session.add(credit_note)
+                db.session.add(txn)
+                db.session.flush()
+                update_customer_balances(date,amount,customer_id,txn.txn_type)
                 db.session.commit()
                 flash('Credit note created','info')
                 return redirect(url_for('customers'))
@@ -1411,10 +1424,8 @@ def customer(customer_id):
         """Report for single customer"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 customer = Customer.query.filter_by(id=customer_id).first()
-                total_invoices = Invoice.query.filter_by(customer_id=customer_id).all()
-                total_c_notes = CreditNote.query.filter_by(customer_id=customer_id).all()
-                total_payments = CustomerPayments.query.filter_by(customer_id=customer_id).all()
-                net = customer.opening_balance - sum([i.amount for i in total_payments])-sum([i.price*i.qty for i in total_c_notes]) + sum([i.price*i.qty for i in total_invoices])
+                end_date = date.today()
+                net =  CustomerTxn.query.filter(and_(CustomerTxn.date <= end_date,CustomerTxn.customer_id==customer.id)).order_by(Customer.id.desc()).first()
                 
                 if request.method == "POST":
                         start_date = request.form.get("start_date")
@@ -1427,7 +1438,29 @@ def customer(customer_id):
                         start_date = end_date - timedelta(days=30)
                         report = customer_statement(customer_id,start_date,end_date)
                         return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
-                       
+
+@app.route("/customer_statement/<int:customer_id>",methods=["GET","POST"])
+@check_schema
+@login_required
+def customer_statement(customer_id):
+        """Report for single customer"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                customer = Customer.query.filter_by(id=customer_id).first()
+                end_date = date.today()
+                net =  CustomerTxn.query.filter(and_(CustomerTxn.date <= end_date,CustomerTxn.customer_id==customer.id)).order_by(Customer.id.desc()).first()
+                
+                if request.method == "POST":
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        report = CustomerTxn.query.filter(CustomerTxn.date.between(start_date,end_date)).all()
+
+                        return render_template("customer_statement.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
+                else:
+                        end_date = date.today()
+                        start_date = end_date - timedelta(days=30)
+                        report = CustomerTxn.query.filter(CustomerTxn.date.between(start_date,end_date)).all()
+                        return render_template("customer_statement.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
+
 @app.route("/invoice/<int:invoice_id>",methods=["GET","POST"])
 @check_schema
 @login_required
@@ -1468,13 +1501,16 @@ def add_customer():
                         db.session.add(journal)
                 customer = Customer(name=name,account_id=debtor.id,phone_number=phone_number,contact_person=contact_person,opening_balance=opening_balance)
                 customer_exists = bool(Customer.query.filter_by(name=name).first())
+                
                 if customer_exists:
                         flash("User already exists, Try using another  user name",'warning')
                         return redirect(url_for('customers'))
                 else:
                 
                         try:
-                                db.session.add(customer) 
+                                db.session.add(customer)
+                                db.session.flush()
+                                txn = CustomerTxn(date=date,txn_type="Opening Balance",customer_id=customer_id,amount=amount,post_balance=amount) 
                                 db.session.commit()
                         except:
                                 db.session.rollback()
@@ -1869,7 +1905,7 @@ def post_journal():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 i = request.form.get("id")
                 j = Journal_Pending.query.get(i)
-                journal = Journal(date=j.date,details=j.details,amount=j.amount,dr=j.dr,cr=j.cr,created_by=j.created_by)
+                journal = Journal(date=j.date,details=j.details,amount=j.amount,dr=j.dr,cr=j.cr,created_by=j.created_by,updated=False)
                 db.session.add(journal)
                 db.session.delete(j)
                 db.session.commit()
@@ -1901,6 +1937,36 @@ def journal_pending():
                 
                 return render_template("journal_pending.html",journals=journals,accounts=accounts,names=names)
 
+@app.route("/process_journals",methods=["GET","POST"])
+@check_schema
+@login_required
+def process_journals():
+    """ Post Journals to Legder """
+    with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                journals = Journal.query.filter_by(updated=False).order_by(Journal.id.asc()).all()
+                accounts = Account.query.all()
+                names = {i.id:i.account_name for i in accounts}
+                if request.method =="POST":
+                        
+                        for journal in journals:
+                                post_balance = dr_txn_post_balance(journal.date,journal.amount,journal.dr)
+                                txn1 = Ledger(date=journal.date,account_id=journal.dr,journal_id=journal.id,txn_type="DR",amount=journal.amount,post_balance =post_balance)
+                                post_balance = cr_txn_post_balance(journal.date,journal.amount,journal.cr)
+                                txn2 = Ledger(date=journal.date,account_id=journal.cr,journal_id=journal.id,txn_type="CR",amount=journal.amount,post_balance =post_balance)
+                                db.session.add(txn1)
+                                db.session.add(txn2)
+                                update_balances(journal.date,journal.amount,journal.dr,"DR")
+                                update_balances(journal.date,journal.amount,journal.cr,"CR")
+                                journal.updated = True
+                                db.session.flush()
+                        db.session.commit()
+                        flash('Journals Posted to Ledger','info')
+                        return redirect(url_for('process_journals'))
+                else:
+                        return render_template("process_journals.html",journals=journals,names=names)
+                
+
+
 @app.route("/ledger",methods=["GET","POST"])
 @check_schema
 @login_required
@@ -1928,6 +1994,33 @@ def ledger():
           
                         return render_template("ledger.html",journals=journals,account_id=account_id,opening_balance=balance,accounts=accounts,start_date=start_date,end_date=end_date,entry=account.entry,ac=account,names=names)
 
+@app.route("/ledger_report",methods=["GET","POST"])
+@check_schema
+@login_required
+def ledger_report():
+        """View Transactions"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                accounts= Account.query.all()
+
+                if request.method =="GET":
+                        end_date = date.today()
+                        start_date = end_date - timedelta(days=30)
+                        account = Account.query.get(1)
+                        accounts = Account.query.all()
+                        names = {i.id:i.account_name for i in accounts}
+                        return render_template("ledger_report.html",accounts=accounts,account=account,names=names)
+                else:
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        account_id = int(request.form.get("account"))
+                        account = Account.query.get(account_id)
+                        accounts = Account.query.all()
+                        names = {i.id:i.account_name for i in accounts}
+                        
+                        journals = Ledger.query.filter(and_(Ledger.date.between(start_date,end_date),Ledger.account_id==account_id)).all()
+
+                        return render_template("ledger_report.html",journals=journals,account_id=account_id,accounts=accounts,start_date=start_date,end_date=end_date,account=account,names=names)
+
 @app.route("/trial_balance",methods=["GET","POST"])
 @check_schema
 @login_required
@@ -1938,18 +2031,41 @@ def trial_balance():
                 if request.method =="GET":
                         end_date = date.today()
                         start_date = end_date - timedelta(days=30)
-                        report = trial_balance_report(start_date,end_date)
+                        report = trial_balance_journals(start_date,end_date)
                         r_e = retained_earnings(start_date)
                         return render_template("trial_balance.html",accounts=accounts,report=report,r_e=r_e,start_date=start_date,end_date=end_date)
                         
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
-                        report = trial_balance_report(start_date,end_date)
+                        report = trial_balance_journals(start_date,end_date)
                         r_e = retained_earnings(start_date)
                         start_date = datetime.strptime(start_date,"%Y-%m-%d")
                         end_date = datetime.strptime(end_date,"%Y-%m-%d")
                         return render_template("trial_balance.html",accounts=accounts,report=report,r_e=r_e,start_date=start_date,end_date=end_date)
+
+@app.route("/trial_balance_report",methods=["GET","POST"])
+@check_schema
+@login_required
+def trial_balance_report():
+        """View Transactions"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                accounts= Account.query.all()
+                if request.method =="GET":
+                        end_date = date.today()
+                        start_date = end_date - timedelta(days=30)
+                        report = trial_balance_ledger(start_date,end_date)
+                        r_e = retained_earnings(start_date)
+                        return render_template("trial_balance_report.html",accounts=accounts,report=report,r_e=r_e,start_date=start_date,end_date=end_date)
+                        
+                else:
+                        start_date = request.form.get("start_date")
+                        end_date = request.form.get("end_date")
+                        report = trial_balance_ledger(start_date,end_date)
+                        r_e = retained_earnings(start_date)
+                        start_date = datetime.strptime(start_date,"%Y-%m-%d")
+                        end_date = datetime.strptime(end_date,"%Y-%m-%d")
+                        return render_template("trial_balance_report.html",accounts=accounts,report=report,r_e=r_e,start_date=start_date,end_date=end_date)
 
 @app.route("/pnl",methods=["GET","POST"])
 @check_schema
@@ -1988,12 +2104,12 @@ def cash_accounts():
         """Cash Account Report"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 accounts= Account.query.filter(Account.code.between(400,450)).all()
+                end_date = date.today()
                 balances= {}
                 for account in accounts:
-                        receipts = Journal.query.filter_by(dr=account.id).all()
-                        payouts = Journal.query.filter_by(cr=account.id).all()
-                        balance = sum([i.amount for i in receipts])- sum([i.amount for i in payouts])
-                        balances[account]=balance
+                        #get last txn
+                        txn = Ledger.query.filter(and_(Ledger.date <= end_date,Ledger.account_id==account.id)).order_by(Ledger.id.desc()).first()
+                        balances[account]= round(txn.post_balance,2) if txn else 0
                 return render_template("cash_accounts.html",accounts=accounts,balances=balances)
 
 
@@ -2005,26 +2121,26 @@ def cash_accounts():
 def cash_account(account_id):
         """Cash Account"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                account = Account.query.get(account_id) 
-                receipts = Journal.query.filter_by(dr=account.id).all()
-                payments = Journal.query.filter_by(cr=account.id).all()
-                balance = sum([i.amount for i in receipts])- sum([i.amount for i in payments])
+                account = Account.query.get(account_id)
+                end_date = date.today() 
+                txn = Ledger.query.filter(and_(Ledger.date <= end_date,Ledger.account_id==account.id)).order_by(Ledger.id.desc()).first()
+                balance = round(txn.post_balance,2) if txn else 0
 
                 if request.method == "GET":
                         end_date = date.today()
                         start_date = end_date - timedelta(days=30)
                         account_id = account_id
-                        opening_ = opening_balance(start_date,account_id)
-                        report = Journal.query.filter(Journal.date.between(start_date,end_date)).filter(or_(Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
-                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance,opening=opening_,start_date=start_date,end_date=end_date)
+
+                        report = Ledger.query.filter(Ledger.date.between(start_date,end_date)).filter(or_(Ledger.account_id==account_id)).order_by(Ledger.id.asc()).all()
+                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance,start_date=start_date,end_date=end_date)
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
                         account_id = account_id
-                        opening_ = opening_balance(start_date,account_id)
-                        report = Journal.query.filter(Journal.date.between(start_date,end_date)).filter(or_(Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
+                        report = Ledger.query.filter(Ledger.date.between(start_date,end_date)).filter(or_(Ledger.account_id==account_id)).order_by(Ledger.id.asc()).all()
+                        
                 
-                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance,opening=opening_,start_date=start_date,end_date=end_date)
+                        return render_template("cash_account.html",account=account,journals=report,account_id=account_id,balance=balance,start_date=start_date,end_date=end_date)
 
 
 
@@ -2650,8 +2766,12 @@ def sales_receipts():
                 else:
                         db.session.add(receipt)
                         db.session.add(payment)
-                        cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
                         
+                        post_balance=customer_txn_opening_balance(date,customer.id) +amount
+                        txn = CustomerTxn(date=date,txn_type="Sales Recceipts",customer_id=customer.id,amount=amount,post_balance=post_balance)
+                        db.session.flush()
+                        cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
+                        update_customer_balances(date,amount,customer.id,txn_type)
                         db.session.commit()
                                         
                         return redirect(url_for('ss26'))
@@ -2680,8 +2800,12 @@ def coupon_sales():
                 price = Price.query.filter(and_(Price.shift_id==shift_id,Price.product_id==product.id)).first()
                 coupon_sale = CouponSale(date=date,shift_id=shift_id,product_id=product.id,coupon_id=coupon.id,qty=number_of_coupons)
                 invoice = Invoice(date=date,product_id=product.id,shift_id=shift_id,customer_id=customer.id,qty=total_litres,price=price.selling_price)
+                post_balance=customer_txn_opening_balance(date,customer.id) +amount
+                txn = CustomerTxn(date=date,txn_type="Sales Recceipts",customer_id=customer.id,amount=amount,post_balance=post_balance)
                 db.session.add(coupon_sale)
                 db.session.add(invoice)
+                db.session.flush()
+                update_customer_balances(date,amount,customer.id,txn_type)
                 db.session.commit()
                         
                 return redirect(url_for('ss26'))
@@ -2717,6 +2841,10 @@ def cash_up():
                         db.session.add(payment)
                         db.session.add(cash_up)
                         db.session.add(receipt)
+                        db.session.flush()
+                        post_balance=customer_txn_opening_balance(date,customer.id) +amount
+                        txn = CustomerTxn(date=date,txn_type="Sales Recceipts",customer_id=customer.id,amount=amount,post_balance=post_balance)
+                        update_customer_balances(date,amount,customer.id,txn_type)
                         if len(shifts) > 1:
                                 cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
                                 db.session.commit()

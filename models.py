@@ -223,6 +223,21 @@ class CustomerPayments(db.Model):
 
     __table_args__={'schema':'tenant'}
 
+class CustomerTxn(db.Model):
+    __tablename__="customer_transactions"
+    
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    txn_type = db.Column(db.String,nullable=False)
+    customer_id = db.Column(db.Integer,db.ForeignKey("customers.id"),nullable=False)
+    amount= db.Column(db.Float,nullable=False)
+    post_balance= db.Column(db.Float,nullable=False)
+   
+    
+
+   
+
+    __table_args__={'schema':'tenant'}
 class Supplier(db.Model):
     __tablename__="supplier"
     
@@ -246,12 +261,22 @@ class SupplierPayments(db.Model):
     supplier_id = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
     amount= db.Column(db.Float,nullable=False)
     ref = db.Column(db.String,nullable=True)
-    
+    post_balance= db.Column(db.Float,nullable=False)
 
     def __repr__(self):
         return "{}".format(self.amount)
 
     __table_args__={'schema':'tenant'}
+
+class SupplierTransactions(db.Model):
+    __tablename__="supplier_transactions"
+    
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    transaction_type = db.Column(db.String,nullable=False)
+    supplier_id = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
+    amount= db.Column(db.Float,nullable=False)
+    ref = db.Column(db.String,nullable=True)
 
 class Shift_Underway(db.Model):
     __tablename__="shift_underway"
@@ -417,6 +442,7 @@ class Journal(db.Model):
     amount= db.Column(db.Float,nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_on =db.Column(db.DateTime, nullable=False,default=datetime.utcnow)
+    updated = db.Column(db.Boolean,nullable=False)
 
 class Journal_Pending(db.Model):
     __tablename__="journals_pending"
@@ -430,3 +456,20 @@ class Journal_Pending(db.Model):
     amount= db.Column(db.Float,nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_on =db.Column(db.DateTime, nullable=False,default=datetime.utcnow)
+    
+
+class Ledger(db.Model):
+    __tablename__="ledger"
+    __table_args__={'schema':'tenant'}
+
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    date= db.Column(db.Date, nullable=False)
+    account_id = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
+    journal_id = db.Column(db.Integer,db.ForeignKey("journals.id"),nullable=False)
+    txn_type = db.Column(db.String,nullable=False)
+    amount= db.Column(db.Float,nullable=False)
+    post_balance= db.Column(db.Float,nullable=False)
+    updated_on =db.Column(db.DateTime, nullable=False,default=datetime.utcnow)
+
+
+    

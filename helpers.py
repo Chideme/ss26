@@ -904,6 +904,34 @@ def customer_statement(customer_id,start_date,end_date):
         j += 1
     return report
 
+def customer_txn_opening_balance(date,customer_id):
+    """ calculate prior txn balance """
+    customer = Customer.query.get(customer_id)
+    last_txn = CustomerTxn.query.filter(and_(CustomerTxn.date==date,CustomerTxn.customer_id==customer_id)).order_by(CustomerTxn.id.desc()).first()
+    if last_txn:
+        account_balance = last_txn.post_balance
+    else: # get last day of txns before this date
+        try:
+            last_txn =  CustomerTxn.query.filter(and_(CustomerTxn.date < date,CustomerTxn.customer_id==customer_id)).order_by(CustomerTxn.id.desc()).first()
+            account_balance = last_txn.post_balance
+        except:
+            account_balance = customer.opening_balance
+    
+    return account_balance
+
+def update_customer_balances(date,amount,customer_id,txn_type):
+    """ recalculate post txn customer balances """
+    customer = Customer.query.get(customer_id)
+    if txn_type  == 'Payment':
+        customer_txns = CustomerTxn.query.filter(and_(CustomerTxn.customer_id==customer_id,CustomerTxn.date > date)).all()
+        for txn in customer_txns:
+            txn.post_balance = txn.post_balance - amount
+            
+    else:
+        customer_txns = CustomerTxn.query.filter(and_(CustomerTxn.customer_id==customer_id,CustomerTxn.date > date)).all()
+        for txn in customer_txns:
+            txn.post_balance = txn.post_balance + amount
+    return True
 def supplier_statement(supplier_id,start_date,end_date):
     """Returns Supplier statement"""
   
@@ -1108,6 +1136,66 @@ def opening_balance(date,account_id):
 
     return balance
 
+def txn_opening_balance(date,account_id):
+    """ calculate prior txn balance """
+    last_txn = Ledger.query.filter(and_(Ledger.date==date,Ledger.account_id==account_id)).order_by(Ledger.id.desc()).first()
+    if last_txn:
+        account_balance = last_txn.post_balance
+    else: # get last day of txns before this date
+        try:
+            last_txn =  Ledger.query.filter(and_(Ledger.date < date,Ledger.account_id==account_id)).order_by(Ledger.id.desc()).first()
+            account_balance = last_txn.post_balance
+        except:
+            account_balance = 0
+    
+
+    return account_balance
+
+def dr_txn_post_balance(date,amount,account_id):
+    """ calculate post txn balance """
+    account = Account.query.get(account_id)
+    if account.entry == 'DR':
+        post_balance = txn_opening_balance(date,account_id) + amount
+    else:
+        post_balance = txn_opening_balance(date,account_id) - amount
+
+    
+
+    return post_balance
+
+def cr_txn_post_balance(date,amount,account_id):
+    """ calculate post txn balance """
+    account = Account.query.get(account_id)
+    if account.entry == 'DR':
+        post_balance = txn_opening_balance(date,account_id) - amount
+    else:
+        post_balance = txn_opening_balance(date,account_id) + amount
+
+    
+
+    return post_balance
+
+def update_balances(date,amount,account_id,txn_type):
+    """ recalculate post txn ledger balances """
+    account = Account.query.get(account_id)
+    if account.entry == 'DR':
+        legder_txns = Ledger.query.filter(and_(Ledger.account_id==account_id,Ledger.date > date)).all()
+        for txn in legder_txns:
+            if txn_type == "DR":
+                txn.post_balance = txn.post_balance + amount
+            else:
+                txn.post_balance = txn.post_balance - amount
+    else:
+        legder_txns = Ledger.query.filter(and_(Ledger.account_id==account_id,Ledger.date > date)).all()
+        for txn in legder_txns:
+            if txn_type == "DR":
+                txn.post_balance = txn.post_balance - amount
+            else:
+                txn.post_balance = txn.post_balance + amount
+
+    
+
+    return True
 
 def retained_earnings(start_date):
     """ Calculate Retained Earnings Balance for Trial Balance"""
@@ -1119,7 +1207,7 @@ def retained_earnings(start_date):
     expenses = sum([i[1].amount for i in expenses_dr])-sum([i[1].amount for i in expenses_cr])
     income = sum([i[1].amount for i in income_cr])-sum([i[1].amount for i in income_dr])
     balance =income - expenses
-    return balance
+    return round(balance,2)
 
 def p_n_l_balances(start_date,end_date):
     """ Balance for P n L accounts """
@@ -1149,7 +1237,7 @@ def s_o_p_balances(end_date):
         report[account.id]= balance
     return report
 
-def trial_balance_report(start_date,end_date):
+def trial_balance_journals(start_date,end_date):
     """Trial Balance"""
     p_n_l = p_n_l_balances(start_date,end_date)
     s_o_p = s_o_p_balances(end_date)
@@ -1158,6 +1246,22 @@ def trial_balance_report(start_date,end_date):
         report[i] = p_n_l[i]
     for i in s_o_p:
         report[i]= s_o_p[i]
+    return report
+
+def trial_balance_ledger(start_date,end_date):
+    """Trial Balance"""
+    bal_accounts = Account.query.filter(Account.code > 399).all()
+    pnl_accounts = Account.query.filter(Account.code.between(100,399)).all()
+    pnl = db.session.query(Ledger,Account).filter(and_(Account.code.between(100,399),Ledger.date.between(start_date,end_date),Ledger.account_id==Account.id)).all()
+    report = {}
+    for account in pnl_accounts:
+        if account.entry == "DR":
+            report[account.id] = round(sum([i[0].amount for i in pnl if i[1].id == account.id and i[0].txn_type =="DR"])-sum([i[0].amount for i in pnl if i[1].id == account.id and i[0].txn_type =="CR"]),2)
+        else:
+            report[account.id] = round(sum([i[0].amount for i in pnl if i[1].id == account.id and i[0].txn_type =="CR"])-sum([i[0].amount for i in pnl if i[1].id == account.id and i[0].txn_type =="DR"]),2)
+    for account in bal_accounts:
+        txn = Ledger.query.filter(and_(Ledger.date <= end_date,Ledger.account_id==account.id)).order_by(Ledger.id.desc()).first()
+        report[account.id] = round(txn.post_balance,2) if txn else 0
     return report
 
 def account_code(account_category):
@@ -1238,9 +1342,9 @@ def daily_cash_balances(start_date,end_date):
     for date in dates:
         balance=0
         for account in accounts:
-            receipts = Journal.query.filter(and_(Journal.dr==account.id,Journal.date <= date)).all()
-            payouts = Journal.query.filter(and_(Journal.cr==account.id,Journal.date <= date)).all()
-            balance += sum([i.amount for i in receipts])- sum([i.amount for i in payouts])
+            txn = Ledger.query.filter(and_(Ledger.date <= date,Ledger.account_id==account.id)).order_by(Ledger.id.desc()).first()
+            bal = round(txn.post_balance,2) if txn else 0
+            balance += bal
         if balance != 0:
             report[date.strftime('%d %b %Y')]=balance
         #report[date]=balance
@@ -1301,9 +1405,9 @@ def monthly_cash_balances(start_date,end_date):
     for date in month_end_dates:
         balance=0
         for account in accounts:
-            receipts = Journal.query.filter(and_(Journal.dr==account.id,Journal.date <= date)).all()
-            payouts = Journal.query.filter(and_(Journal.cr==account.id,Journal.date <= date)).all()
-            balance += sum([i.amount for i in receipts])- sum([i.amount for i in payouts])
+            txn = Ledger.query.filter(and_(Ledger.date <= date,Ledger.account_id==account.id)).order_by(Ledger.id.desc()).first()
+            bal = round(txn.post_balance,2) if txn else 0
+            balance += bal
         if balance != 0:
             report[date.strftime('%b %Y')]=balance
     return report
@@ -1359,13 +1463,13 @@ def monthly_margin(start_date,end_date):
 
 def current_cash_balance():
     """ Cash Balance for Dashboard"""
+    end_date = date.today()
     accounts= Account.query.filter(Account.code.between(400,450)).all()
     balances= 0
     for account in accounts:
-        receipts = Journal.query.filter_by(dr=account.id).all()
-        payouts = Journal.query.filter_by(cr=account.id).all()
-        balance = sum([i.amount for i in receipts])- sum([i.amount for i in payouts])
-        balances +=balance
+        txn = Ledger.query.filter(and_(Ledger.date <= end_date,Ledger.account_id==account.id)).order_by(Ledger.id.desc()).first()
+        bal = round(txn.post_balance,2) if txn else 0
+        balances += bal
     return balances
 
 def liquidity_ratios(end_date):
@@ -1396,3 +1500,5 @@ def  asset_liabilities(end_date):
     liabilities_balances = sum([balances[account.id] for account in liabilities])
 
     return asset_balances,liabilities_balances
+
+

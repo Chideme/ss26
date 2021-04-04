@@ -1,0 +1,133 @@
+{% extends "accounts_layout.html" %}
+
+{% block title %}
+From:{{ start_date }} To: {{ end_date }}
+{% endblock %}
+
+{% block main %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div class="row">
+        <div class="col-sm-6 col-lg-8 col-md-8 ">
+          <div class="card">
+            <div class="card-header" style="background-color: lightseagreen;">Filter</div>
+            <div class="card-body">
+            <form  action="{{ url_for('ledger_report') }}" id="form" method="post">
+              <div class="form-group">
+                <label for="account">Select Account:</label>
+                  <select class="form-control"  id="account" name="account">
+                    <option value="{{ account.id }}" selected>{{ account.account_name }}</option>
+                      {% for account in accounts %}
+                    <option value="{{ account.id }}">{{ account.account_name }}</option>
+                    {% endfor %}
+                  </select>
+              </div>
+             
+              <div class="form-group">
+                <label for="start_date">From:</label>
+                  <input type = "date"  value="{{ start_date }}" id="start_date" name="start_date" autocomplete="off" autofocus class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="end_date">To:</label>
+                  <input type = "date"  value="{{ end_date }}" id="end_date" name="end_date" autocomplete="off"  class="form-control" required>
+              </div>
+              <div class="form-group">
+                  <button type="submit"  id="clickbutton" class="btn btn-block btn-outline-secondary">Filter <span data-feather="filter"></span></button>
+              </div>
+              </form>
+              </div>
+          </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center">
+<h4>Ledger Transactions</h4>
+    
+            <table class="display" id="export">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Account</th>
+                        <th>TXN ID</th>
+                        <th>Journal Number</th>
+                        <th>TXN TYPE</th>
+                        <th>Amount</th>
+                        <th>Post Balance</th>
+                        
+                    </tr>
+                </thead>
+                <tbody>
+                  
+                    {% for j in journals %}
+                    <tr>
+                        <td>{{ j.date }}</td>
+                        <td>{{ account.account_name }}</td>
+                        <td>{{ j.id }}</td>
+                        <td>{{ j.journal_id }}</td>
+                        <td>{{ j.txn_type }}</td>
+                        <td>{{ j.amount | currencyFormat  }}</td>
+                        <td>{{ j.post_balance | currencyFormat  }}</td>
+                        
+            
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+</div>               
+                            
+    
+   <!--Journal Modal -->
+   {% for j in journals %}
+   <div class="modal fade" id="Journal{{ j.id }}" tabindex="-1" role="dialog" aria-labelledby="Journal{{ j.id }}FormModalLabel" aria-hidden="true">
+       <div class="modal-dialog" role="document">
+           <div class="modal-content">
+               <div class="modal-header">
+                   <h5 class="modal-title" id="Journal{{ j.id }}FormLabel">Journal</h5>
+                       <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                           <span aria-hidden="true">&times;</span>
+                       </button>
+               </div>
+               <div class="modal-body">
+                   <table class="table table-sm">
+                     <thead>
+                       <th>Date</th>
+                       <th>Account</th>
+                       <th>DR</th>
+                       <th>CR</th>
+                     </thead>
+                     <tbody>
+                       <tr>
+                         <td>{{ j.date }}</td>
+                         <td>{{ names[j.dr] }}</td>
+                         <td>{{ j.amount | currencyFormat }}</td>
+                         <td>0</td>
+                       </tr>
+                       <tr>
+                        <td>{{ j.date }}</td>
+                        <td>{{ names[j.cr] }}</td>
+                        <td>0</td>
+                        <td>{{ j.amount | currencyFormat }}</td>
+                      </tr>
+                       <tr>
+                         <td colspan="4" class="text-center h6">
+                           {{ j.details }}
+                         </td>
+                       </tr>
+                     </tbody>
+                   </table>
+                  </div>
+               
+               <div class="modal-footer">  
+                   <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+               </div>
+               </div>
+           </div>
+       </div>
+   
+   {% endfor %}
+<!--Journal Modal-->  
+
+
+    
+{% endblock %}

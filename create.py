@@ -54,6 +54,28 @@ def main():
         op.create_foreign_key('coupons_account_fkey', 'coupons', 'account', ['account_id'], ['id'])
         op.execute(text("SET search_path TO default"))
     op.execute(text("SET search_path TO default"))
+
+    for schema in schemas:
+        print("Executing on schema {}".format(schema))
+        op.execute("SET search_path TO {}".format(schema))
+        op.add_column('journals',sa.Column('updated', sa.Boolean() ,nullable=True))
+        op.execute("UPDATE journals SET updated = False")
+        op.alter_column('journals',sa.Column('updated',nullable=False))
+        op.create_table('ledger',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('date', sa.Date(), nullable=False),
+            sa.Column('account_id', sa.Integer(), nullable=False),
+            sa.Column('journal_id', sa.Integer(), nullable=False),
+            sa.Column('txn_type', sa.String(), nullable=False),
+            sa.Column('amount', sa.Float(), nullable=False),
+            sa.Column('post_balance', sa.Float(), nullable=False),
+            sa.Column('updated_on', sa.DateTime(), nullable=False),
+            sa.ForeignKeyConstraint(['account_id'], ['accounts.id'], ),
+            sa.ForeignKeyConstraint(['journal_id'], ['journals.id'], ),
+            sa.PrimaryKeyConstraint('id')
+            )
+        op.execute("SET search_path TO default")
+    op.execute("SET search_path TO default")
    
 if __name__=="__main__":
     with app.app_context():

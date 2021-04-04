@@ -37,18 +37,27 @@
               </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('ledger') }}">
-              <span data-feather="columns"></span>
+            <a class="nav-link" href="{{ url_for('process_journals') }}">
+              <span data-feather="clipboard"></span>
               <span style="color: lightseagreen;">
-              Ledger
+              Process Journals
               </span>
             </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('trial_balance') }}">
+          <a class="nav-link" href="{{ url_for('ledger_report') }}">
+            <span data-feather="columns"></span>
+            <span style="color: lightseagreen;">
+            Ledger Report
+            </span>
+          </a>
+      </li>
+       
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('trial_balance_report') }}">
             <span data-feather="file"></span>
             <span style="color: lightseagreen;">
-            Trial Balance
+            Trial Balance Report
             </span>
           </a>
         </li>
@@ -89,7 +98,7 @@
 
       </div>
        
-      {% endblock %}
+  {% endblock %}
    
 
     
