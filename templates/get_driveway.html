@@ -1,323 +1,67 @@
 {% extends "report_layout.html" %}
-{% block title %}
-    Driveway Report
-{% endblock %}
-
 {% block main %}
-<style type="text/css" media="print">
-  @page { size: landscape; }
-</style>
-      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#ShiftSelection">
-          Select Shift
-        </button>
-        <div class="btn-group mr-2">
-          <button  type="button" id="print" onclick="printTable()" class="btn  btn-outline-secondary"><span data-feather="printer"></span></button>
-          <button  type="button" id="download" class="btn  btn-outline-secondary"><span data-feather="download"></span></button>
-        </div>
-        </div>
-     
 
-    
-      
-      
-  
-      <div id="printTable">
-      <div class="card text-center d-flex align-items-center" style="background-color: whitesmoke;" >
-        <h2 >{{ session["org_name"] }}</h2>
-        <h4  >Forecourt Driveway</h4>
-        <div class="text-left">
-        <h6>Prepared by: {{ shift.prepared_by }}</h6>
-        <h6>Date : {{ date | dateFormat }}</h6>
-        <h6>Shift: {{ shift_daytime }}</h6>
-        <h6 id="name">Driveway No. : {{ shift.id }}</h6>
-        </div>
-      </div>
-      <div class="p-2"></div>
-      <div class="row">
-        
-      <div class="col-sm-8">
-        <div class="card" style="width: fit-content;">
-          <h5 class="card-header" style="color: white; background-color:lightslategray;">Key Metrics-Litres</h5>
-          <div class="card-body" style="background-color: whitesmoke;">
-          <table class="table table-sm">
-          <thead>
-            <th>Product</th>
-            <th>Shift Sales</th>
-            <th>Month Avg Sales</th>
-            <th>Month to Date Sales</th>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Fuels</td>
-              <td>{{ total_sales_ltr }}</td>
-              <td>{{ avg_sales | round(2) }}</td>
-              <td>{{ mnth_sales | round(2) }}</td>
-            </tr>
-            <tr>
-              <td>Lubricants</td>
-              <td>{{ total_lubes_shift_sales }}</td>
-              <td>{{ lube_avg | round(2) }}</td>
-              <td>{{ lubes_mnth_sales | round(2) }}</td>
-            </tr>
-          </tbody>
-        </table>
-        </div>
-        </div>
-        
-      </div>
-      </div>
-       <div class ="row p-3">
-        <div class="col-sm-6">
-          <div class="card">
-            <h5 class="card-header" style="background-color: grey;" >Pumps</h5>
-            <div class="card-body">
-            <table class="table table-sm table-hover">
-            <thead>
-                <th  colspan="2">Pump Name</th>
-                <th >Opening Readings</th>
-                <th>Closing Readings</th>
-                <th >Sales</th>
-            </thead>
-            <tbody>
-              {%for pump in A %}
-              <tr>
-                <td  rowspan="2">{{ pump.name }}</td>
-                <td >Litre Reading:</td>
-                <td >{{ pump_readings[pump.name][0][0] }}</td>
-                <td >{{ pump_readings[pump.name][1][0] }}</td>
-                <td >{{ pump_readings[pump.name][1][0]-pump_readings[pump.name][0][0] }}</td>
-              </tr>
-              <tr>
-                <td>Money Reading:</td>
-                <td>{{ pump_readings[pump.name][0][1] | currencyFormat }}</td>
-                <td>{{ pump_readings[pump.name][1][1] | currencyFormat }}</td>
-                <td>{{ (pump_readings[pump.name][1][1]-pump_readings[pump.name][0][1]) | currencyFormat}}</td>
-              </tr>
-              {% endfor %}
-              </tbody>
-            </table>
-            </div>
-            </div>
-          </div>
-          <div class="col-sm-6">
-            <div class="card">
-              <h5 class="card-header" style=" background-color: grey;" >Pumps</h5>
-              <div class="card-body">
-              <table class="table table-sm table-hover">
-              <thead>
-                  <th  colspan="2">Pump Name</th>
-                  <th >Opening Readings</th>
-                  <th >Closing Readings</th>
-                  <th >Sales</th>
-              </thead>
-              <tbody>
-                {%for pump in B %}
-                <tr>
-                  <td  rowspan="2">{{ pump.name }}</td>
-                  <td >Litre Reading:</td>
-                  <td >{{ pump_readings[pump.name][0][0] }}</td>
-                  <td >{{ pump_readings[pump.name][1][0] }}</td>
-                  <td >{{ pump_readings[pump.name][1][0]-pump_readings[pump.name][0][0] }}</td>
-                </tr>
-                <tr>
-                  <td>Money Reading:</td>
-                  <td>{{ pump_readings[pump.name][0][1] | currencyFormat }}</td>
-                  <td>{{ pump_readings[pump.name][1][1] | currencyFormat }}</td>
-                  <td>{{ (pump_readings[pump.name][1][1]-pump_readings[pump.name][0][1]) | currencyFormat }}</td>
-                </tr>
-                {% endfor %}
-                </tbody>
-              </table>
-          </div>
-          </div>
-        </div>
-        </div>
-        
-          
-          
-          
-            
-            <div class="card dont" style="width: fit-content;">
-          <h5 class="card-header" style=" background-color: grey;">Tank Analysis</h5>
-          <div class="card-body">
-        <table>
-            <thead>
-              <th class="driveway-table">Tank Name</th>
-              <th class="driveway-table">Opening Dip</th>
-              <th class="driveway-table">Delivery</th>
-              <th class="driveway-table">Closing Dip </th>
-              <th class="driveway-table"> Tank Sales</th>
-              <th class="driveway-table">Pump Sales</th>
-              <th class="driveway-table">Variance</th>
-            </thead>
-            <tbody>
-              {% for tank in tanks %}
-              <tr class="driveway-table">
-                <td>{{ tank.name }}</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank.name][0] }}</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank.name][3] }} </td>
-                <td class="numbers driveway-table">{{ tank_dips[tank.name][1] }}</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank.name][0]+ tank_dips[tank.name][3]-tank_dips[tank.name][1] }}</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank.name][2] }} ltrs</td>
-                <td class="numbers driveway-table">{{ tank_dips[tank.name][2]-(tank_dips[tank.name][0]+tank_dips[tank.name][3]-tank_dips[tank.name][1]) }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>  
-        </table>
-        </div>
-            </div>
-            
-        
-        <div class ="row p-3 dont">
-          <div class="col-sm-6">
-          <div class="card" style="width: fit-content; min-height: 20rem;">
-            <h5 class="card-header" style=" background-color: grey;">Product Sales</h5>
-            <div class="card-body">
-              <table>
-              <thead class="driveway-table">
-                <th class="driveway-table">Product</th>
-                <th class="driveway-table">Cost Price</th>
-                <th class="driveway-table">Selling Price</th>
-                <th class="driveway-table">Litres</th>
-                <th class="driveway-table">Amount</th>
-              </thead>
-              <tbody>
-                {% for product in product_sales_ltr %}
-                <tr class="driveway-table">
-                  <td class="driveway-table">{{ product }}</td>
-                  <td class="driveway-table">{{ product_sales_ltr[product][1][1].cost_price }}</td>
-                  <td class="driveway-table">{{ product_sales_ltr[product][1][1].selling_price }}</td>
-                  <td class="driveway-table">{{ product_sales_ltr[product][0] }}</td>
-                  <td class="numbers driveway-table">{{ (product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price) | currencyFormat }}</td>
-                </tr>
-                {% endfor %}
-                <tr class="driveway-table">
-                  <th class="driveway-table" colspan="3">Total</th>
-                  <td class="driveway-table">{{ total_sales_ltr }}</td>
-                  <td class="numbers driveway-table">{{ total_sales_amt | currencyFormat }}</td>
-                </tr>
-              </tbody>
-            </table>
-            </div>
-          </div>
-        </div>
-          <div class="col-sm-3">
-          <div class="card" style="width: fit-content;min-height: 20rem;">
-          <h5 class="card-header" style=" background-color: grey;">Sales Breadown</h5>
-          <div class="card-body">
-        
-            <table class="table table-sm">
-              <thead>
-                <th>Account</th>
-                <th>Amount</th>
-              </thead>
-              <tbody>
-                {% for i in sales_breakdown %}
-                <tr>
-                  <td>{{ i }}</td>
-                  <td class="numbers">{{ sales_breakdown[i] | currencyFormat }}</td>
-                </tr>
-               {% endfor %}
-               <tr>
-                 <th>Total:</th>
-                 <td>{{  sales_breakdown_amt | currencyFormat }}</td>
-               </tr>
-              </tbody>
-        </table>
-        </div>
-        </div>
-        </div>
-        <div class="col-sm-3">
-          <div class="card" style="width: fit-content; min-height: 20rem;">
-          <h5 class="card-header" style=" background-color: grey;">Cash Payouts</h5>
-          <div class="card-body">
-          <table class="table table-sm">
-          <tr>
-            <th scope="row">Total Cash Sales:</th>
-            <td class="numbers">{{ sales_breakdown["Cash"] | currencyFormat }}</td>
-          </tr>
-          <th  colspan="2">Expenses:</th>
-          {% if expenses %}
-          {% for expense in expenses %}
-          <tr>
-            <td>{{ expense[1].account_name }}</td>
-            <td class="numbers">{{ expense[0].amount | currencyFormat }}</td>
-          </tr>
-          {% endfor %}
-          {% endif %}
-          <tr>
-              <th  scope="row">Expected Cash</th>
-        
-              <td class="numbers">{{ (sales_breakdown["Cash"]-total_cash_expenses) | currencyFormat }}</td>
 
-          </tr>
-          <tr>
-            <th  scope="row"> Actual Cash Banked</th>
-            {% if cash_up %}
-            <td class="numbers">{{ cash_up.actual_amount | currencyFormat }}</td>
-            {% else %}
-            <td class="numbers"></td>
-            {% endif %}
-          </tr>
-        </table>
-        </div>
-        </div>
-        </div>
-        </div>
-        
-      </div>
-    
-     <!--Shift Slection Modal-->
-   <div class="modal fade" id="ShiftSelection" tabindex="-1" role="dialog" aria-labelledby="ShiftSelectionFormModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="ShiftSelectionFormLabel">Select Shift</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-            </div>
-            <div class="modal-body">
-                <form  action="{{ url_for('get_driveway') }}" method="post" > 
-                    <div class="form-group">
-                        <input type = "date"  name="date" autocomplete="off"  autofocus class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                      <select class="form-control" name="shift">
-                        <option selected>Total</option>
-                        <option>Day</option>
-                        <option>Night</option>
-                    </select>
-                  </div>
-
-                    <button class="btn btn-primary btn-block" type="submit">Enter</button>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div class="row">
+      <div class="col-sm-6 col-lg-8 col-md-8 ">
+        <div class="card">
+          <div class="card-header" style="background-color: lightseagreen;">Select Shift</div>
+          <div class="card-body">
+          <form  action="{{ url_for('get_driveway') }}" id="form" method="post">
             
-                 </form>
+           
+            
+            <div class="form-group">
+              <label for="date">Date:</label>
+                <input type = "date"  id="end_date" name="date" autocomplete="off"  class="form-control" required>
             </div>
-            <div class="modal-footer">  
-                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            <div class="form-group">
+                <button type="submit"  id="clickbutton" class="btn btn-block btn-outline-secondary">Filter <span data-feather="filter"></span></button>
+            </div>
+            </form>
             </div>
         </div>
-    </div>
+      </div>
+  </div>
 </div>
 
-<script>
-  //Prints Driveway
-       
-  function printTable(){
-            var toprint = document.getElementById('printTable');
-            newWIn = window.open("",'PRINT', 'height=650,width=900,top=100,left=150');
-            newWIn.document.write('<html><body>');
-            newWIn.document.write('<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"/>');
-            newWIn.document.write('<link href="/static/style.css" rel="stylesheet">');
-            newWIn.document.write(toprint.innerHTML);
-            newWIn.document.write('</body></html>');
-            newWIn.print();
-            newWIn.close();
-            location.reload();
-            return false;
-        };
-</script>
+<div class="text-center">
+<h4>Shifts</h4>
+  
+          <table class="display" id="export">
+              <thead>
+                  <tr>
+                      <th>Date</th>
+                      <th>Shift Number</th>
+                      <th>Daytime</th>
+                      
+                  </tr>
+              </thead>
+              <tbody>
+                
+                {% for shift in shifts %}
+                <tr>
+                  <td>{{ shift.date }}</td>
+                  <td><a href="{{ url_for('driveway_report',shift=shift.id) }}">{{ shift.id }}</a></td>
+                  <td>{{ shift.daytime }}</td>
+                </tr>
+                  {% endfor %}
+                  {% if shifts %}
+                  <tr>
+                    <td>{{ date }}</td>
+                    <td><a href="{{ url_for('driveway_report',shift=date) }}">Total</a></td>
+                    <td></td>
+                  </tr>
+                  {% endif %}
+              </tbody>
+          </table>
+</div>               
+                          
+  
+   
 
+
+
+  
 {% endblock %}

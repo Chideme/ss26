@@ -34,6 +34,10 @@ $(document).ready(function(){
         
         
         // DataTables function
+        var p = document.getElementById('export');
+        if(p){
+
+        
         $('#export').DataTable( {
             dom: '<"pull-left"f><"pull-right"B>tip',
             
@@ -45,19 +49,20 @@ $(document).ready(function(){
                 'csv',
                 'pdf'
             ]
-        } );
+        } );}
 
         
           
 // html2pdf
+
 $('#download').on('click',function(){
     var element = document.getElementById('printTable');
     var opt = {
     margin:       [1,1,1,1],
-    filename:     document.getElementById('name').innerHTML+'.pdf',
+    filename:     'statement'+'.pdf',
     html2canvas:  { scale: 2, bottom: 0 },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' ,compressPDF: true},
-    pagebreak: { before: "table"}
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' ,compressPDF: true},
+    pagebreak: { before: "tr"}
     };
 
   

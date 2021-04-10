@@ -1452,7 +1452,28 @@ def customer(customer_id):
                         report = customer_statement(customer_id,start_date,end_date)
                         return render_template("customer.html",report=report,customer=customer,net=net,start=start_date,end=end_date)
 
-
+@app.route("/create_statement/<int:customer_id>",methods=["POST"])
+@check_schema
+@login_required
+def create_statement(customer_id):
+        """Report for single customer"""
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                customer = Customer.query.filter_by(id=customer_id).first()
+                tenant = Tenant.query.get(session['tenant'])
+                start_date = request.form.get("start_date")
+                end_date = request.form.get("end_date")
+                report =  customer_statement(customer_id,start_date,end_date)
+                dates = sorted_dates([report[i]["date"] for i in report])
+                txns=[]
+                for date in dates:
+                        date_txns = [i for i in report if report[i]["date"]==date]
+                        sorted_txns = sorted(date_txns) # sort txns as per the day
+                        for i in sorted_txns:
+                                txns.append(i)
+                start_date = datetime.strptime(start_date,"%Y-%m-%d")
+                end_date = datetime.strptime(end_date,"%Y-%m-%d")
+                return render_template("customer_statement.html",txns=txns,tenant=tenant,report=report,customer=customer,start_date=start_date,end_date=end_date)
+                
 
 @app.route("/invoice/<int:invoice_id>",methods=["GET","POST"])
 @check_schema
@@ -2314,166 +2335,68 @@ def get_driveway():
         """Query Shift Driveways for a particular day """
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 if request.method == "POST":
-                        shift_daytime = request.form.get("shift")
+                        
                         date = request.form.get("date")
-                        pumps = Pump.query.order_by(Pump.id.asc()).all()
-                        tanks = Tank.query.order_by(Tank.id.asc()).all()
-                        B = pumps[len(pumps)//2:]
-                        A = pumps[:len(pumps)//2]
-                        if shift_daytime != "Total":
-                                current_shift= Shift.query.filter(and_(Shift.date == date,Shift.daytime == shift_daytime)).first()
-                                if not current_shift:
-                                        flash("No Such Shift exists",'warning')
-                                        return redirect(url_for('get_driveway'))
-                                shift_id = current_shift.id
-                                #####
-                                prev = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
-                                prev_shift_id=prev.id if  prev else shift_id
-                                ######
-                                data = get_driveway_data(shift_id,prev_shift_id)
-                                date = current_shift.date
-                                return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
-                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
-                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
-                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
-                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
-                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
-                        else:
-                                #Driveway for the day
-                                current_shift= Shift.query.filter_by(date=date).order_by(Shift.id.desc()).first()
-                                if not current_shift:
-                                        flash('No such shift exists','warning')
-                                        return redirect(url_for('get_driveway'))
-                                shift_id = current_shift.id
-                                prev_date = current_shift.date -timedelta(days=1)
-                                prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
-                                if prev_shift:
-                                        prev_shift_id = prev_shift.id
-                                else:
-                                        prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
-                                        prev_shift_id = prev_shift.id if prev_shift else shift_id
-                                
-                                data = get_driveway_data(shift_id,prev_shift_id)
-                                date = current_shift.date
-                                return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
-                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
-                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
-                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
-                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
-                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])        
                         
+                        
+                        shifts = Shift.query.filter(Shift.date == date).all()
+                        return render_template("get_driveway.html",shifts=shifts,date=date)
                 else:
-
-                       
-                        shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
                         
-                        if shifts:
-                                current_shift = shifts[0]
-                                prev_shift = shifts[1] if len(shifts)>1 else shifts[0]
-                                shift_daytime = current_shift.daytime
-                                shift_id = current_shift.id
-                                pumps = Pump.query.order_by(Pump.id.asc()).all()
-                                tanks = Tank.query.all()
-                                B = pumps[len(pumps)//2:]
-                                A = pumps[:len(pumps)//2]
-                                date = current_shift.date
-                                prev_shift_id = prev_shift.id
-                                data = get_driveway_data(shift_id,prev_shift_id)
-                                
-                                return render_template("get_driveway.html",A=A,B=B,avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
-                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
-                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
-                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
-                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
-                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
-                                
-                        else:
-                                flash("No shift updated yet",'warning')
-                                return redirect(url_for('start_shift_update'))
+                        return render_template("get_driveway.html")
                                 
 
-@app.route("/driveway_report",methods=["GET","POST"])
+@app.route("/driveway_report/<shift>",methods=["GET","POST"])
 @check_schema
 @login_required
-def driveway_report():
+def driveway_report(shift):
 
         """Query Shift Driveways for a particular day """
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                if request.method == "POST":
-                        shift_daytime = request.form.get("shift")
-                        date = request.form.get("date")
-                        pumps = Pump.query.order_by(Pump.id.asc()).all()
-                        tanks = Tank.query.order_by(Tank.id.asc()).all()
-                       
-                        if shift_daytime != "Total":
-                                current_shift= Shift.query.filter(and_(Shift.date == date,Shift.daytime == shift_daytime)).first()
-                                if not current_shift:
-                                        flash("No Such Shift exists",'warning')
-                                        return redirect(url_for('driveway_report'))
-                                shift_id = current_shift.id
-                                #####
-                                prev = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
-                                prev_shift_id=prev.id if  prev else shift_id
-                                ######
-                                data = get_driveway_data(shift_id,prev_shift_id)
-                                date = current_shift.date
-                                return render_template("driveway_report.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
-                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
-                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
-                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
-                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
-                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
-                        else:
-                                #Driveway for the day
-                                current_shift= Shift.query.filter_by(date=date).order_by(Shift.id.desc()).first()
-                                if not current_shift:
-                                        flash('No such shift exists','warning')
-                                        return redirect(url_for('driveway_report'))
-                                shift_id = current_shift.id
-                                prev_date = current_shift.date -timedelta(days=1)
-                                prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
-                                if prev_shift:
-                                        prev_shift_id = prev_shift.id
-                                else:
-                                        prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
-                                        prev_shift_id = prev_shift.id if prev_shift else shift_id
-                                
-                                data = get_driveway_data(shift_id,prev_shift_id)
-                                date = current_shift.date
-                                return render_template("driveway_report.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
-                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
-                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
-                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
-                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
-                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])        
+                try:
+                       shift = int(shift)
+                except:
+                        shift = shift 
+        
+                if type(shift) == int:
                         
+                        shift_id = shift
+                        current_shift = Shift.query.get(shift_id)
+                        #####
+                        prev = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+                        prev_shift_id=prev.id if  prev else shift_id
+                        ######
+                        data = get_driveway_data(shift_id,prev_shift_id)
+                        date = current_shift.date
+                        return render_template("driveway_report.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                        lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
+                        products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
+                        cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
+                        shift=current_shift,date=date,shift_daytime=current_shift.daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                        pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
                 else:
-
-                       
-                        shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
-                        
-                        if shifts:
-                                current_shift = shifts[0]
-                                prev_shift = shifts[1] if len(shifts)>1 else shifts[0]
-                                shift_daytime = current_shift.daytime
-                                shift_id = current_shift.id
-                                pumps = Pump.query.order_by(Pump.id.asc()).all()
-                                tanks = Tank.query.all()
-                               
-                                date = current_shift.date
+                        #Driveway for the day
+                        date = shift
+                        current_shift= Shift.query.filter_by(date=date).order_by(Shift.id.desc()).first()
+                        shift_id = current_shift.id
+                        prev_date = current_shift.date -timedelta(days=1)
+                        prev_shift = Shift.query.filter_by(date=prev_date).order_by(Shift.id.desc()).first()
+                        if prev_shift:
                                 prev_shift_id = prev_shift.id
-                                data = get_driveway_data(shift_id,prev_shift_id)
-                                
-                                return render_template("driveway_report.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
-                                lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
-                                products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
-                                cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
-                                shift=current_shift,date=date,shift_daytime=shift_daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
-                                pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
-                                
                         else:
-                                flash("No shift updated yet",'warning')
-                                return redirect(url_for('start_shift_update'))
+                                prev_shift = Shift.query.filter(Shift.id < shift_id).order_by(Shift.id.desc()).first()
+                                prev_shift_id = prev_shift.id if prev_shift else shift_id
+                        
+                        data = get_driveway_data(shift_id,prev_shift_id)
+                        date = current_shift.date
+                        return render_template("driveway_report.html",avg_sales=data['avg_sales'],mnth_sales=data['mnth_sales'],lubes_daily_sale=data['lubes_daily_sale'],
+                        lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
+                        products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
+                        cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
+                        shift=current_shift,date=date,shift_daytime="Total",tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                        pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])        
+                        
+                
 
 @app.route("/ss26",methods=["GET"])
 @start_shift_first

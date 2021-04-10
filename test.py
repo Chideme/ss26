@@ -30,43 +30,14 @@ app.config.update(dict(
 mail = Mail(app)
 def main():
     tenant = "puma_service_station"
-    
+    customer_id=1
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
         
-        invoices = Invoice.query.all()
-        payments = CustomerPayments.query.all()
-        credit_notes = CreditNote.query.all()
-       
-        for invoice in invoices:
-            amount= round(invoice.price*invoice.qty,2)
-            date = invoice.date
-            post_balance=customer_txn_opening_balance(date,invoice.customer_id) + amount
-            txn = CustomerTxn(date=invoice.date,txn_type="Invoice",customer_id=invoice.customer_id,amount=amount,post_balance=post_balance)
-            db.session.add(txn)
-            db.session.flush()
-            invoice.customer_txn_id = txn.id
-            update_customer_balances(date,amount,invoice.customer_id,txn.txn_type)
-        for invoice in credit_notes:
-            date = invoice.date
-            amount= round(invoice.selling_price*invoice.qty,2)
-            post_balance=customer_txn_opening_balance(date,invoice.customer_id) - amount
-            txn = CustomerTxn(date=invoice.date,txn_type="Credit Note",customer_id=invoice.customer_id,amount=amount,post_balance=post_balance)
-            db.session.add(txn)
-            db.session.flush()
-            invoice.customer_txn_id = txn.id
-            update_customer_balances(date,amount,invoice.customer_id,txn.txn_type)
-        
-        for paymemt in payments:
-            date = payment.date
-            amount= payment.amount
-            post_balance=customer_txn_opening_balance(date,payment.customer_id) - amount
-            txn = CustomerTxn(date=payment.date,txn_type="Payment",customer_id=payment.customer_id,amount=amount,post_balance=post_balance)
-            db.session.add(txn)
-            db.session.flush()
-            invoice.customer_txn_id = txn.id
-            update_customer_balances(date,amount,invoice.customer_id,txn.txn_type)
-       
-        db.session.commit()
+        report = db.session.query(CustomerTxn,Invoice,CustomerPayments,CreditNote).filter(Invoice.customer_id==customer_id,
+                                        CustomerTxn.customer_id==customer_id,CustomerPayments.customer_id==customer_id,CreditNote.customer_id==customer_id,
+                                       CustomerTxn.id==Invoice.customer_txn_id,CustomerTxn.id==CreditNote.customer_txn_id,CustomerTxn.id==CustomerPayments.customer_txn_id).order_by(CustomerTxn.date).order_by(CustomerTxn.id).all()
+
+        print(report)
 with app.app_context():
         main()
 

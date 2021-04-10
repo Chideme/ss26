@@ -108,7 +108,7 @@ def admin_required(f):
 
         if session.get("role_id") != 1:
             flash("Access not allowed, Log in as the Admin",'danger')
-            return redirect(url_for('dashboard'))
+            return redirect(request.referrer)
 
         return f(*args, **kwargs)
 
@@ -130,7 +130,7 @@ def view_only(f):
 
         if session.get("role_id") == 3:
             flash("You can only view data",'danger')
-            return redirect(url_for('dashboard'))
+            return redirect(request.referrer)
 
         return f(*args, **kwargs)
 
@@ -889,27 +889,27 @@ def customer_statement(customer_id,start_date,end_date):
     invoices = db.session.query(Invoice,Product).filter(and_(Invoice.product_id == Product.id,Invoice.customer_id==customer_id,Invoice.date.between(start_date,end_date))).order_by(Invoice.date.asc()).all()
     payments = CustomerPayments.query.filter(and_(CustomerPayments.customer_id==customer_id,CustomerPayments.date.between(start_date,end_date))).order_by(CustomerPayments.date.asc()).all()     
     credit_notes = db.session.query(CreditNote,Product).filter(and_(CreditNote.product_id == Product.id,CreditNote.customer_id==customer_id,CreditNote.date.between(start_date,end_date))).order_by(CreditNote.date.asc()).all()
-    
+    report={}
     j = 1
     for invoice in invoices:
         details = "Invoice {}".format(invoice[0].id)
         amount = invoice[0].qty*invoice[0].price
         balance = db.session.query(Invoice,CustomerTxn).filter(and_(Invoice.id==invoice[0].id,CustomerTxn.customer_id==invoice[0].customer_id,CustomerTxn.id==Invoice.customer_txn_id)).first()
-        report[j] = {"date":invoice[0].date,"details":details,"dr":round(amount,2),"cr":0.00,"invoice_id":int(invoice[0].id),"qty":invoice[0].qty,"price":invoice[0].price,"product":invoice[1].name,"balance":balance[1].post_balance}
+        report[invoice[0].customer_txn_id] = {"date":invoice[0].date,"details":details,"dr":round(amount,2),"cr":0.00,"invoice_id":int(invoice[0].id),"qty":invoice[0].qty,"price":invoice[0].price,"vehicle":invoice[0].vehicle_number,"product":invoice[1].name,"balance":balance[1].post_balance}
         j +=1
     
     for invoice in credit_notes:
         details = "Credit Note {}".format(invoice[0].id)
         amount = invoice[0].qty*invoice[0].price
         balance = db.session.query(Invoice,CustomerTxn).filter(and_(Invoice.id==invoice[0].id,CustomerTxn.customer_id==invoice[0].customer_id,CustomerTxn.id==Invoice.customer_txn_id)).first()
-        report[j] = {"date":invoice[0].date,"details":details,"dr":0.00,"cr":round(amount,2),"balance":balance[1].post_balance}
+        report[invoice[0].customer_txn_id] = {"date":invoice[0].date,"details":details,"dr":0.00,"cr":round(amount,2),"balance":balance[1].post_balance}
         j +=1
 
     for payment in payments:
         amount = payment.amount
-        details  = "Payment - {}".format(payment.ref)
+        details  = "{}".format(payment.ref)
         balance = db.session.query(CustomerPayments,CustomerTxn).filter(and_(CustomerPayments.id==payment.id,CustomerTxn.customer_id==payment.customer_id,CustomerTxn.id==CustomerPayments.customer_txn_id)).first()
-        report[j] = {"date":payment.date,"details":details,"dr":0.00,"cr":round(amount,2),"balance":balance[1].post_balance}
+        report[payment.customer_txn_id] = {"date":payment.date,"details":details,"dr":0.00,"cr":round(amount,2),"balance":balance[1].post_balance}
         j += 1
     return report
 
@@ -1538,5 +1538,4 @@ def  asset_liabilities(end_date):
     liabilities_balances = sum([balances[account.id] for account in liabilities])
 
     return asset_balances,liabilities_balances
-
 
