@@ -61,17 +61,18 @@ def signup():
                 tenant = Tenant(name =company.capitalize(),address=address,company_email=email,database_url=DATABASE_URL,tenant_code=schema,phone_number=phone_number,contact_person=contact_person,schema=schema,active=date.today())
                 try:
                         db.session.add(tenant)
-                        db.session.flush
+                        db.session.flush()
                 except:
-                        flash("Account already created use login in page, or contact support",'warning')
-                        return redirect(url_for('login'))
+                        flash("An error occurred",'warning')
+                        return render_template("signup.html")
                 try:
                         tenant.tenant_code = create_tenant_code(tenant.id)
                         db.session.execute('CREATE SCHEMA IF NOT EXISTS {}'.format(schema))
                         db.session.commit()
                 except:
+                        db.session.rollback()
                         flash("Account already created use login in page or contact support",'warning')
-                        return redirect(url_for('login'))
+                        return render_template("signup.html")
                 
                 #####
                 create_tenant_tables(schema)
@@ -530,7 +531,7 @@ def end_shift_update():
                                         shift_underway[0].state = False
                                         db.session.commit()
                                         flash('Shift Ended','info')
-                                        return redirect(url_for('driveway_report'))
+                                        return redirect(url_for('driveway_report',shift=shift_id))
                                 else:
                                         flash('Something is wrong','warning')
                                         return redirect(url_for('ss26'))
@@ -546,7 +547,7 @@ def end_shift_update():
                                         db.session.commit()
                                         session["shift_underway"]=False
                                         flash('Shift Ended','info')
-                                        return redirect(url_for('driveway_report'))
+                                        return redirect(url_for('driveway_report',shift=shift_id))
                                 except:
                                         flash('Something is wrong','warning')
                                         return redirect(url_for('ss26'))
@@ -688,7 +689,7 @@ def update_sales_receipts():
                         db.session.add(invoice)
                         db.session.flush()
                         details = "Invoice {}".format(invoice.id)
-                        sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'])
+                        sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'],updated=False)
                         db.session.add(sales_journal)
                         db.session.commit()
                         
@@ -745,7 +746,7 @@ def update_deliveries():
                 db.session.add(delivery)
                 db.session.flush()
                 details = "Delivery {}".format(delivery.id)
-                delivery_journal=Journal(date=shift.date,details=details,amount=amount,dr=inventory_acc.id,cr=supplier.account_id,created_by=session['user_id'])
+                delivery_journal=Journal(date=shift.date,details=details,amount=amount,dr=inventory_acc.id,cr=supplier.account_id,created_by=session['user_id'],updated=False)
                 db.session.add(delivery_journal)
                 db.session.commit()
                 
@@ -1099,7 +1100,7 @@ def add_product():
                 
                 try:
                         product = Product(name=name,selling_price=price,qty=qty,product_type=product_type,cost_price=cost,avg_price=cost,unit=unit,account_id=account)
-                        journal = Journal(date=date,details="Opening Balance",dr=account,cr=equity.id,amount=amt,created_by=session['user_id'])
+                        journal = Journal(date=date,details="Opening Balance",dr=account,cr=equity.id,amount=amt,created_by=session['user_id'],updated=False)
                         db.session.add(product)
                         db.session.add(journal)
                         db.session.commit()
@@ -1188,7 +1189,7 @@ def add_lube_product():
                 account_id =int(request.form.get("account"))
                 s = Shift.query.order_by(Shift.id.desc()).all()
                 product = Product(name=name,selling_price=selling_price,qty=open_qty,product_type=product_type,cost_price=cost_price,avg_price=cost_price,unit=mls,account_id=account_id)
-                journal = Journal(date=date,details="Opening Balance",dr=account_id,cr=equity.id,amount=amt,created_by=session['user_id'])
+                journal = Journal(date=date,details="Opening Balance",dr=account_id,cr=equity.id,amount=amt,created_by=session['user_id'],updated=False)
                
                 
                 try:
@@ -1356,26 +1357,26 @@ def customer_payment():
                 date = request.form.get("date")
                 customer_id = request.form.get("customers")
                 customer = Customer.query.get(customer_id)
-                amount = request.form.get("amount")
+                amount = float(request.form.get("amount"))
                 ref = request.form.get("ref") or ""
                 paypoint = Account.query.get(request.form.get("paypoint"))
                 try:
-                        post_balance = customer_txn_opening_balance(date,customer_id) - amount
+                        post_balance = customer_txn_opening_balance(date,customer.id) - amount
                         txn = CustomerTxn(date=date,txn_type="Payment",customer_id=customer_id,amount=amount,post_balance=post_balance)
                         db.session.add(txn)
                         db.session.flush()
-                        update_customer_balances(date,amount,customer_id,txn.txn_type)
+                        update_customer_balances(date,amount,customer.id,txn.txn_type)
                         payment = CustomerPayments(date=date,customer_id=customer_id,amount=amount,ref=ref,customer_txn_id=txn.id)
                         cr = customer.account_id
                         dr= paypoint.id
-                        journal = Journal(date=date,details=ref,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
+                        journal = Journal(date=date,details=ref,amount=amount,dr=dr,cr=cr,created_by=session['user_id'],updated=False)
                         db.session.add(journal)
                         db.session.add(payment)
                         
                         db.session.commit()
-                except:
+                except Exception as e:
                         db.session.rollback()
-                        flash('There was error adding payment','warning')
+                        flash(str(e),'warning')
                         return redirect(url_for('customers'))
                 else:
                         
@@ -1419,7 +1420,7 @@ def credit_note():
                         db.session.flush()
                         update_customer_balances(date,amount,customer_id,txn.txn_type)
                         payment =  CustomerPayments(date=date,customer_id=customer_id,amount=-amount,ref=ref,customer_txn_id=txn.id)
-                sales_journal = Journal(date=shift.date,details=details,dr=sales_return.id,cr=customer.account_id,amount=amount,created_by=session['user_id'])
+                sales_journal = Journal(date=shift.date,details=details,dr=sales_return.id,cr=customer.account_id,amount=amount,created_by=session['user_id'],updated=False)
                 db.session.add(sales_journal)
                 db.session.add(payment)
                 db.session.add(credit_note)
@@ -1464,12 +1465,9 @@ def create_statement(customer_id):
                 end_date = request.form.get("end_date")
                 report =  customer_statement(customer_id,start_date,end_date)
                 dates = sorted_dates([report[i]["date"] for i in report])
-                txns=[]
-                for date in dates:
-                        date_txns = [i for i in report if report[i]["date"]==date]
-                        sorted_txns = sorted(date_txns) # sort txns as per the day
-                        for i in sorted_txns:
-                                txns.append(i)
+                c_txns = CustomerTxn.query.filter(CustomerTxn.customer_id==customer.id,CustomerTxn.date.between(start_date,end_date)).order_by(CustomerTxn.date.asc()).order_by(CustomerTxn.id.asc()).all()
+                txns=[i.id for i in c_txns]
+                   
                 start_date = datetime.strptime(start_date,"%Y-%m-%d")
                 end_date = datetime.strptime(end_date,"%Y-%m-%d")
                 return render_template("customer_statement.html",txns=txns,tenant=tenant,report=report,customer=customer,start_date=start_date,end_date=end_date)
@@ -1511,7 +1509,7 @@ def add_customer():
                         account_id =debtor.id
                 equity = Account.query.filter_by(account_name="Capital").first()
                 if opening_balance !=0:
-                        journal = Journal(date=date,details=details,dr=account_id,cr=equity.id,amount=opening_balance,created_by=session['user_id'])
+                        journal = Journal(date=date,details=details,dr=account_id,cr=equity.id,amount=opening_balance,created_by=session['user_id'],updated=False)
                         db.session.add(journal)
                 customer = Customer(name=name,account_id=debtor.id,phone_number=phone_number,contact_person=contact_person,opening_balance=opening_balance)
                 customer_exists = bool(Customer.query.filter_by(name=name).first())
@@ -1623,7 +1621,7 @@ def supplier_payment():
                         payment = SupplierPayments(date=date,supplier_id=supplier_id,amount=amount,ref=ref,supplier_txn_id=txn.id)
                         dr = supplier.account_id
                         cr= paypoint.id
-                        journal = Journal(date=date,details=ref,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
+                        journal = Journal(date=date,details=ref,amount=amount,dr=dr,cr=cr,created_by=session['user_id'],updated=False)
                         db.session.add(journal)
                         db.session.add(payment)
                         db.session.commit()
@@ -1674,7 +1672,7 @@ def debit_note():
                 db.session.add(debitnote)
                 db.session.flush()
                 details = "Debit note {}".format(debitnote.id)
-                journal =  Journal(date=shift.date,details=details,amount=amount,dr=supplier.account_id,cr=product.account_id,created_by=session['user_id'])
+                journal =  Journal(date=shift.date,details=details,amount=amount,dr=supplier.account_id,cr=product.account_id,created_by=session['user_id'],updated=False)
                 db.session.add(journal)
                 db.session.commit()
                 flash('Debit note created','info')
@@ -1696,7 +1694,7 @@ def add_supplier():
                 creditor = Account.query.filter_by(account_name="Accounts Payables").first()
                 equity = Account.query.filter_by(account_name="Capital").first()
                 if opening_balance != 0:
-                        journal = Journal(date=date,details=details,dr=equity.id,cr=creditor.id,amount=opening_balance,created_by=session['user_id'])
+                        journal = Journal(date=date,details=details,dr=equity.id,cr=creditor.id,amount=opening_balance,created_by=session['user_id'],updated=False)
                         db.session.add(journal)
                 supplier = Supplier(name=name,phone_number=phone_number,contact_person=contact_person,account_id=creditor.id,opening_balance=opening_balance)
                 supplier_exists = bool(Supplier.query.filter_by(name=name).first())
@@ -2438,6 +2436,64 @@ def ss26():
                         return redirect ('start_shift_update')
 
 
+
+@app.route("/driveway_pump_litre_readings",methods=["GET","POST"])
+@view_only
+@start_shift_first
+@check_schema
+@login_required
+def driveway_pump_litre_readings():
+
+
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                if request.method =="GET":
+                        shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+                        if shifts:
+                        
+                                current_shift = shifts[0]
+                                prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
+                                shift_daytime = current_shift.daytime
+                                shift_id = current_shift.id
+                                shift = Shift.query.get(shift_id)
+                                date = current_shift.date
+                                prev_shift_id = prev_shift.id
+                                pumps = Pump.query.all()
+                                pump_readings= get_pump_readings(shift_id,prev_shift_id)
+                                return render_template("driveway_pump_readings.html",pumps=pumps,pump_readings=pump_readings,shift=shift)
+                        else:
+
+                                flash("No shift started yet",'warning')
+                                return redirect ('start_shift_update')
+                else:
+                        #current_shift = Shift.query.order_by(Shift.id.desc()).first()
+                        shift_underway = Shift_Underway.query.all()
+                        current_shift = shift_underway[0].current_shift
+                        current_shift = Shift.query.get(current_shift)
+                        shift_id = current_shift.id
+                        
+                        data = request.get_json()
+                        print(data)
+                        pumps = Pump.query.all()
+                        #att = request.form.get("attendant")
+                        
+                        for pump in pumps:
+                                l_name = "row-{}-litre".format(pump.id)
+                                for i in data:
+                                        if i['name'] == l_name:
+                                                l_reading = i["value"] 
+                                reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump.id,PumpReading.shift_id== shift_id)).first()
+                                #attendant = AttendantSale(attendant_id=att,pump_id=pump_id,shift_id=shift_id)
+                                litre_reading = l_reading
+                                pump.litre_reading = litre_reading
+                                reading.litre_reading = litre_reading
+                                #db.session.add(attendant)
+                                db.session.flush()
+                        db.session.commit()
+                
+                
+                        return redirect(url_for('driveway_pump_litre_readings'))
+
+
 @app.route("/update_pump_litre_readings",methods=['POST'])
 @view_only
 @start_shift_first
@@ -2448,17 +2504,19 @@ def update_pump_litre_readings():
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 #current_shift = Shift.query.order_by(Shift.id.desc()).first()
-                shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
                 shift_underway = Shift_Underway.query.all()
                 current_shift = shift_underway[0].current_shift
                 current_shift = Shift.query.get(current_shift)
                 shift_id = current_shift.id
-                pump = Pump.query.filter_by(id=request.form.get("pump")).first()
+                pump = Pump.query.get(int(request.form.get("pump")))
                 pump_id = pump.id
                 litre_reading = request.form.get("litre_reading")
+                #att = request.form.get("attendant")
                 reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump_id,PumpReading.shift_id== shift_id)).first()
+                #attendant = AttendantSale(attendant_id=att,pump_id=pump_id,shift_id=shift_id)
                 pump.litre_reading = litre_reading
                 reading.litre_reading = litre_reading
+                #db.session.add(attendant)
                 db.session.commit()
 
                 return redirect('ss26')
@@ -2550,7 +2608,7 @@ def update_fuel_deliveries():
                 db.session.add(delivery)
                 db.session.flush()
                 details = "Delivery {}".format(delivery.id)
-                journal = Journal(date=current_shift.date,details=details,amount=amount,dr=dr,cr=cr,created_by=session['user_id'])
+                journal = Journal(date=current_shift.date,details=details,amount=amount,dr=dr,cr=cr,created_by=session['user_id'],updated=False)
                 db.session.add(journal)
                 db.session.add(delivery)
                 db.session.commit()
@@ -2652,14 +2710,14 @@ def customer_sales():
                 driver_name= request.form.get("driver_name").capitalize()
                 sales_price= float(request.form.get("sales_price"))
                 product_id = request.form.get("product")
-                qty= request.form.get("qty")
+                qty= float(request.form.get("qty"))
                 customer_id=request.form.get("customers")
                 amount= round(sales_price*qty,2)
-                post_balance=customer_txn_opening_balance(date,customer.id) + amount
+                post_balance=customer_txn_opening_balance(date,customer_id) + amount
                 txn = CustomerTxn(date=date,txn_type="Invoice",customer_id=customer_id,amount=amount,post_balance=post_balance)
                 db.session.add(txn)
                 db.session.flush()
-                update_customer_balances(date,amount,customer.id,txn.txn_type)
+                update_customer_balances(date,amount,customer_id,txn.txn_type)
                 invoice = Invoice(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name,customer_txn_id=txn.id)
                 db.session.add(invoice)
                 db.session.commit()
@@ -2768,7 +2826,7 @@ def cash_up():
                         cash_up = CashUp(date=date,shift_id=shift_id,sales_amount=cash_sales_amount,expected_amount=expected_amount,actual_amount=actual_amount,variance=variance)
                         receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=account.id,amount=amount)
                         post_balance=customer_txn_opening_balance(date,customer.id) - amount
-                        txn = CustomerTxn(date=date,txn_type="Payment",customer_id=customer.id,amount=amount,post_balance=post_balance,customer_txn_id=txn.id)
+                        txn = CustomerTxn(date=date,txn_type="Payment",customer_id=customer.id,amount=amount,post_balance=post_balance)
                         db.session.add(txn)
                         db.session.flush()
                         update_customer_balances(date,amount,customer.id,txn.txn_type)
@@ -2812,7 +2870,7 @@ def pay_outs():
                 pay_out_account= request.form.get("pay_out_account")
                 details = "Shift {} expenses".format(shift_id)
                 pay_out = PayOut(source_account=source_account,pay_out_account=pay_out_account,date=date,shift_id=shift_id,amount=amount)
-                journal = Journal(date=date,details=details,amount=amount,dr=pay_out_account,cr=source_account,created_by=session['user_id'])
+                journal = Journal(date=date,details=details,amount=amount,dr=pay_out_account,cr=source_account,created_by=session['user_id'],updated=False)
                 db.session.add(pay_out)
                 db.session.add(journal)
                 db.session.commit()
@@ -3054,7 +3112,7 @@ def update_lubes_deliveries():
                                 db.session.add(delivery)
                                 db.session.flush()
                                 details ="Delivery {}".format(delivery.id)
-                                journal = Journal(date=date,details=details,amount=amount,dr=inventory.id,cr=supplier.account_id,created_by=session['user_id'])
+                                journal = Journal(date=date,details=details,amount=amount,dr=inventory.id,cr=supplier.account_id,created_by=session['user_id'],updated=False)
                                 db.session.add(delivery)
                                 db.session.add(journal)
                                 db.session.commit()

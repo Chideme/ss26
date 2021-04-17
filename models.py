@@ -85,6 +85,18 @@ class User(db.Model):
     __table_args__={'schema':'tenant'}
 
 
+class Attendant(db.Model):
+    __tablename__="attendants"
+    
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    name = db.Column(db.String,nullable=False,unique=True)
+    
+    def __repr__(self):
+        name =self.name
+        return "{}".format(name)
+
+    __table_args__={'schema':'tenant'}
+
 
 class Shift(db.Model):
     __tablename__="shift"
@@ -190,7 +202,17 @@ class TankDip(db.Model):
     __table_args__={'schema':'tenant'}
 
 
+class AttendantSale(db.Model):
+    __tablename__="attendant_sales"
+    
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    attendat_id = db.Column(db.Integer, db.ForeignKey("attendants.id"), nullable=False)
+    pump_id = db.Column(db.Integer, db.ForeignKey("pumps.id"), nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    
+    
 
+    __table_args__={'schema':'tenant'}
 
 
 class Customer(db.Model):
@@ -273,7 +295,6 @@ class CustomerTxn(db.Model):
     amount= db.Column(db.Float,nullable=False)
     post_balance= db.Column(db.Float,nullable=False)
    
-
     __table_args__={'schema':'tenant'}
 
     
@@ -378,7 +399,7 @@ class PayOut(db.Model):
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
-    amount= db.Column(db.Integer,nullable=False)
+    amount= db.Column(db.Float,nullable=False)
     source_account= db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
     pay_out_account = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
 
@@ -389,10 +410,10 @@ class CashUp(db.Model):
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
-    sales_amount = db.Column(db.Integer,nullable=False)
-    expected_amount= db.Column(db.Integer,nullable=False) #sales- exp
-    actual_amount= db.Column(db.Integer,nullable=False) # cash banked
-    variance = db.Column(db.Integer,nullable=False) #expected-actual
+    sales_amount = db.Column(db.Float,nullable=False)
+    expected_amount= db.Column(db.Float,nullable=False) #sales- exp
+    actual_amount= db.Column(db.Float,nullable=False) # cash banked
+    variance = db.Column(db.Float,nullable=False) #expected-actual
 
 
 class LubesCashUp(db.Model):
@@ -401,10 +422,10 @@ class LubesCashUp(db.Model):
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
-    sales_amount = db.Column(db.Integer,nullable=False)
-    expected_amount= db.Column(db.Integer,nullable=False) #sales- exp
-    actual_amount= db.Column(db.Integer,nullable=False) # cash banked
-    variance = db.Column(db.Integer,nullable=False)
+    sales_amount = db.Column(db.Float,nullable=False)
+    expected_amount= db.Column(db.Float,nullable=False) #sales- exp
+    actual_amount= db.Column(db.Float,nullable=False) # cash banked
+    variance = db.Column(db.Float,nullable=False)
 
 
 class Price(db.Model):

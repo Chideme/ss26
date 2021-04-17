@@ -306,6 +306,10 @@ def product_sales_litres(shift_id,prev_shift_id):
                 product_sales[product.name] = (sales,prices)
             else:
                 product_sales[product.name] = (sales,product)
+        else:
+            prices = db.session.query(Product,Price).filter(and_(Product.id==Price.product_id,Price.shift_id==shift_id,Product.id==product.id)).first()
+            sales = 0
+            product_sales[product.name] = (sales,prices)
                 
     return product_sales
 
@@ -948,7 +952,7 @@ def supplier_statement(supplier_id,start_date,end_date):
     deliveries = db.session.query(Delivery,Product).filter(and_(Delivery.product_id == Product.id,Delivery.supplier==supplier_id,Delivery.date.between(start_date,end_date))).all()
     payments = SupplierPayments.query.filter(and_(SupplierPayments.supplier_id==supplier_id,SupplierPayments.date.between(start_date,end_date))).all()     
     debit_notes =  db.session.query(DebitNote,Product).filter(and_(DebitNote.product_id == Product.id,DebitNote.supplier==supplier_id,DebitNote.date.between(start_date,end_date))).all()
-    
+    report = {}
     j = 1
     for delivery in deliveries:
         details = str(delivery[0].document_number)
@@ -1010,7 +1014,7 @@ def fuel_cogs_amt(shift_id):
     prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
     tanks = get_tank_dips(shift_id,prev_shift.id)
     sales = 0.00
-    variance = 0.00
+   
     for tank in tanks:
         i = db.session.query(Product,Tank).filter(Product.id ==Tank.product_id,Tank.id==int(tanks[tank][4])).first()
         avg_price = i[0].avg_price
@@ -1049,7 +1053,7 @@ def post_fuel_cogs_journal(shift_id):
     #   db.session.add(variance_journal)
      #   db.session.flush()
     if amount:
-        cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount,dr=cogs.id,cr=inventory.id,created_by=1)
+        cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount,dr=cogs.id,cr=inventory.id,created_by=session['user_id'],updated=False)
         db.session.add(cogs_journal)
         db.session.flush()
     return True
@@ -1062,7 +1066,7 @@ def post_lubes_cogs_journal(shift_id):
     cogs = Account.query.filter_by(account_name="Lubes COGS").first()
     detail_cogs = "Shift {} cost of goods sold".format(shift_id)
     if amount:
-        cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount,dr=cogs.id,cr=inventory.id,created_by=session['user_id'])
+        cogs_journal =Journal(date=shift.date,details=detail_cogs,amount=amount,dr=cogs.id,cr=inventory.id,created_by=session['user_id'],updated=False)
         db.session.add(cogs_journal)
         db.session.flush()
     return True
@@ -1093,7 +1097,7 @@ def post_fuel_sales_journal(shift_id):
     coupon_sales_amt = coupon_amount(shift_id)
     non_cash_receivable_amt = total_receivable_amount - (coupon_sales_amt + cash_sales_amt)
     if non_cash_receivable_amt:
-        sales_journal=Journal(date=shift.date,details=details,amount=non_cash_receivable_amt,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
+        sales_journal=Journal(date=shift.date,details=details,amount=non_cash_receivable_amt,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'],updated=False)
         db.session.add(sales_journal)
         db.session.flush()
     return True
@@ -1110,7 +1114,7 @@ def post_coupon_sales_journal(shift_id):
         coupon_sales = db.session.query(CouponSale,Coupon,Product).filter(and_(CouponSale.coupon_id==coupon.id,CouponSale.shift_id==shift_id,CouponSale.product_id==Product.id,CouponSale.coupon_id==Coupon.id)).all()
         amount = sum([(i[0].qty* i[1].coupon_qty * i[2].selling_price ) for i in coupon_sales ])
         if amount:
-            coupon_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'])
+            coupon_journal=Journal(date=shift.date,details=details,amount=amount,dr=customer.account_id,cr=sales_acc.id,created_by=session['user_id'],updated=False)
             db.session.add(coupon_journal)
             db.session.flush()
     return True
@@ -1123,7 +1127,7 @@ def post_cash_sales_journal(shift_id):
     details = "Shift {} sales receipts".format(shift_id)
     for receipt in sales_receipts:
         if receipt.amount !=0:
-            cash_journal = Journal(date=shift.date,details=details,amount=receipt.amount,dr=receipt.account_id,cr=sales_acc.id,created_by=session['user_id'])
+            cash_journal = Journal(date=shift.date,details=details,amount=receipt.amount,dr=receipt.account_id,cr=sales_acc.id,created_by=session['user_id'],updated=False)
             db.session.add(cash_journal)
             db.session.flush()
     return True
@@ -1140,7 +1144,7 @@ def post_lubes_sales_journal(shift_id):
         details = "Shift {} lubricants sales".format(shift_id)
         
         if amount:
-            sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'])
+            sales_journal=Journal(date=shift.date,details=details,amount=amount,dr=debtor.id,cr=sales_acc.id,created_by=session['user_id'],updated=False)
             db.session.add(sales_journal)
         db.session.flush()
     return True
