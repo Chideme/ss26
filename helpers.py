@@ -802,6 +802,27 @@ def get_tank_dips(shift_id,prev_shift_id):
     return tank_dips
 
 
+def get_attendant_sales(shift_id,prev_shift_id):
+    sales = {}
+    pump_readings = get_pump_readings(shift_id,prev_shift_id)
+    att_sales = AttendantSale.query.filter(and_(AttendantSale.shift_id ==shift_id,AttendantSale.attendant_id == attendant.id)).all()
+    for att_sale in att_sales:
+        #pump_readings[pump.name]=[prev_shift_reading,current_shift_reading]
+        
+        pump = Pump.query.get(att_sale.pump_id)
+        litres = pump_readings[pump.name][1]-pump_readings[pump.name][0]
+        product =   db.session.query(Pump,Tank,Product).filter(and_(Pump.tank_id==Tank.id,Tank.product_id==Product.id,Pump.id=pump.id)).first()
+        price = Price.query.filter(and_(Price.product_id==product[2].id,Price.shift_id==shift_id)).first()
+        amount = price.selling_price * litres
+        if att_sale.attendant_id in sales:
+            sales[att_sale.attendant_id]["litres"]+= litres
+            sales[att_sale.attendant_id]["amount"]+= amount
+        else:
+
+            sales[att_sale.attendant_id] = {"litres":litres,"amount":amount}
+    return sales
+
+
 def get_driveway_data(shift_id,prev_shift_id):
     current_shift = Shift.query.get(shift_id)
     data = {}
@@ -846,6 +867,7 @@ def get_driveway_data(shift_id,prev_shift_id):
     data['mnth_sales'] = sum([daily_sales[i] for i in daily_sales])
     lubes_daily_sale = lubes_daily_sales(get_month_day1(end_date),end_date)
     data['lubes_daily_sale']= lubes_daily_sale
+    data['attendant_sales'] = get_attendant_sales(shift_id,prev_shift_id)
     
     data['lubes_mnth_sales'] = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
     data['lube_avg'] = lubes_sales_avg(get_30_day_before(end_date),end_date)

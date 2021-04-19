@@ -68,6 +68,8 @@ def signup():
                 try:
                         tenant.tenant_code = create_tenant_code(tenant.id)
                         db.session.execute('CREATE SCHEMA IF NOT EXISTS {}'.format(schema))
+                        logged_in_users = LoggedInUsers(tenant_id=tenant.id,user_count=0)
+                        db.session.add(logged_in_users)
                         db.session.commit()
                 except:
                         db.session.rollback()
@@ -162,9 +164,16 @@ def login():
                 if company:
                         today = date.today()
                         if active > today:
-                                session['tenant'] = company.id
-                                session["schema"] = company.schema
-                                return redirect(url_for('user_login'))
+                                logged_in_users = LoggedInUsers.query.filter_by(tenant_id=tenant_id).first()
+                                if logged_in_users < 4:
+
+                                        session['tenant'] = company.id
+                                        session["schema"] = company.schema
+                                        logged_in_users.user_count += 1
+                                        return redirect(url_for('user_login'))
+                                else:
+                                        flash('Current number of user reached, ask other users to sign out','warning')
+                                        return render_template("login.html")
 
                         else:
                                 sub = Subscriptions.query.filter_by(tenant_id=tenant_id).first()
@@ -236,6 +245,8 @@ def user_login():
 @check_schema
 def logout():
         """Logs out User"""
+        logged_in_users = LoggedInUsers.query.filter_by(tenant_id=session['tenant']).first()
+        logged_in_users.user_count  -= 1
         session.clear()
         
         return render_template("login.html")
@@ -2460,12 +2471,12 @@ def driveway_pump_readings():
                                 
                                 shift_id = current_shift.id
                                 shift = Shift.query.get(shift_id)
-                               
+                                attendants = User.query.all()
                                 prev_shift_id = prev_shift.id
                                 pumps = Pump.query.all()
                                 pump_readings= get_pump_readings(shift_id,prev_shift_id)
                                 
-                                return render_template("driveway_pump_readings.html",pump_readings=pump_readings,pumps=pumps,shift=shift)
+                                return render_template("driveway_pump_readings.html",attendants=attendants,pump_readings=pump_readings,pumps=pumps,shift=shift)
                         else:
 
                                 flash("No shift started yet",'warning')
@@ -2480,7 +2491,7 @@ def driveway_pump_readings():
                         data = request.get_json()
                         print(data)
                         pumps = Pump.query.all()
-                        #att = request.form.get("attendant")
+                        
                         
                         for pump in pumps:
                                 l_name = "row-{}-litre".format(pump.id)
@@ -2491,14 +2502,14 @@ def driveway_pump_readings():
                                         if i['name'] == m_name:
                                                 m_reading = i["value"]
                                 reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump.id,PumpReading.shift_id== shift_id)).first()
-                                #attendant = AttendantSale(attendant_id=att,pump_id=pump_id,shift_id=shift_id)
+                                attendant = AttendantSale(attendant_id=att,pump_id=pump_id,shift_id=shift_id)
                                 litre_reading = l_reading
                                 money_reading = m_reading
                                 pump.litre_reading = litre_reading
                                 reading.litre_reading = litre_reading
                                 pump.money_reading = money_reading
                                 reading.money_reading = money_reading
-                                #db.session.add(attendant)
+                                db.session.add(attendant)
                                 db.session.flush()
                         db.session.commit()
                 
@@ -2568,10 +2579,25 @@ def driveway_lube_qty():
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 #current_shift = Shift.query.order_by(Shift.id.desc()).first()
                 req =request.form.get("shift_id")# if the update is from  editing a previous shift
-                product = Product.query.filter_by(id=request.form.get("product")).first() 
+                
                 if request.method=="GET":
-                                        
-                                        
+                        shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+                        if shifts:
+                                current_shift = shifts[0]
+                                prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
+                                shift_id = current_shift.id
+                                shift = Shift.query.get(shift_id)
+                                prev_shift_id = prev_shift.id
+                                products = Product.query.filter_by(product_type="Lubricants").order_by(Product.id.asc()).all()
+                                product_sales = lube_sales(shift_id,prev_shift_id)               
+                                total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
+                                total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
+                                suppliers = Supplier.query.all()
+                                return render_template("shift_lube_sales.html",product_sales=product_sales,shift=shift,suppliers=suppliers,products=products)
+                        else:
+                        
+                                flash("No shift started yet",'warning')
+                                return redirect ('start_shift_update')          
                 else:
                                 
                         shift_underway = Shift_Underway.query.all()
@@ -2579,20 +2605,28 @@ def driveway_lube_qty():
                         current_shift = Shift.query.get(current_shift)
                         shift_id = current_shift.id
                         date = current_shift.date
-                        
+                        products = Product.query.filter_by(product_type="Lubricants").order_by(Product.id.asc()).all()
+                        data = request.get_json()
                         try:
-                                lube_qty = LubeQty.query.filter(and_(LubeQty.shift_id==shift_id,LubeQty.product_id==product.id)).first()
-                                product.qty = request.form.get("qty")
-                                lube_qty.qty = request.form.get("qty")
+                                for product in products:
+                                        p_name = "row-{}-qty".format(product.id)
+                               
+                                        for i in data:
+                                                if i['name'] == p_name:
+                                                        qty = i["value"]
+                                        lube_qty = LubeQty.query.filter(and_(LubeQty.shift_id==shift_id,LubeQty.product_id==product.id)).first()
+                                        product.qty = qty
+                                        lube_qty.qty = qty
+                                        db.session.flush()
                                 db.session.commit()
                                
                         except:
                                 db.session.rollback()
                                 flash("There was an error updating qty",'warning')
-                                return redirect('shift_lube_sales')
+                                return redirect('driveway_lube_qty')
                         else:
                                 flash('Done','info')
-                                return redirect('shift_lube_sales')
+                                return redirect('driveway_lube_qty')
                             
 
 

@@ -139,6 +139,76 @@ document.addEventListener('DOMContentLoaded',() => {
     return false;  
 
     }
+    /// tank variance
+    document.querySelector('#tank').onchange = () => {
+    const request = new XMLHttpRequest()
+    const start_date = document.querySelector('#start_date').value;
+    const end_date = document.querySelector('#end_date').value;
+    const product = document.querySelector('#product').value;
+    const frequency = document.querySelector('#frequency').value;
+    const tank = document.querySelector('#tank').value;
+    request.open('POST','/dashboard/reports');
+
     
+    // when request finishes
+    request.onload = () => {
+
+      const report = JSON.parse(request.responseText);
+      
+      var tank_dates = report.TankDate;
+      var tank_data = report.TankData;
+
+
+
+         
+         
+          var t_ctx = document.getElementById("TankVariance");
+          var tankChart = new Chart(t_ctx, {
+            type: 'line',
+            data: {
+              labels: tank_dates,
+              datasets: [{
+                data: tank_data,
+                lineTension: 0,
+                backgroundColor: '#333',
+                borderColor: 'rgba(255,0,0,255)',
+                borderWidth: 4,
+                pointBackgroundColor: '#007bff'
+              }]
+            },
+            options: {
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    beginAtZero: true
+                  }
+                }]
+              },
+              legend: {
+                display: false,
+              },
+              title: {
+                display:true,
+                fontColor: 'rgba(255,255,255,255)',
+                fontStyle: '#bold',
+                text:'Tank Variance Analysis'
+              }
+            }
+          });
+
+    }
+
+    const data = new FormData();
+    data.append('start_date',start_date);
+    data.append('end_date',end_date);
+    data.append('frequency',frequency);
+    data.append('product',product);
+    data.append('tank',tank);
+    //send request
+    request.send(data);
+
+    return false;  
+
+    }
     });
 

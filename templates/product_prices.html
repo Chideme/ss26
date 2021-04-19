@@ -4,16 +4,7 @@
 
 
 {% block main %}
-      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
-        
-        
-        <div class="btn-toolbar mb-2 mb-md-0">
-        
-          <div class="btn-group mr-2">
-            <button  type="button" id="download" class="btn  btn-outline-secondary"><a href="{{ url_for('driveway_report',shift=shift.id) }}" >View Report</a></button>
-          </div>
-        </div>
-      </div>
+      
 
     
       
@@ -36,12 +27,12 @@
                         <tr>
                             <td>{{ product.name }}</td>
                             <td>
-                                <input id="row-{{ product.id }}-cp" name="row-{{ product.id }}-cp"
+                                <input type="number" step="0.01"  id="row-{{ product.id }}-cp" name="row-{{ product.id }}-cp" class="form-control"
                                 value="{{ product_sales_ltr[product.name][1][1].cost_price }}">
                                 </input>
                             </td>
                             <td>
-                                <input id="row-{{ product.id }}-sp" name="row-{{ product.id }}-sp"
+                                <input type="number" step="0.01"  id="row-{{ product.id }}-sp" name="row-{{ product.id }}-sp" class="form-control"
                                 value="{{ product_sales_ltr[product.name][1][1].selling_price }}">
                                 </input>
                             </td>
@@ -52,12 +43,12 @@
                          <tr>
                             <td>{{ product.name }}</td>
                             <td>
-                                <input id="row-{{ product.id }}-cp" name="row-{{ product.id }}-cp"
+                                <input type="number" step="0.01" id="row-{{ product.id }}-cp" name="row-{{ product.id }}-cp" class="form-control"
                                 value="{{ product_sales[product.name][3] }}">
                             </input>
                             </td>
                             <td>
-                                <input id="row-{{ product.id }}-sp" name="row-{{ product.id }}-sp"
+                                <input type="number" step="0.01"  id="row-{{ product.id }}-sp" name="row-{{ product.id }}-sp" class="form-control"
                                 value="{{ product_sales[product.name][4]  }}">
                                 </input>
                             </td>
@@ -83,7 +74,7 @@
         
                     <div class="btn-group mr-2">
                     
-                    <button type="submit" id="update" class="btn  btn-outline-primary" >Update Readings</button>
+                    <button type="submit" id="update" class="btn  btn-outline-primary" >Update Prices</button>
                     </div>
                 </div>
             </div>

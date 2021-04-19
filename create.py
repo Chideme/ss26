@@ -36,8 +36,8 @@ def main():
     op.bulk_insert(roles_table,
     [
         {'name':'admin'},
-        {'name':'supervisor'},
-        {'name':'view-only'}
+        {'name':'assistant manager'},
+        {'name':'attendant'}
     ],
      multiinsert=False)
     # 

@@ -23,6 +23,17 @@ class Tenant(db.Model):
 
     __table_args__={'schema':'public'}
 
+class LoggedInUsers(db.Model):
+    __tablename__="logged_in_users"
+   
+    id = db.Column(db.Integer,primary_key=True,nullable=False)
+    tenant_id = db.Column(db.Integer,db.ForeignKey("public.tenants.id"),nullable=False)
+    user_count =  db.Column(db.Integer,nullable=False)
+    
+    
+
+    __table_args__={'schema':'public'}
+
 class SystemAdmin(db.Model):
     __tablename__="system_admin" 
    
@@ -84,18 +95,18 @@ class User(db.Model):
 
     __table_args__={'schema':'tenant'}
 
-
-class Attendant(db.Model):
-    __tablename__="attendants"
+class AttendantSale(db.Model):
+    __tablename__="attendant_sales"
     
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    name = db.Column(db.String,nullable=False,unique=True)
-    
-    def __repr__(self):
-        name =self.name
-        return "{}".format(name)
+    attendat_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    pump_id = db.Column(db.Integer, db.ForeignKey("pumps.id"), nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+
 
     __table_args__={'schema':'tenant'}
+
+
 
 
 class Shift(db.Model):
@@ -202,17 +213,7 @@ class TankDip(db.Model):
     __table_args__={'schema':'tenant'}
 
 
-class AttendantSale(db.Model):
-    __tablename__="attendant_sales"
-    
-    id = db.Column(db.Integer,primary_key=True,nullable=False)
-    attendat_id = db.Column(db.Integer, db.ForeignKey("attendants.id"), nullable=False)
-    pump_id = db.Column(db.Integer, db.ForeignKey("pumps.id"), nullable=False)
-    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
-    
-    
 
-    __table_args__={'schema':'tenant'}
 
 
 class Customer(db.Model):

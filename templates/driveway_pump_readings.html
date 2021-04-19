@@ -57,7 +57,7 @@
                 <td >{{ pump_readings[pump.name][1][1]-pump_readings[pump.name][0][1] }}</td>
                 <td>
                     <select class="form-control" name="attendant" required>
-                        <option selected>Choose..</option>
+                        <option selected></option>
                         {% for  attendant in attendants %}
                         <option  value="{{ attendant.id }}">{{ attendant.name }}</option>
                         {% endfor %}
