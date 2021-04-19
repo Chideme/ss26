@@ -18,20 +18,21 @@
             </a>
           </h6>
           <ul class="nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('ss26') }}">
-                  <span data-feather="plus-circle"></span>
-                  <span style="color: lightseagreen;">
-                  Current Driveway Form
-                  </span>
-                </a>
-              </li>
+            
 
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('driveway_pump_litre_readings') }}">
+                <a class="nav-link" href="{{ url_for('driveway_pump_readings') }}">
                   <span data-feather="plus-circle"></span>
                   <span style="color: lightseagreen;">
                   Pump Readings
+                  </span>
+                </a>
+              </li>
+               <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('driveway_tank_dips') }}">
+                  <span data-feather="plus-circle"></span>
+                  <span style="color: lightseagreen;">
+                  Tank Dips
                   </span>
                 </a>
               </li>
@@ -39,15 +40,39 @@
                 <a class="nav-link" href="{{ url_for('shift_lube_sales') }}">
                   <span data-feather="plus-circle"></span>
                   <span style="color: lightseagreen;">
-                  Lubricants Sales Update
+                  Lubricants Stock Take
                   </span>
                 </a>
               </li>
+               <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('product_prices') }}">
+                <span data-feather="plus-circle"></span>
+                <span style="color: lightseagreen;">
+                Update Product Prices
+                </span>
+              </a>
+            </li>
+              <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('driveway_invoices') }}">
+                <span data-feather="plus-circle"></span>
+                <span style="color: lightseagreen;">
+                Sales Invoices
+                </span>
+              </a>
+            </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('start_shift_update') }}">
                 <span data-feather="plus-circle"></span>
                 <span style="color: lightseagreen;">
                 Start Shift Update
+                </span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('end_shift_update') }}">
+                <span data-feather="plus-circle"></span>
+                <span style="color: lightseagreen;">
+                End Shift Update
                 </span>
               </a>
             </li>

@@ -507,7 +507,7 @@ def start_shift_update():
                 else:
                         return render_template("start_shift_update.html")
 
-@app.route("/end_shift_update",methods=["POST"])
+@app.route("/end_shift_update",methods=["GET","POST"])
 @view_only
 @start_shift_first
 @check_schema
@@ -516,44 +516,48 @@ def end_shift_update():
         "End Update of Shift Figures"
         # first check if cash up on lubes has been done
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
-                shift_underway = Shift_Underway.query.all()
-                shift_id = shift_underway[0].current_shift
-                lubes = Product.query.filter_by(product_type="Lubricants").all()
-                check_cash_up = CashUp.query.filter_by(shift_id=shift_id).first()
-                check_lube_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
-                if lubes:
-                        if check_lube_cash_up :
-                                if check_cash_up:
-                               
-                                       
-                                        post_all_shift_journals(shift_id)
-                                        session["shift_underway"]=False
-                                        shift_underway[0].state = False
-                                        db.session.commit()
-                                        flash('Shift Ended','info')
-                                        return redirect(url_for('driveway_report',shift=shift_id))
-                                else:
-                                        flash('Something is wrong','warning')
-                                        return redirect(url_for('ss26'))
-                        else:
-                                flash('Do cash up on lubes','warning')
-                                return redirect(url_for('shift_lube_sales'))
+                if request.method == "GET":
+                        return render_template("end_shift_update.html")
                 else:
-                        if check_cash_up:
 
-                                try:
-                                        post_all_shift_journals(shift_id)
-                                        shift_underway[0].state = False
-                                        db.session.commit()
-                                        session["shift_underway"]=False
-                                        flash('Shift Ended','info')
-                                        return redirect(url_for('driveway_report',shift=shift_id))
-                                except:
-                                        flash('Something is wrong','warning')
-                                        return redirect(url_for('ss26'))
+                        shift_underway = Shift_Underway.query.all()
+                        shift_id = shift_underway[0].current_shift
+                        lubes = Product.query.filter_by(product_type="Lubricants").all()
+                        check_cash_up = CashUp.query.filter_by(shift_id=shift_id).first()
+                        check_lube_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
+                        if lubes:
+                                if check_lube_cash_up :
+                                        if check_cash_up:
+                                
+                                        
+                                                post_all_shift_journals(shift_id)
+                                                session["shift_underway"]=False
+                                                shift_underway[0].state = False
+                                                db.session.commit()
+                                                flash('Shift Ended','info')
+                                                return redirect(url_for('driveway_report',shift=shift_id))
+                                        else:
+                                                flash('Something is wrong','warning')
+                                                return redirect(url_for('ss26'))
+                                else:
+                                        flash('Do cash up on lubes','warning')
+                                        return redirect(url_for('shift_lube_sales'))
                         else:
-                                flash('Do cash up ','warning')
-                                return redirect(url_for('ss26')) 
+                                if check_cash_up:
+
+                                        try:
+                                                post_all_shift_journals(shift_id)
+                                                shift_underway[0].state = False
+                                                db.session.commit()
+                                                session["shift_underway"]=False
+                                                flash('Shift Ended','info')
+                                                return redirect(url_for('driveway_report',shift=shift_id))
+                                        except:
+                                                flash('Something is wrong','warning')
+                                                return redirect(url_for('ss26'))
+                                else:
+                                        flash('Do cash up ','warning')
+                                        return redirect(url_for('ss26')) 
 
         
 
@@ -1593,9 +1597,10 @@ def suppliers():
                 tanks = Tank.query.all()
                 paypoints = Account.query.filter(Account.code.between(500,599)).all()
                 # calculate balances
+                end_date = date.today()
                 balances = {}
                 for supplier in suppliers:
-                        balances[supplier]= supplier_txn_opening_balance(end_date,customer.id)
+                        balances[supplier]= supplier_txn_opening_balance(end_date,supplier.id)
                 return render_template("suppliers.html",products=products,tanks=tanks,suppliers=suppliers,balances=balances,paypoints=paypoints)
 
 
@@ -2437,12 +2442,12 @@ def ss26():
 
 
 
-@app.route("/driveway_pump_litre_readings",methods=["GET","POST"])
+@app.route("/driveway_pump_readings",methods=["GET","POST"])
 @view_only
 @start_shift_first
 @check_schema
 @login_required
-def driveway_pump_litre_readings():
+def driveway_pump_readings():
 
 
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
@@ -2452,14 +2457,15 @@ def driveway_pump_litre_readings():
                         
                                 current_shift = shifts[0]
                                 prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
-                                shift_daytime = current_shift.daytime
+                                
                                 shift_id = current_shift.id
                                 shift = Shift.query.get(shift_id)
-                                date = current_shift.date
+                               
                                 prev_shift_id = prev_shift.id
                                 pumps = Pump.query.all()
                                 pump_readings= get_pump_readings(shift_id,prev_shift_id)
-                                return render_template("driveway_pump_readings.html",pumps=pumps,pump_readings=pump_readings,shift=shift)
+                                
+                                return render_template("driveway_pump_readings.html",pump_readings=pump_readings,pumps=pumps,shift=shift)
                         else:
 
                                 flash("No shift started yet",'warning')
@@ -2478,20 +2484,178 @@ def driveway_pump_litre_readings():
                         
                         for pump in pumps:
                                 l_name = "row-{}-litre".format(pump.id)
+                                m_name = "row-{}-money".format(pump.id)
                                 for i in data:
                                         if i['name'] == l_name:
-                                                l_reading = i["value"] 
+                                                l_reading = i["value"]
+                                        if i['name'] == m_name:
+                                                m_reading = i["value"]
                                 reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump.id,PumpReading.shift_id== shift_id)).first()
                                 #attendant = AttendantSale(attendant_id=att,pump_id=pump_id,shift_id=shift_id)
                                 litre_reading = l_reading
+                                money_reading = m_reading
                                 pump.litre_reading = litre_reading
                                 reading.litre_reading = litre_reading
+                                pump.money_reading = money_reading
+                                reading.money_reading = money_reading
                                 #db.session.add(attendant)
                                 db.session.flush()
                         db.session.commit()
                 
                 
-                        return redirect(url_for('driveway_pump_litre_readings'))
+                        return redirect(url_for('driveway_pump_readings'))
+
+@app.route("/driveway_tank_dips",methods=['GET','POST'])
+@view_only
+@start_shift_first
+@check_schema
+@login_required
+def driveway_tank_dips():
+
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                #current_shift = Shift.query.order_by(Shift.id.desc()).first()
+                if request.method =='GET':
+                        shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+                        if shifts:
+                        
+                                current_shift = shifts[0]
+                                prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
+                                
+                                shift_id = current_shift.id
+                                shift = Shift.query.get(shift_id)
+                               
+                                prev_shift_id = prev_shift.id
+                                tanks = Tank.query.all()
+                                tank_dips= get_tank_dips(shift_id,prev_shift_id)
+                                suppliers = Supplier.query.all()
+                                return render_template("driveway_tank_dips.html",tank_dips=tank_dips,tanks=tanks,shift=shift,suppliers=suppliers)
+                        else:
+                        
+                                flash("No shift started yet",'warning')
+                                return redirect ('start_shift_update') 
+                else:
+
+                        shift_underway = Shift_Underway.query.all()
+                        current_shift = shift_underway[0].current_shift
+                        current_shift = Shift.query.get(current_shift)
+                        shift_daytime = current_shift.daytime
+                        shift_id = current_shift.id
+                        data = request.get_json()
+                        
+                        tanks = Tank.query.all()
+                        for tank in tanks:
+                                d_name = "row-{}-dip".format(tank.id)
+                               
+                                for i in data:
+                                        if i['name'] == d_name:
+                                                tank_dip = i["value"]
+                                shift_dip = TankDip.query.filter(and_(TankDip.tank_id == tank.id,TankDip.shift_id ==shift_id)).first()
+                                shift_dip.dip = tank_dip
+                                tank.dip = tank_dip
+                                db.session.flush()
+                        db.session.commit()
+                        return redirect(url_for('driveway_tank_dips'))
+
+
+
+
+@app.route("/driveway_lube_qty",methods=['GET','POST'])
+@view_only
+@check_schema
+@login_required
+def driveway_lube_qty():
+
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                #current_shift = Shift.query.order_by(Shift.id.desc()).first()
+                req =request.form.get("shift_id")# if the update is from  editing a previous shift
+                product = Product.query.filter_by(id=request.form.get("product")).first() 
+                if request.method=="GET":
+                                        
+                                        
+                else:
+                                
+                        shift_underway = Shift_Underway.query.all()
+                        current_shift = shift_underway[0].current_shift
+                        current_shift = Shift.query.get(current_shift)
+                        shift_id = current_shift.id
+                        date = current_shift.date
+                        
+                        try:
+                                lube_qty = LubeQty.query.filter(and_(LubeQty.shift_id==shift_id,LubeQty.product_id==product.id)).first()
+                                product.qty = request.form.get("qty")
+                                lube_qty.qty = request.form.get("qty")
+                                db.session.commit()
+                               
+                        except:
+                                db.session.rollback()
+                                flash("There was an error updating qty",'warning')
+                                return redirect('shift_lube_sales')
+                        else:
+                                flash('Done','info')
+                                return redirect('shift_lube_sales')
+                            
+
+
+@app.route("/product_prices",methods=['GET','POST'])
+@view_only
+@check_schema
+@login_required
+def product_prices():
+
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                #current_shift = Shift.query.order_by(Shift.id.desc()).first()
+                if request.method =='GET':
+                        shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+                        if shifts:
+                        
+                                current_shift = shifts[0]
+                                prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
+                                
+                                shift_id = current_shift.id
+                                shift = Shift.query.get(shift_id)
+                               
+                                prev_shift_id = prev_shift.id
+                                products = Product.query.all()
+                                product_sales_ltr = product_sales_litres(shift_id,prev_shift_id)
+                                product_sales = lube_sales(shift_id,prev_shift_id)
+                                return render_template("product_prices.html",product_sales_ltr=product_sales_ltr,product_sales=product_sales,products=products,shift=shift)
+                        else:
+                        
+                                flash("No shift started yet",'warning')
+                                return redirect ('start_shift_update') 
+                
+                        
+                shift_underway = Shift_Underway.query.all()
+                current_shift = shift_underway[0].current_shift
+                current_shift = Shift.query.get(current_shift)
+                shift_id = current_shift.id
+                
+                products = Product.query.all()
+                
+                try:
+                        data = request.get_json()
+                        print(data)
+                        for product in products:
+                                sp_name = "row-{}-sp".format(product.id)
+                                cp_name = "row-{}-cp".format(product.id)
+                                for i in data:
+                                        if i['name'] == cp_name:
+                                                cost_price = i["value"]
+                                        if i['name'] == sp_name:
+                                                selling_price = i["value"]
+                        
+                                product.cost_price = cost_price
+                                product.selling_price = selling_price
+                                price =Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
+                                price.cost_price = cost_price
+                                price.selling_price = selling_price
+                                db.session.flush()
+                        db.session.commit()
+                except:
+                        db.session.rollback()
+                        flash("There was an error",'warning')
+                else:
+                        return redirect('product_prices')
 
 
 @app.route("/update_pump_litre_readings",methods=['POST'])
@@ -2722,6 +2886,47 @@ def customer_sales():
                 db.session.add(invoice)
                 db.session.commit()
                 return redirect(url_for('ss26'))
+
+
+
+@app.route("/driveway_invoices",methods=["GET"])
+@view_only
+@start_shift_first
+@check_schema
+@login_required
+def driveway_invoices():
+        """Sales Invoices"""
+
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                #current_shift = Shift.query.order_by(Shift.id.desc()).first()
+                shifts = Shift.query.order_by(Shift.id.desc()).limit(2).all()
+                if shifts:
+                        
+                        current_shift = shifts[0]
+                        prev_shift = shifts[1] if len(shifts) > 1 else shifts[0]
+                        shift_daytime = current_shift.daytime
+                        shift_id = current_shift.id
+                        shift= Shift.query.all()
+                        date = current_shift.date
+                        prev_shift_id = prev_shift.id
+                        data = get_driveway_invoices_data(shift_id,prev_shift_id)
+                        receivable = Account.query.filter_by(account_name="Accounts Receivables").first()
+                        cash_customers = Customer.query.filter(Customer.account_id != receivable.id).all()
+                        ###### Cash breakdown
+                        customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
+                        credit_notes= db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.shift_id==shift_id,Customer.name != "Cash")).all()
+                        sales_breakdown = total_customer_sales(customer_sales,credit_notes) #calculate total sales per customer)
+                        sales_breakdown["Cash"] = data['total_sales_amt']- sum([sales_breakdown[i] for i in sales_breakdown])
+                        
+                        return render_template("sales_breakdown.html",products=data['products'],expense_accounts=data['expense_accounts'],
+                        cash_accounts=data['cash_accounts'],customers=data['customers'],cash_customers=cash_customers,
+                        coupons=data['coupons'],cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],
+                        expenses=data['expenses'],sales_breakdown=sales_breakdown,shift=shift,
+                        product_sales_ltr=data['product_sales_ltr'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'])
+                else:
+                        flash("No shift started yet",'warning')
+                        return redirect ('start_shift_update')
+                return render_template('sales_breakdown.html')
 
 @app.route("/sales_receipts",methods=["POST"])
 @view_only

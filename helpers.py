@@ -172,7 +172,7 @@ def end_shift_first(f):
         
         if session["shift_underway"] == True:
             flash("End shift first",'warning')
-            return redirect(url_for('ss26'))
+            return redirect(url_for('end_shift_update'))
 
 
         return f(*args, **kwargs)
@@ -296,20 +296,38 @@ def product_sales_litres(shift_id,prev_shift_id):
     curr_readings = db.session.query(Product,PumpReading).filter(and_(Product.id == PumpReading.product_id,PumpReading.shift_id == shift_id)).all()
     product_sales = {}
     for product in products:
-        prev_prod_readings = db.session.query(Product,PumpReading).filter(and_(Product.id == PumpReading.product_id,PumpReading.shift_id == prev_shift_id,Product.id==product.id)).first()
-        if prev_prod_readings:
-            current_product_reading = sum([i[1].litre_reading for i in curr_readings if i[0].id == product.id])
-            previous_product_reading = sum([i[1].litre_reading for i in prev_readings if i[0].id == product.id])
-            sales = current_product_reading-previous_product_reading
-            prices = db.session.query(Product,Price).filter(and_(Product.id==Price.product_id,Price.shift_id==shift_id,Product.id==product.id)).first()
-            if prices:
-                product_sales[product.name] = (sales,prices)
+        if product.product_type =="Fuels":
+            prev_prod_readings = db.session.query(Product,PumpReading).filter(and_(Product.id == PumpReading.product_id,PumpReading.shift_id == prev_shift_id,Product.id==product.id)).first()
+            if prev_prod_readings:
+                current_product_reading = sum([i[1].litre_reading for i in curr_readings if i[0].id == product.id])
+                previous_product_reading = sum([i[1].litre_reading for i in prev_readings if i[0].id == product.id])
+                sales = current_product_reading-previous_product_reading
+                prices = db.session.query(Product,Price).filter(and_(Product.id==Price.product_id,Price.shift_id==shift_id,Product.id==product.id)).first()
+                if prices:
+                    product_sales[product.name] = (sales,prices)
+                else:
+                    product_sales[product.name] = (sales,product)
             else:
-                product_sales[product.name] = (sales,product)
+                prices = db.session.query(Product,Price).filter(and_(Product.id==Price.product_id,Price.shift_id==shift_id,Product.id==product.id)).first()
+                sales = 0
+                product_sales[product.name] = (sales,prices)
         else:
-            prices = db.session.query(Product,Price).filter(and_(Product.id==Price.product_id,Price.shift_id==shift_id,Product.id==product.id)).first()
-            sales = 0
-            product_sales[product.name] = (sales,prices)
+            prev = LubeQty.query.filter(and_(LubeQty.shift_id == prev_shift_id,LubeQty.product_id== product.id)).first()
+            curr = LubeQty.query.filter(and_(LubeQty.shift_id == shift_id,LubeQty.product_id== product.id)).first()
+            if prev and curr: # check if previous shift exists
+                delivery = Delivery.query.filter(and_(Delivery.shift_id==shift_id,Delivery.product_id==product.id)).all()
+                d_notes = DebitNote.query.filter(and_(DebitNote.shift_id==shift_id,DebitNote.product_id==product.id)).all()
+                deliveries = sum([i.qty for i in delivery])- sum([i.qty for i in d_notes])
+                sales = ( prev.qty + deliveries)-curr.qty
+                cost_price = product.cost_price
+                selling_price = product.selling_price
+                price = Price.query.filter(and_(Price.product_id == product.id,Price.shift_id ==shift_id)).first()
+                cost_price = price.cost_price
+                selling_price = price.selling_price
+                mls = product.unit
+                product_sales[product.name]= (prev.qty,curr.qty,sales,cost_price,selling_price,mls,deliveries)
+            else:
+                pass
                 
     return product_sales
 
@@ -721,6 +739,9 @@ def get_pump_readings(shift_id,prev_shift_id):
     return pump_readings
 
 
+
+
+
 def pump_meter_reading(pump_id,start_date,end_date):
     """Query for pump readings per day """
     pump = Pump.query.get(pump_id)
@@ -833,7 +854,55 @@ def get_driveway_data(shift_id,prev_shift_id):
 
 
     return data
+
+def get_driveway_invoices_data(shift_id,prev_shift_id):
+    current_shift = Shift.query.get(shift_id)
+    data = {}
     
+    product_sales_ltr = product_sales_litres(shift_id,prev_shift_id)
+    data['product_sales_ltr'] = product_sales_ltr
+    data['cash_account'] = Customer.query.filter_by(name="Cash").first()
+    customer_sales= db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name != "Cash")).all()
+    credit_notes= db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.shift_id==shift_id,Customer.name != "Cash")).all()
+    sales_breakdown = total_customer_sales(customer_sales,credit_notes) # calculate total sales per customer)
+    data['total_sales_ltr']= sum([product_sales_ltr[product][0] for product in product_sales_ltr])
+    data['total_sales_amt']= sum([product_sales_ltr[product][0]*product_sales_ltr[product][1][1].selling_price for product in product_sales_ltr])
+    cash_sales =  db.session.query(Customer,Invoice).filter(and_(Customer.id==Invoice.customer_id,Invoice.shift_id==shift_id,Customer.name == "Cash")).all()
+    cash_sales_cnotes =  db.session.query(Customer,CreditNote).filter(and_(Customer.id==CreditNote.customer_id,CreditNote.shift_id==shift_id,Customer.name == "Cash")).all()
+    cash_breakdown = total_customer_sales(cash_sales,cash_sales_cnotes)
+    receivable = Account.query.filter_by(account_name="Accounts Receivables").first()
+    data['cash_customers'] = Customer.query.filter(Customer.account_id != receivable.id).all()
+    
+    sales_breakdown["Cash"] = sum([cash_breakdown[i] for i in cash_breakdown])
+    data['sales_breakdown'] = sales_breakdown
+    data['sales_breakdom_amt'] =  sum([sales_breakdown[i] for i in sales_breakdown])
+    expenses = db.session.query(PayOut,Account).filter(and_(PayOut.pay_out_account== Account.id,PayOut.shift_id==shift_id)).all()
+    data['expenses'] = expenses
+    data['total_cash_expenses'] = sum([i[0].amount for i in expenses])
+    data['cash_up'] = CashUp.query.filter_by(shift_id=shift_id).first()
+    data['products'] = Product.query.filter_by(product_type="Fuels").order_by(Product.id.asc()).all()
+    data['coupons'] = Coupon.query.all()
+    data['customers'] = Customer.query.all()
+    #data['cash_customers'] = Customer.query.filter_by(account_type="Cash").all()
+    data['expense_accounts'] = Account.query.filter(Account.code.between(200,399)).all()
+    data['cash_accounts'] = Account.query.filter(Account.code.between(400,450)).all()
+    ######## query report data
+    data['accounts'] = Account.query.all()
+    data['end_date'] = current_shift.date
+    end_date= current_shift.date
+    data['avg_sales'] = fuel_sales_avg(get_30_day_before(end_date),end_date)
+    daily_sales = fuel_daily_sales(get_month_day1(end_date),end_date) 
+    data['mnth_sales'] = sum([daily_sales[i] for i in daily_sales])
+    lubes_daily_sale = lubes_daily_sales(get_month_day1(end_date),end_date)
+    data['lubes_daily_sale']= lubes_daily_sale
+    
+    data['lubes_mnth_sales'] = sum([lubes_daily_sale[i] for i in lubes_daily_sale])
+    data['lube_avg'] = lubes_sales_avg(get_30_day_before(end_date),end_date)
+    total_lubes_shift_sales = lube_sales(shift_id,prev_shift_id)
+    data['total_lubes_shift_sales']=sum([total_lubes_shift_sales[i][5]*total_lubes_shift_sales[i][2] for i in total_lubes_shift_sales])/1000
+
+
+    return data
 
 def create_tenant_tables(schema):
     engine= create_engine(DATABASE_URL)

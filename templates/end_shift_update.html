@@ -1,0 +1,15 @@
+{% extends "driveway_layout.html" %}
+
+
+
+{% block main %}
+<div class="p-5"></div>
+<div class="text-center">
+
+<form style="display: inline-block;" action="{{ url_for('end_shift_update') }}" method="post" > 
+    <h1 class="h3 mb-3 font-weight-normal">End Shift Update</h1>
+    
+    <button  class="btn btn-primary btn-block" type="submit">End Shift Update</button>
+</form>
+</div>
+{% endblock %}

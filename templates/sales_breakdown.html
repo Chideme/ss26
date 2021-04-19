@@ -1,0 +1,330 @@
+{% extends "driveway_layout.html" %}
+
+
+
+
+{% block main %}
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+        
+       
+        <div class="btn-toolbar mb-2 mb-md-0">
+        
+          <div class="btn-group mr-2">
+            <button  type="button" id="download" class="btn  btn-outline-secondary"><a href="{{ url_for('driveway_report',shift=shift.id) }}" >View Report</a></button>
+          </div>
+        </div>
+      </div>
+
+    
+      
+      
+      
+      
+        
+    
+        <h4 class="p-2">Sales Invoices
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+                <div class="btn-toolbar mb-2 mb-md-0">
+                  <div class="btn-group mr-2">
+                    <button  type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#CustomerSales">Customer Sales (Non Cash Customers )</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#SalesReceipts">Sales Receipt (Cash Account Sales)</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#CouponSales">Coupon Sales</button>
+                  </div>
+                </div>
+              </div>
+        
+        </h4>
+        <table class="table table-sm">
+              <thead>
+                <th>Account</th>
+                <th>Amount</th>
+              </thead>
+              <tbody>
+                {% for i in sales_breakdown %}
+                <tr>
+                  <td>{{ i }}</td>
+                  <td>{{ sales_breakdown[i] | currencyFormat }}</td>
+                </tr>
+               {% endfor %}
+              </tbody>
+        </table>
+        <h4 class="p-2">Cash Payouts
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+                <div class="btn-toolbar mb-2 mb-md-0">
+                  <div class="btn-group mr-2">
+                    <button  type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#Payouts">Enter Payouts</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#CashUp">Cash Up</button>
+                  </div>
+                </div>
+        </h4>
+        <table class="table table-sm">
+    
+            <tr>
+              <th scope="row">Total Cash Sales:</th>
+              <td class="numbers">{{ sales_breakdown["Cash"] | currencyFormat }}</td>
+            </tr>
+            <th  colspan="2">Expenses:</th>
+            {% if expenses %}
+            {% for expense in expenses %}
+            <tr>
+              <td>{{ expense[1].account_name }}</td>
+              <td class="numbers">{{ expense[0].amount | currencyFormat }}</td>
+            </tr>
+            {% endfor %}
+        
+            {% endif %}
+            <tr>
+                <th  scope="row">Expected Cash</th>
+          
+                <td class="numbers">{{ (sales_breakdown["Cash"]-total_cash_expenses) |  currencyFormat }}</td>
+  
+            </tr>
+            <tr>
+              <th  scope="row"> Actual Cash Banked</th>
+              {% if cash_up %}
+              <td class="numbers">{{ cash_up.actual_amount | currencyFormat }}</td>
+              {% endif %}
+            </tr>
+        </table>
+    </div>
+      
+      
+     
+       
+
+   
+ <!--Customer Sales Modal-->
+ <div class="modal fade" id="CustomerSales" tabindex="-1" role="dialog" aria-labelledby="CustomerSalesFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="CustomerSalesFormLabel">Enter Invoice</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form role="form"  action="{{ url_for('customer_sales') }}" method="post" >
+                    <div class="form-row">
+                    <div class="form-group col-md-8">
+                        <label for="customer">Pick Customer:</label>
+                        <select id="customer" class="form-control" name="customers" required> <!--DataList-->
+                            <option selected></option>
+                            {% for customer in customers %}
+                            <option  value="{{ customer.id }}">{{ customer.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="salesproduct">Select Product:</label>
+                            <select id="salesproduct" class="form-control" name="product" required>
+                                <option selected></option>
+                                {% for product in products %}
+                                <option  value="{{ product.id }}">{{ product.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="sales_price">Selling Price:</label>
+                            <input id="sales_price" type="number" step="0.01" name="sales_price"  placeholder="Price" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="qtyltr">Quantity:</label>
+                            <input id="qtyltr" type="number"  step="any" name="qty"  placeholder="litres" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="vehicle_number">Vehicle Registration:</label>
+                            <input id="vehicle_number" type="text" name="vehicle_number"  placeholder="Vehicle Number" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="driver_name">Driver Name:</label>
+                            <input id="driver_name" type="text" name="driver_name"  placeholder="Driver Name" class="form-control">
+                        </div> 
+                    </div>
+                    <button  class="btn btn-primary btn-block" type="submit">Save</button>    
+                </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  <!--Customer Sales Modal-->
+<!--Sales Receipts Modal-->
+<div class="modal fade" id="SalesReceipts" tabindex="-1" role="dialog" aria-labelledby="SalesReceiptsFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="SalesReceiptsFormLabel">Enter Invoice</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form role="form"  action="{{ url_for('sales_receipts') }}" method="post" > 
+                    <div class="form-group" >
+                        <label for="cash_account">Cash Account:</label>
+                        <select id="cash_account" class="form-control" name="account" required>
+                            <option selected></option>
+                            {% for account in cash_customers %}
+                            <option  value="{{ account.id }}">{{ account.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Amount:</label>
+                        <input id="amount" type = "number"  step="0.01" name="amount" autocomplete="off"  autofocus class="form-control" required>
+                    </div>
+                <button  class="btn btn-primary btn-block" type="submit">Save</button>      
+            </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  <!--Sales Receipts Modal-->
+
+<!--Coupon Sales Modal-->
+<div class="modal fade" id="CouponSales" tabindex="-1" role="dialog" aria-labelledby="CouponSalesFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="CouponSalesFormLabel">Enter Coupon</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form role="form"  action="{{ url_for('coupon_sales') }}" method="post" >
+                    <div class="form-group" >
+                        <label for="coupon">Select Coupon:</label>
+                        <select id="coupon" class="form-control" name="coupon_id" required>
+                            <option selected></option>
+                            {% for coupon in coupons %}
+                            <option  value="{{ coupon.id }}">{{ coupon.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" >
+                        <label for="product">Select Product:</label>
+                        <select id="product" class="form-control" name="product_id" required>
+                            <option selected></option>
+                            {% for product in products %}
+                            <option  value="{{ product.id }}">{{ product.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type = "number"  name="number_of_coupons" autocomplete="off" placeholder="Number of Coupons" autofocus class="form-control" required>
+                    </div>
+                <button  class="btn btn-primary btn-block" type="submit">Save</button>      
+            </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <!--Payouts Modal-->
+<div class="modal fade" id="Payouts" tabindex="-1" role="dialog" aria-labelledby="PayoutsFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="PayoutsFormLabel">Enter Payout</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                <form role="form" action="{{ url_for('pay_outs') }}" method="post" >
+                    <label for="source">Account to pay from:</label> 
+                    <div class="form-group" >
+                        <select id="source" class="form-control" name="source_account" required>
+                            <option selected></option>
+                            {% for account in cash_accounts %}
+                            <option  value="{{ account.id }}">{{ account.account_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <label for="exp_acc">Select the Expense</label>
+                    <div class="form-group" >
+                        <select id="exp_acc" class="form-control" name="pay_out_account" required>
+                            <option selected></option>
+                            {% for account in expense_accounts %}
+                            <option  value="{{ account.id }}">{{ account.account_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" >
+                        <input type = "number" step="0.01"  name="amount" autocomplete="off"  autofocus class="form-control" required>
+                    </div>
+                <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
+            </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  <!--Payouts Modal-->
+
+  <!--CashUpModal-->
+  <div class="modal fade" id="CashUp" tabindex="-1" role="dialog" aria-labelledby="CashUpFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="CashUpFormLabel">Cash Up</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+            </div>
+            <div class="modal-body">
+                    <form role="form"   action="{{ url_for('cash_up') }}" method="post" > 
+                        <div class="form-group" >
+                            <label for="CashSales">Cash Sales</label>
+                            <input id="CashSales" type = "number" step="0.01" value="{{ sales_breakdown['Cash'] | round(2) }}"  name="cash_sales_amount" autocomplete="off" autofocus class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="ExpectedAmount">Expected Amount</label>
+                            <input id="ExpectedAmount" type = "number"  step="0.01" value="{{ (sales_breakdown['Cash']-total_cash_expenses) | round(2) }}"  name="expected_amount" autocomplete="off" autofocus class="form-control" readonly>
+                        </div>
+                        
+                        <div class="form-group" >
+                            <label for="ActualAmount">Actual Amount</label>
+                            <input  id="ActualAmount" type = "number" step="0.01"  name="actual_amount" autocomplete="off" placeholder="Actual Amount" autofocus class="form-control" required>
+                        </div>
+                        <div class="form-group" >
+                            <label for="Variance">Variance</label>
+                            <input id="Variance" type = "number" step="any"  name="variance" autocomplete="off" placeholder="Variance" autofocus class="form-control" readonly>
+                        </div>
+                    <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
+                </form>
+            </div>
+            <div class="modal-footer">  
+                <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  <!--Cash Up Modal-->
+  <script>
+      // calculate variance
+      document.getElementById('ActualAmount').addEventListener("input", function () {
+        var actual_amt = document.getElementById("ActualAmount").value;
+        var expected_amt = document.getElementById("ExpectedAmount").value; 
+        document.getElementById("Variance").value = actual_amt- expected_amt  ;
+   });
+  </script>
+
+{% endblock %}
+
