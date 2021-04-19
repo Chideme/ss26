@@ -40,7 +40,7 @@
                 <td >{{ pump.name }}</td>
                 
                 <td >{{ pump_readings[pump.name][0][0] }}</td>
-                <td><input type="text" id="row-{{ pump.id }}-litre" name="row-{{ pump.id }}-litre"
+                <td><input type="number" step="any" id="row-{{ pump.id }}-litre" name="row-{{ pump.id }}-litre"
                     value="{{ pump_readings[pump.name][1][0] }}" class="form-control" >
                  
                 </td>
@@ -49,17 +49,17 @@
             
                 
                 <td >{{ pump_readings[pump.name][0][1] }}</td>
-                <td ><input type="text" id="row-{{ pump.id }}-money" name="row-{{ pump.id }}-money"
+                <td ><input type="number" step="any" id="row-{{ pump.id }}-money" name="row-{{ pump.id }}-money"
                  
                     value="{{ pump_readings[pump.name][1][1] }}" class="form-control" >
                   
                 </td>
                 <td >{{ pump_readings[pump.name][1][1]-pump_readings[pump.name][0][1] }}</td>
                 <td>
-                    <select class="form-control" name="attendant" required>
+                    <select class="form-control" name="attendant-{{ pump.id }}" required>
                         <option selected></option>
-                        {% for  attendant in attendants %}
-                        <option  value="{{ attendant.id }}">{{ attendant.name }}</option>
+                        {% for  user in attendants %}
+                        <option  value="{{ user.id }}">{{ user.username }}</option>
                         {% endfor %}
                     </select>
                 </td>

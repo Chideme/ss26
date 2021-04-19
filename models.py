@@ -99,9 +99,9 @@ class AttendantSale(db.Model):
     __tablename__="attendant_sales"
     
     id = db.Column(db.Integer,primary_key=True,nullable=False)
-    attendat_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    attendant_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     pump_id = db.Column(db.Integer, db.ForeignKey("pumps.id"), nullable=False)
-    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False,index=True)
 
 
     __table_args__={'schema':'tenant'}
@@ -150,7 +150,7 @@ class LubeQty(db.Model):
     __table_args__={'schema':'tenant'}
 
     id = db.Column(db.Integer, primary_key=True)
-    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False,index=True)
     date= db.Column(db.Date, nullable=False)
     qty = db.Column(db.Float,nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
@@ -197,7 +197,7 @@ class PumpReading(db.Model):
     litre_reading = db.Column(db.Float, nullable=False)
     money_reading = db.Column(db.Float,nullable=True)
     pump_id = db.Column(db.Integer, db.ForeignKey("pumps.id"), nullable=False)
-    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False,index=True)
     
     __table_args__={'schema':'tenant'}
 
@@ -208,7 +208,7 @@ class TankDip(db.Model):
     date= db.Column(db.Date, nullable=False)
     dip = db.Column(db.Float,nullable=False)
     tank_id = db.Column(db.Integer, db.ForeignKey("tanks.id"), nullable=False)
-    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False,index=True)
 
     __table_args__={'schema':'tenant'}
 
@@ -222,6 +222,7 @@ class Customer(db.Model):
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     name= db.Column(db.String,nullable=False,unique=True)
     contact_person =db.Column(db.String,nullable=True)
+    address = db.Column(db.String,nullable=True)
     phone_number = db.Column(db.String,nullable=True)
     account_id= db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
     opening_balance= db.Column(db.Float,nullable=False)
@@ -292,7 +293,7 @@ class CustomerTxn(db.Model):
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
     txn_type = db.Column(db.String,nullable=False)
-    customer_id = db.Column(db.Integer,db.ForeignKey("customers.id"),nullable=False)
+    customer_id = db.Column(db.Integer,db.ForeignKey("customers.id"),nullable=False,index=True)
     amount= db.Column(db.Float,nullable=False)
     post_balance= db.Column(db.Float,nullable=False)
    
@@ -319,6 +320,7 @@ class Supplier(db.Model):
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     name= db.Column(db.String,nullable=False,unique=True)
     contact_person =db.Column(db.String,nullable=True)
+    address = db.Column(db.String,nullable=True)
     phone_number = db.Column(db.String,nullable=True)
     account_id=db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
     opening_balance= db.Column(db.Float,nullable=False)
@@ -349,8 +351,8 @@ class SupplierTxn(db.Model):
     
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
-    transaction_type = db.Column(db.String,nullable=False)
-    supplier_id = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False)
+    txn_type = db.Column(db.String,nullable=False)
+    supplier_id = db.Column(db.Integer,db.ForeignKey("supplier.id"),nullable=False,index=True)
     amount= db.Column(db.Float,nullable=False)
     ref = db.Column(db.String,nullable=True)
     post_balance= db.Column(db.Float,nullable=False)
@@ -434,7 +436,7 @@ class Price(db.Model):
     __table_args__={'schema':'tenant'}
     id=db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
-    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
+    shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False,index=True)
     product_id= db.Column(db.Integer,db.ForeignKey("products.id"),nullable=False)
     cost_price= db.Column(db.Float,nullable=False)
     selling_price= db.Column(db.Float,nullable=False)
@@ -494,7 +496,7 @@ class Ledger(db.Model):
 
     id = db.Column(db.Integer,primary_key=True,nullable=False)
     date= db.Column(db.Date, nullable=False)
-    account_id = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
+    account_id = db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False,index=True)
     journal_id = db.Column(db.Integer,db.ForeignKey("journals.id"),nullable=False)
     txn_type = db.Column(db.String,nullable=False)
     amount= db.Column(db.Float,nullable=False)

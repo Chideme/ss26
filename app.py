@@ -165,7 +165,7 @@ def login():
                         today = date.today()
                         if active > today:
                                 logged_in_users = LoggedInUsers.query.filter_by(tenant_id=tenant_id).first()
-                                if logged_in_users < 4:
+                                if logged_in_users.user_count < 4:
 
                                         session['tenant'] = company.id
                                         session["schema"] = company.schema
@@ -502,10 +502,10 @@ def start_shift_update():
                                         shift_underway[0].current_shift = shift_id
                                         db.session.commit()
                                         flash("Shift Started",'info')
-                                        return redirect(url_for('ss26'))
+                                        return redirect(url_for('driveway_pump_readings'))
                                 except:
                                         flash("An error occured",'warning')
-                                        return redirect(url_for('ss26'))
+                                        return redirect(url_for('driveway_pump_readings'))
                                         
                         
                         #Unfinished set up of products              
@@ -547,9 +547,9 @@ def end_shift_update():
                                                 db.session.commit()
                                                 flash('Shift Ended','info')
                                                 return redirect(url_for('driveway_report',shift=shift_id))
-                                        else:
-                                                flash('Something is wrong','warning')
-                                                return redirect(url_for('ss26'))
+                                        else :
+                                                flash('Do cash up','warning')
+                                                return redirect(url_for('driveway_invoices'))
                                 else:
                                         flash('Do cash up on lubes','warning')
                                         return redirect(url_for('shift_lube_sales'))
@@ -565,10 +565,10 @@ def end_shift_update():
                                                 return redirect(url_for('driveway_report',shift=shift_id))
                                         except:
                                                 flash('Something is wrong','warning')
-                                                return redirect(url_for('ss26'))
+                                                return redirect(url_for('driveway_pump_readings'))
                                 else:
                                         flash('Do cash up ','warning')
-                                        return redirect(url_for('ss26')) 
+                                        return redirect(url_for('driveway_pump_readings')) 
 
         
 
@@ -1611,7 +1611,7 @@ def suppliers():
                 end_date = date.today()
                 balances = {}
                 for supplier in suppliers:
-                        balances[supplier]= supplier_txn_opening_balance(end_date,supplier.id)
+                        balances[supplier.name]= supplier_txn_opening_balance(end_date,supplier.id)
                 return render_template("suppliers.html",products=products,tanks=tanks,suppliers=suppliers,balances=balances,paypoints=paypoints)
 
 
@@ -2496,13 +2496,17 @@ def driveway_pump_readings():
                         for pump in pumps:
                                 l_name = "row-{}-litre".format(pump.id)
                                 m_name = "row-{}-money".format(pump.id)
+                                att_name = "attendant-{}".format(pump.id)
                                 for i in data:
                                         if i['name'] == l_name:
                                                 l_reading = i["value"]
                                         if i['name'] == m_name:
                                                 m_reading = i["value"]
+                                        if i['name'] == att_name:
+                                                att = i["value"]
+                                        
                                 reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump.id,PumpReading.shift_id== shift_id)).first()
-                                attendant = AttendantSale(attendant_id=att,pump_id=pump_id,shift_id=shift_id)
+                                attendant = AttendantSale(attendant_id=att,pump_id=pump.id,shift_id=shift_id)
                                 litre_reading = l_reading
                                 money_reading = m_reading
                                 pump.litre_reading = litre_reading
@@ -3069,7 +3073,7 @@ def cash_up():
                         db.session.add(txn)
                         db.session.flush()
                         update_customer_balances(date,amount,customer.id,txn.txn_type)
-                        payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id))
+                        payment = CustomerPayments(date=date,customer_id=customer.id,amount=amount,ref=str(shift_id),customer_txn_id=txn.id)
                         db.session.add(payment)
                         db.session.add(cash_up)
                         db.session.add(receipt)
@@ -3441,9 +3445,9 @@ def lubes_cash_up():
                 current_shift = Shift.query.get(current_shift)
                 shift_id = current_shift.id
                 date = current_shift.date
-                cash_sales_amount = request.form.get("cash_sales_amount") 
+                cash_sales_amount = request.form.get("cash_sales_amount") or 0
                 cash_sales_amount = float(cash_sales_amount)
-                expected_amount = float(request.form.get("expected_amount"))
+                expected_amount = float(request.form.get("expected_amount")) or 0
                 variance = cash_sales_amount-expected_amount
                 check_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
                 if not check_cash_up:
@@ -3460,10 +3464,10 @@ def lubes_cash_up():
                         else:
                                 
                                 flash("Cash up for Lubricants done",'info')
-                                return redirect(url_for('ss26'))
+                                return redirect(url_for('end_shift_update'))
                 else:
                         flash("Cash up for Lubricants already done",'info')
-                        return redirect(url_for('ss26'))
+                        return redirect(url_for('end_shift_update'))
 
 
 @app.route("/forgotpassword/",methods=['GET','POST'])
