@@ -2449,7 +2449,7 @@ def ss26():
                         pumps=data['pumps'],tanks=data['tanks'],product_sales_ltr=data['product_sales_ltr'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'])
                 else:
                         flash("No shift started yet",'warning')
-                        return redirect ('start_shift_update')
+                        return redirect (url_for('start_shift_update'))
 
 
 
@@ -2601,7 +2601,7 @@ def driveway_lube_qty():
                         else:
                         
                                 flash("No shift started yet",'warning')
-                                return redirect ('start_shift_update')          
+                                return redirect (url_for('start_shift_update'))         
                 else:
                                 
                         shift_underway = Shift_Underway.query.all()
@@ -2627,10 +2627,10 @@ def driveway_lube_qty():
                         except:
                                 db.session.rollback()
                                 flash("There was an error updating qty",'warning')
-                                return redirect('driveway_lube_qty')
+                                return redirect (url_for('driveway_lube_qty'))
                         else:
                                 flash('Done','info')
-                                return redirect('driveway_lube_qty')
+                                return redirect(url_for('driveway_lube_qty'))
                             
 
 
@@ -2660,7 +2660,7 @@ def product_prices():
                         else:
                         
                                 flash("No shift started yet",'warning')
-                                return redirect ('start_shift_update') 
+                                return redirect(url_for('start_shift_update')) 
                 
                         
                 shift_underway = Shift_Underway.query.all()
@@ -2693,7 +2693,7 @@ def product_prices():
                         db.session.rollback()
                         flash("There was an error",'warning')
                 else:
-                        return redirect('product_prices')
+                        return redirect(url_for('product_prices'))
 
 
 @app.route("/update_pump_litre_readings",methods=['POST'])
@@ -2721,7 +2721,7 @@ def update_pump_litre_readings():
                 #db.session.add(attendant)
                 db.session.commit()
 
-                return redirect('ss26')
+                return redirect(url_for('driveway_invoices'))
 
 @app.route("/update_pump_money_readings",methods=['POST'])
 @view_only
@@ -2814,7 +2814,7 @@ def update_fuel_deliveries():
                 db.session.add(journal)
                 db.session.add(delivery)
                 db.session.commit()
-                return redirect('ss26')
+                return redirect(url_for('driveway_invoices'))
 
 @app.route("/update_cost_prices",methods=['POST'])
 @view_only
@@ -2873,7 +2873,7 @@ def update_shift_date():
                 date = request.form.get("date")
                 db.session.query(Shift).filter(Shift.id==shift_id).update({Shift.date: date}, synchronize_session = False)
                 db.session.commit()
-                return redirect('ss26')
+                return redirect(url_for('driveway_invoices'))
 
 @app.route("/update_shift_daytime",methods=['POST'])
 @view_only
@@ -2891,7 +2891,7 @@ def update_shift_daytime():
                 date = request.form.get("shift")
                 db.session.query(Shift).filter(Shift.id==shift_id).update({Shift.daytime: date}, synchronize_session = False)
                 db.session.commit()
-                return redirect('ss26')
+                return redirect(url_for('driveway_invoices'))
 
 @app.route("/customer_sales",methods=["POST"])
 @view_only
@@ -2923,7 +2923,7 @@ def customer_sales():
                 invoice = Invoice(date=date,shift_id=shift_id,product_id=product_id,customer_id=customer_id,qty=qty,price=sales_price,vehicle_number=vehicle_number,driver_name=driver_name,customer_txn_id=txn.id)
                 db.session.add(invoice)
                 db.session.commit()
-                return redirect(url_for('ss26'))
+                return redirect(url_for('driveway_invoices'))
 
 
 
@@ -3002,7 +3002,7 @@ def sales_receipts():
                         cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
                         db.session.commit()
                                         
-                        return redirect(url_for('ss26'))
+                        return redirect(url_for('driveway_invoices'))
 
 
 @app.route("/coupon_sales",methods=["POST"])
@@ -3039,7 +3039,7 @@ def coupon_sales():
                 db.session.add(invoice)
                 db.session.commit()
                         
-                return redirect(url_for('ss26'))
+                return redirect(url_for('driveway_invoices'))
 
 
 @app.route("/cash_up",methods=["POST"])
@@ -3083,15 +3083,15 @@ def cash_up():
                                 cash_sales(amount,customer.id,shift_id,date)# add invoices to cash customer account
                                 db.session.commit()
                                 flash("Cash up done",'info')
-                                return redirect(url_for('ss26'))
+                                return redirect(url_for('driveway_invoices'))
                         else:
                                 db.session.commit()
                                 flash("Cash up done",'info')
-                                return redirect(url_for('ss26'))
+                                return redirect(url_for('driveway_invoices'))
                 except Exception as e:
                         db.session.rollback()
                         flash(str(e),'warning')
-                        return redirect(url_for('ss26'))
+                        return redirect(url_for('driveway_invoices'))
                 
 
 @app.route("/payouts",methods=["POST"])
@@ -3117,7 +3117,7 @@ def pay_outs():
                 db.session.add(pay_out)
                 db.session.add(journal)
                 db.session.commit()
-        return redirect(url_for('ss26'))
+        return redirect(url_for('driveway_invoices'))
 
 
 @app.route("/shift_lube_sales",methods=["POST","GET"])
@@ -3447,8 +3447,8 @@ def lubes_cash_up():
                 date = current_shift.date
                 cash_sales_amount = request.form.get("cash_sales_amount") or 0
                 cash_sales_amount = float(cash_sales_amount)
-                expected_amount = float(request.form.get("expected_amount")) or 0
-                variance = cash_sales_amount-expected_amount
+                expected_amount = request.form.get("expected_amount")  or 0
+                variance = cash_sales_amount-float(expected_amount)
                 check_cash_up = LubesCashUp.query.filter_by(shift_id=shift_id).first()
                 if not check_cash_up:
                         cash_up = LubesCashUp(date=date,shift_id=shift_id,sales_amount=expected_amount,expected_amount=expected_amount,actual_amount=cash_sales_amount,variance=variance)
