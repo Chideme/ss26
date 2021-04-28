@@ -57,10 +57,17 @@
                 <td >{{ pump_readings[pump.name][1][1]-pump_readings[pump.name][0][1] }}</td>
                 <td>
                     <select class="form-control" name="attendant-{{ pump.id }}" required>
-                        <option selected></option>
+                        {% if pump_attendant %}
+                        <option selected value="{{ pump_attendant[pump.id].id }}">{{ pump_attendant[pump.id].username }}</option>
                         {% for  user in attendants %}
                         <option  value="{{ user.id }}">{{ user.username }}</option>
                         {% endfor %}
+                        {% else %}
+                        {% for  user in attendants %}
+                        <option  value="{{ user.id }}">{{ user.username }}</option>
+                        {% endfor %}
+                        {% endif %}
+                        
                     </select>
                 </td>
               </tr>

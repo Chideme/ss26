@@ -2474,9 +2474,12 @@ def driveway_pump_readings():
                                 attendants = User.query.all()
                                 prev_shift_id = prev_shift.id
                                 pumps = Pump.query.all()
+                                attend_sale = db.session.query(AttendantSale,User).filter(AttendantSale.shift_id==shift_id,AttendantSale.attendant_id==User.id).all()
+                                
+                                pump_attendant = {i[0].pump_id: i[1] for i in attend_sale}
                                 pump_readings= get_pump_readings(shift_id,prev_shift_id)
                                 
-                                return render_template("driveway_pump_readings.html",attendants=attendants,pump_readings=pump_readings,pumps=pumps,shift=shift)
+                                return render_template("driveway_pump_readings.html",pump_attendant=pump_attendant,attendants=attendants,pump_readings=pump_readings,pumps=pumps,shift=shift)
                         else:
 
                                 flash("No shift started yet",'warning')
@@ -2489,7 +2492,7 @@ def driveway_pump_readings():
                         shift_id = current_shift.id
                         
                         data = request.get_json()
-                        print(data)
+                
                         pumps = Pump.query.all()
                         
                         
@@ -2503,17 +2506,24 @@ def driveway_pump_readings():
                                         if i['name'] == m_name:
                                                 m_reading = i["value"]
                                         if i['name'] == att_name:
-                                                att = i["value"]
+                                                att = int(i["value"])
                                         
                                 reading = PumpReading.query.filter(and_(PumpReading.pump_id == pump.id,PumpReading.shift_id== shift_id)).first()
-                                attendant = AttendantSale(attendant_id=att,pump_id=pump.id,shift_id=shift_id)
+                                attendant = AttendantSale.query.filter(AttendantSale.pump_id==pump.id,AttendantSale.shift_id==shift_id).first()
+                                if attendant:
+                                       
+                                        attendant.attendant_id = att
+                                else:
+                                        
+                                        attendant = AttendantSale(attendant_id=att,pump_id=pump.id,shift_id=shift_id)
+                                        db.session.add(attendant)
                                 litre_reading = l_reading
                                 money_reading = m_reading
                                 pump.litre_reading = litre_reading
                                 reading.litre_reading = litre_reading
                                 pump.money_reading = money_reading
                                 reading.money_reading = money_reading
-                                db.session.add(attendant)
+                                
                                 db.session.flush()
                         db.session.commit()
                 
