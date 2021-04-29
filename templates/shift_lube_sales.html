@@ -153,10 +153,12 @@
                     <form role="form"   action="{{ url_for('lubes_cash_up') }}" method="post" > 
                         
                         <div class="form-group" >
-                            <input type = "number" step="0.01"   name="cash_sales_amount" placeholder="Total Amount Available" autocomplete="off" autofocus class="form-control">
+                            <label for="AMV"> Amount Available</label>
+                            <input id="AMV" type = "number" step="0.01"   name="cash_sales_amount"  autocomplete="off" autofocus class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <input type = "number" step="0.01" value="{{ total_sales_amt }}"  name="expected_amount" autocomplete="off" autofocus class="form-control" readonly>
+                            <label for="EX">Expected Amount</label>
+                            <input id="EX" type = "number" step="0.01" value="{{ total_sales_amt }}"  name="expected_amount" autocomplete="off" autofocus class="form-control" readonly>
                         </div>
                        
                     <button  class="btn btn-primary btn-block" type="submit">Enter</button>      
@@ -175,7 +177,7 @@
                  // DataTables function
                 $(document).ready(function(){
                     var table = $('#qtys').DataTable({
-                        dom: '<"pull-left"><"pull-right">ti',
+                        dom: '<"pull-left"f><"pull-right">ti',
                        
                 
                     })

@@ -3075,6 +3075,10 @@ def cash_up():
                 variance= float(request.form.get("variance"))
                
                 amount  = cash_sales_amount
+                cash_up = CashUp.query.filter_by(shift_id=shift_id).first()
+                if cash_up:
+                        flash("Cash already done",'warning')
+                        return redirect(url_for('driveway_invoices'))
                 try:
                         cash_up = CashUp(date=date,shift_id=shift_id,sales_amount=cash_sales_amount,expected_amount=expected_amount,actual_amount=actual_amount,variance=variance)
                         receipt = SaleReceipt(date=date,shift_id=shift_id,account_id=account.id,amount=amount)
@@ -3152,6 +3156,7 @@ def shift_lube_sales():
                 product_sales = lube_sales(shift_id,prev_shift_id)               
                 total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
                 total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
+                
                 
                 return render_template("shift_lube_sales.html",product_sales=product_sales,shift_number=shift_id,
                                         date=date,shift_daytime =daytime,suppliers=suppliers,total_sales_amt=total_sales_amt,total_sales_ltrs=total_sales_ltrs,products=products)

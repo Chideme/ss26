@@ -4,11 +4,15 @@
 {% endblock %}
 
 {% block sidebar %}
-<a href="{{ url_for('get_driveway') }}"><span style="color: royalblue;">Back</span></a>
-    
-      <div class="p-3 card text-center d-flex align-items-center" style="background-color: whitesmoke;" >
+<div class="container p-3  text-center d-flex align-items-center">
+  <div class="row">
+    <div class="col-2">
+      <a href="{{ url_for('get_driveway') }}"><span style="color: royalblue;">Reports</span></a>
+    </div>
+    <div class="col-9 card">
+      <div style="background-color: whitesmoke;" >
        
-        <h4  >Forecourt Driveway</h4>
+        <h4>Forecourt Driveway</h4>
         <div class="text-left">
         <h6>Prepared by: {{ shift.prepared_by }}</h6>
         <h6>Date : {{ date | dateFormat }}</h6>
@@ -279,8 +283,10 @@
           </tbody>
         </table>
        
-        
-     
+    </div>
+    <div class="col-3">
+    </div> 
+  </div>
 
    
     
