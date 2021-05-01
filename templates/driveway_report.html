@@ -173,11 +173,39 @@
                 <td>{{ tank_dips[tank.name][2]-(tank_dips[tank.name][0]+tank_dips[tank.name][3]-tank_dips[tank.name][1]) }}</td>
               </tr>
               {% endfor %}
-        
-             
+              <tr>
+                <th class="h6">Attendant Takings</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+            <tr>
+              <th>Attendant</th>
+              <th></th>
+              <th>Litres</th>
+              <th>Amount</th>
+              <th></th>
+              <th></th>
+              <th></th>
+            </tr>
+            {% for i in attendant_sales %}
+            <tr>
+              <td>{{ attendant_sales[i]["user"] }}</td>
+              <td></td>
+              <td>{{ attendant_sales[i]["litres"] }}</td>
+              <td>{{ attendant_sales[i]["amount"] | currencyFormat }}</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+           {% endfor %}
+           <tr>
         
             <tr>
-                <th class="h6">Sales Breakdown</th>
+                <th class="h6">Account Sales</th>
                 <th></th>
                 <th></th>
                 <th></th>

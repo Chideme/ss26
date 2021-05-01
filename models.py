@@ -284,7 +284,7 @@ class SaleReceipt(db.Model):
     date= db.Column(db.Date, nullable=False)
     shift_id = db.Column(db.Integer,db.ForeignKey("shift.id"),nullable=False)
     account_id= db.Column(db.Integer,db.ForeignKey("accounts.id"),nullable=False)
-    amount= db.Column(db.Integer,nullable=False)
+    amount= db.Column(db.Float,nullable=False)
 
 
 class CustomerTxn(db.Model):

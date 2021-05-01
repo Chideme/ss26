@@ -29,13 +29,15 @@ app.config.update(dict(
 ))
 mail = Mail(app)
 def main():
-    tenant = "puma_service_station"
-    customer_id=1
+    tenant = "marvel"
+
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
+        #pump_readings[pump.name]=[prev_shift_reading,current_shift_reading]
+        attend_sale = db.session.query(AttendantSale,User).filter(AttendantSale.shift_id==shift_id,AttendantSale.attendant_id==User.id).all()
+                            
+        pump_attendant = {i[0].pump_id: i[1] for i in attend_sale}
+        pump_readings= get_pump_readings(shift_id,prev_shift_id)
         
-        report = db.session.query(CustomerTxn,Invoice,CustomerPayments,CreditNote).filter(Invoice.customer_id==customer_id,
-                                        CustomerTxn.customer_id==customer_id,CustomerPayments.customer_id==customer_id,CreditNote.customer_id==customer_id,
-                                       CustomerTxn.id==Invoice.customer_txn_id,CustomerTxn.id==CreditNote.customer_txn_id,CustomerTxn.id==CustomerPayments.customer_txn_id).order_by(CustomerTxn.date).order_by(CustomerTxn.id).all()
 
         print(report)
 with app.app_context():

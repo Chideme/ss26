@@ -12,7 +12,7 @@ From:{{ start_date }} To: {{ end_date }}
           <div class="card">
             <div class="card-header" style="background-color: lightseagreen;">Filter</div>
             <div class="card-body">
-            <form  action="{{ url_for('ledger') }}" id="form" method="post">
+            <form  action="{{ url_for('journals') }}" id="form" method="post">
               <div class="form-group">
                 <label for="account">Select Account:</label>
                   <select class="form-control"  id="account" name="account">

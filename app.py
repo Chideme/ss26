@@ -1776,7 +1776,7 @@ def supplier(supplier_id):
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 supplier = Supplier.query.filter_by(id=supplier_id).first()
                 end_date = date.today()
-                net= supplier_txn_opening_balance(end_date,customer.id)
+                net= supplier_txn_opening_balance(end_date,supplier.id)
                 if request.method == "POST":
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
@@ -1995,10 +1995,10 @@ def process_journals():
                 
 
 
-@app.route("/ledger",methods=["GET","POST"])
+@app.route("/journals",methods=["GET","POST"])
 @check_schema
 @login_required
-def ledger():
+def journals():
         """View Transactions"""
         with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
                 accounts= Account.query.all()
@@ -2009,7 +2009,7 @@ def ledger():
                         accounts = Account.query.all()
                         names = {i.id:i.account_name for i in accounts}
                         balance = opening_balance(start_date,account.id)
-                        return render_template("ledger.html",accounts=accounts,ac=account,names=names,opening_balance=balance)
+                        return render_template("journals.html",accounts=accounts,ac=account,names=names,opening_balance=balance)
                 else:
                         start_date = request.form.get("start_date")
                         end_date = request.form.get("end_date")
@@ -2020,7 +2020,7 @@ def ledger():
                         balance = opening_balance(start_date,account_id)
                         journals = Journal.query.filter(Journal.date.between(start_date,end_date)).filter(or_(Journal.dr==account_id,Journal.cr==account_id)).order_by(Journal.id.asc()).all()
           
-                        return render_template("ledger.html",journals=journals,account_id=account_id,opening_balance=balance,accounts=accounts,start_date=start_date,end_date=end_date,entry=account.entry,ac=account,names=names)
+                        return render_template("journals.html",journals=journals,account_id=account_id,opening_balance=balance,accounts=accounts,start_date=start_date,end_date=end_date,entry=account.entry,ac=account,names=names)
 
 @app.route("/ledger_report",methods=["GET","POST"])
 @check_schema
@@ -2386,7 +2386,7 @@ def driveway_report(shift):
                         lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
                         products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
                         cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
-                        shift=current_shift,date=date,shift_daytime=current_shift.daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                        shift=current_shift,date=date,shift_daytime=current_shift.daytime,tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],attendant_sales=data['attendant_sales'],
                         pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])
                 else:
                         #Driveway for the day
@@ -2407,7 +2407,7 @@ def driveway_report(shift):
                         lubes_mnth_sales=data['lubes_mnth_sales'],lube_avg=data['lube_avg'],total_lubes_shift_sales=data['total_lubes_shift_sales'],
                         products=data['products'],accounts=data['accounts'],cash_customers=data['cash_customers'],customers=data['customers'],
                         cash_up=data['cash_up'],total_cash_expenses=data['total_cash_expenses'],expenses=data['expenses'],sales_breakdown=data['sales_breakdown'],sales_breakdown_amt=data['sales_breakdom_amt'],
-                        shift=current_shift,date=date,shift_daytime="Total",tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],
+                        shift=current_shift,date=date,shift_daytime="Total",tank_dips=data['tank_dips'],pump_readings=data['pump_readings'],attendant_sales=data['attendant_sales'],
                         pumps=data['pumps'],tanks=data['tanks'],total_sales_amt=data['total_sales_amt'],total_sales_ltr=data['total_sales_ltr'],product_sales_ltr=data['product_sales_ltr'])        
                         
                 
@@ -2586,6 +2586,7 @@ def driveway_tank_dips():
 
 @app.route("/driveway_lube_qty",methods=['GET','POST'])
 @view_only
+@start_shift_first
 @check_schema
 @login_required
 def driveway_lube_qty():
@@ -2646,6 +2647,7 @@ def driveway_lube_qty():
 
 @app.route("/product_prices",methods=['GET','POST'])
 @view_only
+@start_shift_first
 @check_schema
 @login_required
 def product_prices():
@@ -2682,7 +2684,7 @@ def product_prices():
                 
                 try:
                         data = request.get_json()
-                        print(data)
+                        
                         for product in products:
                                 sp_name = "row-{}-sp".format(product.id)
                                 cp_name = "row-{}-cp".format(product.id)

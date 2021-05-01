@@ -15,7 +15,7 @@ db.init_app(app)
 def main():
 
     #db.create_all()
-     ## Insert management data
+    ## Insert init data
     password = generate_password_hash("Kud@94")
     op.bulk_insert(system_table,
     [
@@ -52,8 +52,8 @@ def main():
         op.execute("SET search_path TO {}".format(schema))
         op.add_column('coupons',sa.Column('account_id', sa.Integer(),nullable=True))
         op.create_foreign_key('coupons_account_fkey', 'coupons', 'account', ['account_id'], ['id'])
-        op.execute(text("SET search_path TO default"))
-    op.execute(text("SET search_path TO default"))
+        op.execute("SET search_path TO default")
+    op.execute("SET search_path TO default")
 
     for schema in schemas:
         print("Executing on schema {}".format(schema))

@@ -61,10 +61,10 @@
                     <td>{{ report[i]["details"] }}</td>
                 {% endif %}
                 
-                <td>{{ report[i]['dr'] }}</td>
+                <td>{{ report[i]['dr'] | currencyFormat }}</td>
             
-                <td>{{ report[i]["cr"]  }}</td>
-                <td>{{ report[i]["balance"]  }}</td>
+                <td>{{ report[i]["cr"] | currencyFormat }}</td>
+                <td>{{ report[i]["balance"] | currencyFormat }}</td>
             </tr>
             {% endfor %}
         </tbody>

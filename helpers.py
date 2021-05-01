@@ -822,7 +822,7 @@ def get_attendant_sales(shift_id,prev_shift_id):
                 sales[att_sale.attendant_id]["amount"]+= amount
             else:
 
-                sales[att_sale.attendant_id] = {"litres":litres,"amount":amount}
+                sales[att_sale.attendant_id] = {"litres":litres,"amount":amount,"user":attendant.username}
     return sales
 
 
@@ -876,8 +876,8 @@ def get_driveway_data(shift_id,prev_shift_id):
     data['lube_avg'] = lubes_sales_avg(get_30_day_before(end_date),end_date)
     total_lubes_shift_sales = lube_sales(shift_id,prev_shift_id)
     data['total_lubes_shift_sales']=sum([total_lubes_shift_sales[i][5]*total_lubes_shift_sales[i][2] for i in total_lubes_shift_sales])/1000
-
-
+    data["attendant_sales"] = get_attendant_sales(shift_id, prev_shift_id)
+    
     return data
 
 def get_driveway_invoices_data(shift_id,prev_shift_id):
@@ -1049,14 +1049,14 @@ def supplier_statement(supplier_id,start_date,end_date):
     report = {}
     j = 1
     for delivery in deliveries:
-        details = str(delivery[0].document_number)
+        details = "Delivery {}".format(delivery[0].document_number)
         amount = delivery[0].qty*delivery[0].cost_price
         amount = round(amount,2)
-        balance = db.session.query(Delivery,SupplierTxn).filter(and_(Delivery.id==delivery[0].id,SupplierTxn.supplier_id==delivery[0].supplier_id,SupplierTxn.id==Delivery.supplier_txn_id)).first()
-        report[j] = {"date":delivery[0].date,"details":details,"dr":0.00,"cr":amount,"delivery_id":int(delivery[0].id),"balance":balance.post_balance}
+        balance = db.session.query(Delivery,SupplierTxn).filter(and_(Delivery.id==delivery[0].id,SupplierTxn.supplier_id==delivery[0].supplier,SupplierTxn.id==Delivery.supplier_txn_id)).first()
+        report[j] = {"date":delivery[0].date,"details":details,"dr":0.00,"cr":amount,"delivery_id":int(delivery[0].id),"balance":balance[1].post_balance}
         j += 1
     for note in debit_notes:
-        details = str(note[0].document_number)
+        details = "Debit note {}".format(note[0].document_number)
         amount = note[0].qty*note[0].cost_price
         amount = round(amount,2)
         balance = db.session.query(Delivery,SupplierTxn).filter(and_(Delivery.id==delivery[0].id,SupplierTxn.supplier_id==delivery[0].supplier_id,SupplierTxn.id==Delivery.supplier_txn_id)).first()
