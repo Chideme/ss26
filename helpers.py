@@ -2,6 +2,7 @@ import os
 import urllib.request
 import random
 import string
+import pandas as pd
 
 from flask import redirect, render_template, request, session,flash,url_for
 from flask_login import current_user
@@ -1473,7 +1474,7 @@ def last_day_of_month(any_day):
 def daily_cash_balances(start_date,end_date):
     """ Cash Balances for Finance Dashboard (Daily Frequency) """
     accounts= Account.query.filter(Account.code.between(400,450)).all()
-    dates = [i for i in daterange(start_date,end_date)]
+    dates = pd.date_range(start_date, end_date).tolist()
     report = {}
     for date in dates:
         balance=0
@@ -1490,7 +1491,8 @@ def daily_cash_balances(start_date,end_date):
 def daily_revenue(start_date,end_date):
     """Daily Revenue for Finance Dashboard """
     accounts = Account.query.filter(Account.code.between(100,199)).all()
-    dates = [i for i in daterange(start_date,end_date)]
+    dates =  pd.date_range(start_date, end_date).tolist()
+    
     report = {}
     
     for date in dates:
@@ -1507,7 +1509,7 @@ def daily_margin(start_date,end_date):
     """Daily Profit Margin for Finance Dashboard """
     revenue_accounts = Account.query.filter(Account.code.between(100,199)).all()
     expense_accounts = Account.query.filter(Account.code.between(200,399)).all()
-    dates = [i for i in daterange(start_date,end_date)]
+    dates = pd.date_range(start_date, end_date).tolist()
     report = {}
     
     for date in dates:
@@ -1534,7 +1536,7 @@ def daily_margin(start_date,end_date):
 def monthly_cash_balances(start_date,end_date):
     """ Cash Balances for Finance Dashboard (Monthly Frequency) """
     accounts= Account.query.filter(Account.code.between(400,450)).all()
-    dates = [i for i in daterange(start_date,end_date)]
+    dates = pd.date_range(start_date, end_date).tolist()
     month_end_dates = set([last_day_of_month(i) for i in dates if last_day_of_month(i)])
     month_end_dates = list(month_end_dates)
     report = {}
@@ -1551,7 +1553,7 @@ def monthly_cash_balances(start_date,end_date):
 def monthly_revenue(start_date,end_date):
     """ Monthly for Finance Dashboard (Monthly Frequency) """
     accounts= Account.query.filter(Account.code.between(100,199)).all()
-    dates = [i for i in daterange(start_date,end_date)]
+    dates = pd.date_range(start_date, end_date).tolist()
     month_end_dates = set([last_day_of_month(i) for i in dates if last_day_of_month(i)])
     month_end_dates = list(month_end_dates)
     report = {}
@@ -1570,7 +1572,7 @@ def monthly_margin(start_date,end_date):
     """Monthly Profit Margin for Finance Dashboard """
     revenue_accounts = Account.query.filter(Account.code.between(100,199)).all()
     expense_accounts = Account.query.filter(Account.code.between(200,399)).all()
-    dates = [i for i in daterange(start_date,end_date)]
+    dates = pd.date_range(start_date, end_date).tolist()
     month_end_dates = set([last_day_of_month(i) for i in dates if last_day_of_month(i)])
     month_end_dates = list(month_end_dates)
     report = {}

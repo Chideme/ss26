@@ -33,13 +33,13 @@ def main():
 
     with db.session.connection(execution_options={"schema_translate_map":{"tenant":tenant}}):
         #pump_readings[pump.name]=[prev_shift_reading,current_shift_reading]
-        attend_sale = db.session.query(AttendantSale,User).filter(AttendantSale.shift_id==shift_id,AttendantSale.attendant_id==User.id).all()
+       
                             
-        pump_attendant = {i[0].pump_id: i[1] for i in attend_sale}
-        pump_readings= get_pump_readings(shift_id,prev_shift_id)
+        shift = Shift.query.get(2)
+        print(daily_revenue(shift.date,shift.date))
         
 
-        print(report)
+        
 with app.app_context():
         main()
 

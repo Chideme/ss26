@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded',() => {
       var assets = report.Assets;
       var liabilities= report.Liabilities;
       
-      
+      console.log(sales_dates);
 
           var ctx = document.getElementById("CashBalances");
           var cChart = new Chart(ctx, {
