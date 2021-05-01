@@ -3161,7 +3161,8 @@ def shift_lube_sales():
                 
                 
                 return render_template("shift_lube_sales.html",product_sales=product_sales,shift_number=shift_id,
-                                        date=date,shift_daytime =daytime,suppliers=suppliers,total_sales_amt=total_sales_amt,total_sales_ltrs=total_sales_ltrs,products=products)
+                                        date=date,shift_daytime =daytime,suppliers=suppliers,
+                                        total_sales_amt=total_sales_amt,total_sales_ltrs=total_sales_ltrs,products=products)
 
 
 @app.route("/stock_sheet",methods=["GET","POST"])
