@@ -2609,7 +2609,8 @@ def driveway_lube_qty():
                                 total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
                                 total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
                                 suppliers = Supplier.query.all()
-                                return render_template("shift_lube_sales.html",product_sales=product_sales,shift=shift,suppliers=suppliers,products=products)
+                                return render_template("shift_lube_sales.html",
+                                product_sales=product_sales,shift=shift,suppliers=suppliers,products=products,total_sales_ltrs=total_sales_ltrs,total_sales_amt=total_sales_amt,)
                         else:
                         
                                 flash("No shift started yet",'warning')
@@ -3194,7 +3195,7 @@ def get_lubes_stock_sheet():
                                 product_sales = lube_sales(shift_id,prev_shift_id)               
                                 total_sales_amt = sum([product_sales[i][2]*product_sales[i][4] for i in product_sales])
                                 total_sales_ltrs = sum([product_sales[i][5]*product_sales[i][2] for i in product_sales])/1000
-                
+                                
                                 return render_template("lubes_stocksheet.html",product_sales=product_sales,shift_number=shift_id,
                                         date=date,shift_daytime =daytime,suppliers=suppliers,total_sales_amt=total_sales_amt,total_sales_ltrs=total_sales_ltrs,products=products)
                                 
