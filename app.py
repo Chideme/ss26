@@ -48,7 +48,7 @@ def index():
         """App Landing page"""
         
         return render_template("index.html")
-        #return render_template("landing_layout.html")
+       
 
 @app.route("/signup",methods=["GET","POST"])
 def signup():

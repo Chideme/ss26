@@ -512,10 +512,11 @@ def daily_sales_summary(tanks,start_date,end_date):
 def tank_variance_daily_report(start_date,end_date,tank_id):
     """Tank Variance report for dashboard"""
     report = {}
+    #tank_dips[shift.id]=[shift.date,prev_shift_dip,current_shift_dip,deliveries,tank_sales,cumulative_tank_sales,pump_sales,shrinkage2sales,cumulative,cumulativeP,cumulative_pump_sales]
     v = get_tank_variance(start_date,end_date,tank_id)
     for shift in v:
         if v[shift][0] in report:
-            report[v[shift][0]][0] += v[shift][9]
+            report[v[shift][0]] += v[shift][9]
         else:
             report[v[shift][0]] =v[shift][9]
    
@@ -1008,7 +1009,7 @@ def customer_statement(customer_id,start_date,end_date):
 
     for payment in payments:
         amount = payment.amount
-        details  = "{}".format(payment.ref)
+        details  = "Payment {}".format(payment.ref)
         balance = db.session.query(CustomerPayments,CustomerTxn).filter(and_(CustomerPayments.id==payment.id,CustomerTxn.customer_id==payment.customer_id,CustomerTxn.id==CustomerPayments.customer_txn_id)).first()
         report[payment.customer_txn_id] = {"date":payment.date,"details":details,"dr":0.00,"cr":round(amount,2),"balance":balance[1].post_balance}
         j += 1
