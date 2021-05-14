@@ -167,14 +167,14 @@ def login():
                         today = date.today()
                         if active > today:
                                 logged_in_users = LoggedInUsers.query.filter_by(tenant_id=tenant_id).first()
-                                if logged_in_users.user_count < 4:
-
+                                if logged_in_users.user_count <= 4:
+                                        print(logged_in_users.user_count)
                                         session['tenant'] = company.id
                                         session["schema"] = company.schema
-                                        logged_in_users.user_count += 1
+                                        
                                         return redirect(url_for('user_login'))
                                 else:
-                                        flash('Current number of user reached, ask other users to sign out','warning')
+                                        flash('Maximum number of user reached, ask other users to sign out','warning')
                                         return render_template("login.html")
 
                         else:
@@ -215,6 +215,7 @@ def user_login():
                         user = User.query.filter_by(username=username).first()
                         org = Tenant.query.get(session["tenant"])
                         shift_underway = Shift_Underway.query.all()
+                        logged_in_users = LoggedInUsers.query.filter_by(tenant_id=org.id).first()
                        
                         if user:
                                 if  not check_password_hash(user.password,password) or session['tenant'] != user.tenant_id:
@@ -232,7 +233,8 @@ def user_login():
                                         session["role_id"] = user.role_id
                                         session["shift_underway"] = shift_underway[0].state
                                         session["org_name"]= org.name
-                                        
+                                        logged_in_users.user_count += 1
+                                        db.session.commit()
                                         flash("Welcome",'info')
                                         return redirect(url_for('finance_dashboard'))
                         else:
@@ -249,6 +251,7 @@ def logout():
         """Logs out User"""
         logged_in_users = LoggedInUsers.query.filter_by(tenant_id=session['tenant']).first()
         logged_in_users.user_count  -= 1
+        db.session.commit()
         session.clear()
         
         return render_template("login.html")
