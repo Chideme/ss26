@@ -241,7 +241,7 @@ def user_login():
                                                 return redirect(url_for('finance_dashboard'))
                                         elif user.role_id == 1:
                                                 flash("Welcome",'info')
-                                                return redirect(url_for('finance_dashboard'))
+                                                return redirect(url_for('manage_users'))
                                         else:
                                                 flash('Maximum number of users reached, ask other users to sign out','warning')
                                                 return render_template("login.html")
