@@ -227,7 +227,7 @@ def user_login():
                                                 flash("Login details not correct check your details and try again",'warning')
                                                 return redirect(url_for('user_login'))
                                 else:
-                                        if logged_in_users.user_count <= 4:
+                                        if logged_in_users.user_count <= 2:
 
                                                 session["user_id"] = user.id
                                                 session["user"] = user.username
@@ -828,6 +828,19 @@ def manage_users():
                         return render_template("manageusers.html",roles=roles,users_roles=users_roles,users=users)
 
 
+@app.route("/company_information/reset_users",methods=["POST"])
+@admin_required
+@check_schema
+@login_required
+def reset_users():
+        """Managing Users"""
+       
+        with db.session.connection(execution_options={"schema_translate_map":{"tenant":session['schema']}}):
+                org = Tenant.query.get(session["tenant"])
+                logged_in_users = LoggedInUsers.query.filter_by(tenant_id=org.id).first()
+                logged_in_users.user_count = 0
+                db.session.commit()
+                return redirect(url_for("manage_users"))
 
 @app.route("/company_information/users/add_user",methods=["POST"])
 @view_only
