@@ -216,7 +216,7 @@ def user_login():
                         org = Tenant.query.get(session["tenant"])
                         shift_underway = Shift_Underway.query.all()
                         logged_in_users = LoggedInUsers.query.filter_by(tenant_id=org.id).first()
-                        role = Role.query.get(user.roler_id)
+                        role = Role.query.get(user.role_id)
                         if user:
                                 if  not check_password_hash(user.password,password) or session['tenant'] != user.tenant_id:
                                         if org.active <= date.today() and User.query.filter_by(session["tenant"]).all() == None:
