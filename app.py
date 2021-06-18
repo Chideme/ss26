@@ -167,7 +167,7 @@ def login():
                         today = date.today()
                         if active > today:
                                 logged_in_users = LoggedInUsers.query.filter_by(tenant_id=tenant_id).first()
-                                if logged_in_users.user_count <= 7:
+                                if logged_in_users.user_count <= 4:
                                         print(logged_in_users.user_count)
                                         session['tenant'] = company.id
                                         session["schema"] = company.schema
@@ -3567,6 +3567,9 @@ def developer():
                 tenant.active = date.today() + timedelta(days=int(package.number_of_days))
                 db.session.commit()
                 return redirect(url_for('developer'))
+
+
+
 
 @app.route("/developer_login",methods=['GET','POST'])
 def developer_login():
