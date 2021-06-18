@@ -473,7 +473,8 @@ def get_tank_variance(start_date,end_date,tank_id):
                 current_shift_dip= TankDip.query.filter(and_(TankDip.shift_id == shift.id,TankDip.tank_id == tank_id)).first()
                 current_shift_dip = current_shift_dip.dip
                 delivery = Delivery.query.filter(and_(Delivery.shift_id==shift.id,Delivery.tank_id==tank_id)).all()
-                deliveries = sum([i.qty for i in delivery])
+                dnotes = DebitNote.query.filter(and_(DebitNote.shift_id==shift.id,DebitNote.tank_id==tank_id)).all()
+                deliveries = sum([i.qty for i in delivery])- sum([i.qty for i in dnotes])
                 tank_sales = float(prev_shift_dip+deliveries-current_shift_dip)
                 shrinkage2sales = float(pump_sales-tank_sales)
                 cumulative = cumulative + shrinkage2sales
@@ -488,6 +489,7 @@ def get_tank_variance(start_date,end_date,tank_id):
     return tank_dips
 
 def daily_sales_summary(tanks,start_date,end_date):
+    ####Function needs rewrite. 
     sales_summary= {}
 
     for tank in tanks:

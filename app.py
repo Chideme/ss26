@@ -167,14 +167,14 @@ def login():
                         today = date.today()
                         if active > today:
                                 logged_in_users = LoggedInUsers.query.filter_by(tenant_id=tenant_id).first()
-                                if logged_in_users.user_count <= 4:
+                                if logged_in_users.user_count <= 7:
                                         print(logged_in_users.user_count)
                                         session['tenant'] = company.id
                                         session["schema"] = company.schema
                                         
                                         return redirect(url_for('user_login'))
                                 else:
-                                        flash('Maximum number of user reached, ask other users to sign out','warning')
+                                        flash('Maximum number of users reached, ask other users to sign out','warning')
                                         return render_template("login.html")
 
                         else:
