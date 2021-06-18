@@ -216,7 +216,7 @@ def user_login():
                         org = Tenant.query.get(session["tenant"])
                         shift_underway = Shift_Underway.query.all()
                         logged_in_users = LoggedInUsers.query.filter_by(tenant_id=org.id).first()
-                       
+                        role = Role.query.get(user.roler_id)
                         if user:
                                 if  not check_password_hash(user.password,password) or session['tenant'] != user.tenant_id:
                                         if org.active <= date.today() and User.query.filter_by(session["tenant"]).all() == None:
@@ -227,19 +227,20 @@ def user_login():
                                                 flash("Login details not correct check your details and try again",'warning')
                                                 return redirect(url_for('user_login'))
                                 else:
-                                        if logged_in_users.user_count <= 5:
+                                        if logged_in_users.user_count <= 4:
 
                                                 session["user_id"] = user.id
                                                 session["user"] = user.username
                                                 session["user_tenant"]= user.tenant_id
-                                                session["role_id"] = user.role_id
+                                                session["role"] = role.name
                                                 session["shift_underway"] = shift_underway[0].state
                                                 session["org_name"]= org.name
-                                                logged_in_users.user_count += 1
+                                                if role.name != "admin":
+                                                        logged_in_users.user_count += 1
                                                 db.session.commit()
                                                 flash("Welcome",'info')
                                                 return redirect(url_for('finance_dashboard'))
-                                        elif user.role_id == 1:
+                                        elif role.name == "admin":
                                                 flash("Welcome",'info')
                                                 return redirect(url_for('manage_users'))
                                         else:
@@ -258,7 +259,8 @@ def user_login():
 def logout():
         """Logs out User"""
         logged_in_users = LoggedInUsers.query.filter_by(tenant_id=session['tenant']).first()
-        logged_in_users.user_count  -= 1
+        if session["role"] != "admin":
+                logged_in_users.user_count  -= 1
         db.session.commit()
         session.clear()
         

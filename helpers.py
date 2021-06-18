@@ -107,7 +107,7 @@ def admin_required(f):
 
     def decorated_function(*args, **kwargs):
 
-        if session.get("role_id") != 1:
+        if session.get("role") != "admin":
             flash("Access not allowed, Log in as the Admin",'danger')
             return redirect(request.referrer)
 
