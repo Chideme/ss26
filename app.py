@@ -227,7 +227,7 @@ def user_login():
                                                 flash("Login details not correct check your details and try again",'warning')
                                                 return redirect(url_for('user_login'))
                                 else:
-                                        if logged_in_users.user_count <= 4:
+                                        if logged_in_users.user_count <= 5:
 
                                                 session["user_id"] = user.id
                                                 session["user"] = user.username
