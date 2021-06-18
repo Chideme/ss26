@@ -19,7 +19,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] =os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}  
 app.config["FLASK_ENV"] = os.getenv("FLASK_ENV")
+
 app.secret_key = "KUDAKWASHECHIDEME"
+
 db.init_app(app)
 app.config.update(dict(
     DEBUG = False,
@@ -31,6 +33,7 @@ app.config.update(dict(
     MAIL_PASSWORD = os.getenv("EMAIL_PASSWORD"),
 ))
 mail = Mail(app)
+
 
 
 @app.template_filter()
@@ -166,16 +169,13 @@ def login():
                 if company:
                         today = date.today()
                         if active > today:
-                                logged_in_users = LoggedInUsers.query.filter_by(tenant_id=tenant_id).first()
-                                if logged_in_users.user_count <= 4:
-                                        print(logged_in_users.user_count)
-                                        session['tenant'] = company.id
-                                        session["schema"] = company.schema
+                                  
+                                session['tenant'] = company.id
+                                session["schema"] = company.schema
                                         
-                                        return redirect(url_for('user_login'))
-                                else:
-                                        flash('Maximum number of users reached, ask other users to sign out','warning')
-                                        return render_template("login.html")
+                                return redirect(url_for('user_login'))
+                                
+
 
                         else:
                                 sub = Subscriptions.query.filter_by(tenant_id=tenant_id).first()
@@ -227,16 +227,24 @@ def user_login():
                                                 flash("Login details not correct check your details and try again",'warning')
                                                 return redirect(url_for('user_login'))
                                 else:
-                                        session["user_id"] = user.id
-                                        session["user"] = user.username
-                                        session["user_tenant"]= user.tenant_id
-                                        session["role_id"] = user.role_id
-                                        session["shift_underway"] = shift_underway[0].state
-                                        session["org_name"]= org.name
-                                        logged_in_users.user_count += 1
-                                        db.session.commit()
-                                        flash("Welcome",'info')
-                                        return redirect(url_for('finance_dashboard'))
+                                        if logged_in_users.user_count <= 4:
+
+                                                session["user_id"] = user.id
+                                                session["user"] = user.username
+                                                session["user_tenant"]= user.tenant_id
+                                                session["role_id"] = user.role_id
+                                                session["shift_underway"] = shift_underway[0].state
+                                                session["org_name"]= org.name
+                                                logged_in_users.user_count += 1
+                                                db.session.commit()
+                                                flash("Welcome",'info')
+                                                return redirect(url_for('finance_dashboard'))
+                                        elif user.role_id == 1:
+                                                flash("Welcome",'info')
+                                                return redirect(url_for('finance_dashboard'))
+                                        else:
+                                                flash('Maximum number of users reached, ask other users to sign out','warning')
+                                                return render_template("login.html")
                         else:
                                 flash("Login details not correct check your details and try again",'warning')
                                 return redirect(url_for('user_login'))
